@@ -1,5 +1,5 @@
 Package: sf
-Version: 0.2-0
+Version: 0.2-1
 Title: Simple Features for R
 Authors@R: c(person("Edzer", "Pebesma", role = c("aut", "cre"), email = "edzer.pebesma@uni-muenster.de"),
 	person("Roger", "Bivand", role = "ctb"),
@@ -24,7 +24,7 @@ RoxygenNote: 5.0.1
 Collate: RcppExports.R init.R bbox.R read.R sfc.R sfg.R sf.R wkb.R
         wkt.R plot.R geom.R transform.R sp.R crs.R grid.R arith.R
 NeedsCompilation: yes
-Packaged: 2016-10-25 18:35:29 UTC; edzer
+Packaged: 2016-10-26 19:05:03 UTC; edzer
 Author: Edzer Pebesma [aut, cre],
   Roger Bivand [ctb],
   Ian Cook [ctb],
@@ -35,4 +35,4 @@ Author: Edzer Pebesma [aut, cre],
   Jeroen Ooms [ctb]
 Maintainer: Edzer Pebesma <edzer.pebesma@uni-muenster.de>
 Repository: CRAN
-Date/Publication: 2016-10-26 10:37:55
+Date/Publication: 2016-10-27 13:06:28

@@ -1,6 +1,7 @@
 options(warn = 2)
 library(sf)
-nc = st_read(system.file("gpkg/nc.gpkg", package="sf"), "nc.gpkg", crs = 4267,
+# nc = st_read(system.file("gpkg/nc.gpkg", package="sf"), "nc.gpkg", crs = 4267,
+nc = st_read(system.file("shape/nc.shp", package="sf"), "nc", crs = 4267,
 	relation_to_geometry = c(AREA = "lattice", PERIMETER = "lattice", CNTY_ = "entity",
 		CNTY_ID = "entity", NAME = "entity", FIPS = "entity", FIPSNO = "entity",
 		CRESS_ID = "entity", BIR74 = "lattice", SID74 = "lattice", NWBIR74 = "lattice",
@@ -20,7 +21,7 @@ x = st_union_cascaded(nc)
 
 x = st_simplify(nc, 0.1)
 
-if (sf:::CPL_geos_version() >= "3.4.0") {
+if (sf:::CPL_geos_version() >= "3.4.0" && sf:::CPL_gdal_version() >= "2.1.0") {
 	x = st_triangulate(nc)
 }
 

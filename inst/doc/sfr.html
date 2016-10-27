@@ -129,7 +129,7 @@ $(document).ready(function () {
 <li><a href="#how-simple-features-in-r-are-organized">How simple features in R are organized</a><ul>
 <li><a href="#sf-objects-with-simple-features">sf: objects with simple features</a></li>
 <li><a href="#sfc-simple-feature-geometry-list-column">sfc: simple feature geometry list-column</a></li>
-<li><a href="#mixed-geometry-types">mixed geometry types</a></li>
+<li><a href="#mixed-geometry-types">Mixed geometry types</a></li>
 <li><a href="#sfg-simple-feature-geometry">sfg: simple feature geometry</a></li>
 <li><a href="#wkb">Well-known text, well-known binary, precision</a><ul>
 <li><a href="#wkt-and-wkb">WKT and WKB</a></li>
@@ -147,7 +147,7 @@ $(document).ready(function () {
 
 <p><a href="https://en.wikipedia.org/wiki/Simple_Features">Simple features</a> or <a href="http://www.opengeospatial.org/standards/sfa"><em>simple feature access</em></a> refers to a <a href="http://www.iso.org/iso/home/store/catalogue_tc/catalogue_detail.htm?csnumber=40114">formal standard</a> that describes how objects in the real world can be represented in computers, with emphasis on the <em>spatial</em> geometry of these objects. It also describes how such objects can be stored in and retrieved from databases, and which geometrical operations should be defined for them.</p>
 <p>The standard is widely implemented in spatial databases (such as PostGIS), commercial GIS (e.g., <a href="http://www.esri.com/">ESRI ArcGIS</a>), forms the vector data basis for libraries such as <a href="http://www.gdal.org/">GDAL</a>, and a subset of simple features forms the <a href="http://geojson.org/">GeoJSON</a> standard.</p>
-<p>R has well-supported classes for storing spatial data (<a href="https://CRAN.R-project.org/package=sp">sp</a>) and interfacing to the above mentioned environments (<a href="https://CRAN.R-project.org/package=rgdal">rgdal</a>, <a href="https://CRAN.R-project.org/package=rgeos">rgeos</a>), but so far lacked a complete implementation of simple features, making conversions at times convoluted, inefficient or incomplete. The package <a href="http://github.com/edzer/sfr">sf</a> tries to fill this gap, and aims at succeeding <a href="https://CRAN.R-project.org/package=sp">sp</a> in the long term.</p>
+<p>R has well-supported classes for storing spatial data (<a href="https://CRAN.R-project.org/package=sp">sp</a>) and interfacing to the above mentioned environments (<a href="https://CRAN.R-project.org/package=rgdal">rgdal</a>, <a href="https://CRAN.R-project.org/package=rgeos">rgeos</a>), but has so far lacked a complete implementation of simple features, making conversions at times convoluted, inefficient or incomplete. The package <a href="http://github.com/edzer/sfr">sf</a> tries to fill this gap, and aims at succeeding <a href="https://CRAN.R-project.org/package=sp">sp</a> in the long term.</p>
 <p>This vignette:</p>
 <ul>
 <li>explains what is meant by features, and by simple features</li>
@@ -159,7 +159,7 @@ $(document).ready(function () {
 </ul>
 <div id="what-is-a-feature" class="section level1">
 <h1>What is a feature?</h1>
-<p>A feature is thought of as a thing, or an object in the real world, examples would be a building or a tree. As is the case with objects, they often consist of other objects this is the case with features too: a set of features can form a single feature. A forest stand can be a feature, a forest can be a feature, a city can be a feature. A satellite image pixel can be a feature, a complete image can be a feature too.</p>
+<p>A feature is thought of as a thing, or an object in the real world, examples would be a building or a tree. As is the case with objects, they often consist of other objects. This is the case with features too: a set of features can form a single feature. A forest stand can be a feature, a forest can be a feature, a city can be a feature. A satellite image pixel can be a feature, a complete image can be a feature too.</p>
 <p>Features have a <em>geometry</em> describing <em>where</em> on Earth the feature is located, and they have attributes, which describe other properties. The geometry of a tree can be the delineation of its crown, of its stem, or the point indicating its centre. Other properties may include its height, color, diameter at breast height at a particular date, and so on.</p>
 <p>The standard says: “<em>A simple feature is defined by the OpenGIS Abstract specification to have both spatial and non-spatial attributes. Spatial attributes are geometry valued, and simple features are based on 2D geometry with linear interpolation between vertices.</em>” We will see soon that the same standard will extend its coverage beyond 2D and beyond linear interpolation. Here, we take simple features as the data structures and operations described in the <a href="http://www.opengeospatial.org/standards/sfa">standard</a>.</p>
 <div id="dimensions" class="section level2">
@@ -223,7 +223,7 @@ $(document).ready(function () {
 </tbody>
 </table>
 <p>Each of the geometry types can also be a (typed) empty set, containing zero coordinates (for <code>POINT</code> the standard is not clear how to represent the empty geometry). Empty geometries can be thought of being the analogue to missing (<code>NA</code>) attributes, NULL values or empty lists.</p>
-<p>The remaining geometries 10 are more rare, but are increasingly find implementations:</p>
+<p>The remaining geometries 10 are more rare, but increasingly find implementations:</p>
 <table style="width:78%;">
 <colgroup>
 <col width="6%"></col>
@@ -238,7 +238,7 @@ $(document).ready(function () {
 <tbody>
 <tr class="odd">
 <td align="left"><code>CIRCULARSTRING</code></td>
-<td align="left">The CIRCULARSTRING is the basic curve type, similar to a LINESTRING in the linear world. A single segment required three points, the start and end points (first and third) and any other point on the arc. The exception to this is for a closed circle, where the start and end points are the same. In this case the second point MUST be the center of the arc, ie the opposite side of the circle. To chain arcs together, the last point of the previous arc becomes the first point of the next arc, just like in LINESTRING. This means that a valid circular string must have an odd number of points greated than 1.</td>
+<td align="left">The CIRCULARSTRING is the basic curve type, similar to a LINESTRING in the linear world. A single segment requires three points, the start and end points (first and third) and any other point on the arc. The exception to this is for a closed circle, where the start and end points are the same. In this case the second point MUST be the center of the arc, ie the opposite side of the circle. To chain arcs together, the last point of the previous arc becomes the first point of the next arc, just like in LINESTRING. This means that a valid circular string must have an odd number of points greated than 1.</td>
 </tr>
 <tr class="even">
 <td align="left"><code>COMPOUNDCURVE</code></td>
@@ -278,7 +278,7 @@ $(document).ready(function () {
 </tr>
 </tbody>
 </table>
-<p>Note that <code>CIRCULASTRING</code>, <code>COMPOUNDCURVE</code> and <code>CURVEPOLYGON</code> are not described in the SFA standard,but in the SQL-MM part 3 standard. The descriptions above were copied from the <a href="http://postgis.net/docs/using_postgis_dbmanagement.html">postgis</a> docs.</p>
+<p>Note that <code>CIRCULASTRING</code>, <code>COMPOUNDCURVE</code> and <code>CURVEPOLYGON</code> are not described in the SFA standard, but in the SQL-MM part 3 standard. The descriptions above were copied from the <a href="http://postgis.net/docs/using_postgis_dbmanagement.html">postgis</a> docs.</p>
 </div>
 <div id="coordinate-reference-system" class="section level2">
 <h2>Coordinate reference system</h2>
@@ -288,7 +288,7 @@ $(document).ready(function () {
 <div id="how-simple-features-in-r-are-organized" class="section level1">
 <h1>How simple features in R are organized</h1>
 <p>Package <code>sf</code> represents simple features as native R objects. All functions and methods in <code>sf</code> are prefixed by <code>st_</code>, so that they are easily found by command-line completion. Simple features are implemented as R native data, using simple data structures (S3 classes, lists, matrix, vector). Typical use involves reading, manipulating and writing of sets of features, with attributes and geometries.</p>
-<p>As attributes are typically stored in <code>data.frame</code> objects (or the very similar <code>tbl_df</code>), we will also store feature geometries in in a <code>data.frame</code> column. Since geometries are not single-valued, they are put a list-column, a list of length equal to the number of records in the <code>data.frame</code>, with each list element the simple feature geometry of that feature. The three classes used to represent simple features are:</p>
+<p>As attributes are typically stored in <code>data.frame</code> objects (or the very similar <code>tbl_df</code>), we will also store feature geometries in in a <code>data.frame</code> column. Since geometries are not single-valued, they are put in a list-column, a list of length equal to the number of records in the <code>data.frame</code>, with each list element holding the simple feature geometry of that feature. The three classes used to represent simple features are:</p>
 <ul>
 <li><code>sf</code>, the table (<code>data.frame</code>) with feature attributes and feature geometries, which contains</li>
 <li><code>sfc</code>, the list-column with the geometries for each feature (record), which is composed of</li>
@@ -300,18 +300,19 @@ $(document).ready(function () {
 <p>As we usually do not work with geometries of single simple features, but with datasets consisting of sets of features with attributes, the two are put together in <code>sf</code> (simple feature) objects. The following command reads the <code>nc</code> dataset from a file that is contained in the <code>sf</code> package:</p>
 <pre class="r"><code>library(sf)
 ## Linking to GEOS 3.5.0, GDAL 2.1.0
-filename &lt;- system.file(&quot;gpkg/nc.gpkg&quot;, package=&quot;sf&quot;)
-nc &lt;- st_read(filename, &quot;nc.gpkg&quot;, crs = 4267)
-## Reading layer nc.gpkg from data source /tmp/RtmppC6m8s/Rinst613d4bfe395e/sf/gpkg/nc.gpkg using driver &quot;GPKG&quot;
+filename &lt;- system.file(&quot;shape/nc.shp&quot;, package=&quot;sf&quot;)
+nc &lt;- st_read(filename, &quot;nc&quot;, crs = 4267)
+## Reading layer nc from data source /tmp/RtmpVG0S2L/Rinst186a1189f39a/sf/shape/nc.shp using driver &quot;ESRI Shapefile&quot;
 ## features:       100
 ## fields:         14
+## converted into: MULTIPOLYGON
 ## proj4string:    +proj=longlat +datum=NAD27 +no_defs</code></pre>
 <p>The short report printed gives the file name, the driver (GPKG: GeoPackage), mentions that there are 100 features (records) and 14 fields (attributes). This object is of class</p>
 <pre class="r"><code>class(nc)
 ## [1] &quot;sf&quot;         &quot;data.frame&quot;</code></pre>
 <p>meaning it extends (and “is” a) <code>data.frame</code>, but with a single list-column with geometries, which is held in the column with name</p>
 <pre class="r"><code>attr(nc, &quot;sf_column&quot;)
-## [1] &quot;geom&quot;</code></pre>
+## [1] &quot;geometry&quot;</code></pre>
 <p>If we print the first three features, we see their attribute values and an abridged version of the geometry</p>
 <pre class="r"><code>print(nc[9:15], n = 3)</code></pre>
 <p>which would give the following output:</p>
@@ -391,7 +392,7 @@ plot(nc[w,], col = 2:7)</code></pre>
 ## [16] st_transform summary     
 ## see '?methods' for accessing help and source code</code></pre>
 <p>Coordinate reference systems (<code>st_crs</code> and <code>st_transform</code>) are discussed in the section on <a href="#crs">coordinate reference systems</a>. <code>st_as_wkb</code> and <code>st_as_text</code> convert geometry list-columns into well-known-binary or well-known-text, explained <a href="#wkb">below</a>. <code>st_bbox</code> retrieves the coordinate bounding box.</p>
-<p>attributes include</p>
+<p>Attributes include</p>
 <pre class="r"><code>attributes(nc.geom)
 ## $n_empty
 ## [1] 0
@@ -413,7 +414,7 @@ plot(nc[w,], col = 2:7)</code></pre>
 ## -84.32385  33.88199 -75.45698  36.58965</code></pre>
 </div>
 <div id="mixed-geometry-types" class="section level2">
-<h2>mixed geometry types</h2>
+<h2>Mixed geometry types</h2>
 <p>The class of <code>nc.geom</code> is <code>c(&quot;sfc_MULTIPOLYGON&quot;, &quot;sfc&quot;)</code>: <code>sfc</code> is shared with all geometry types, and <code>sft_TYPE</code> with <code>TYPE</code> indicating the type of the particular geometry at hand.</p>
 <p>There are two “special” types: <code>GEOMETRYCOLLECTION</code>, and <code>GEOMETRY</code>. <code>GEOMETRYCOLLECTION</code> indicates that each of the geometries may contain a mix of geometry types, as in</p>
 <pre class="r"><code>(mix &lt;- st_sfc(st_geometrycollection(list(st_point(1:2))), 
@@ -471,7 +472,7 @@ str(x)
 ## Classes 'XYZM', 'POINT', 'sfg'  num [1:4] 1 2 3 4
 st_drop_zm(x)
 ## POINT(1 2)</code></pre>
-<p>This means that we can represent 2-, 3- or 4-dimensional coordinates. All geometry objects inherit from <code>sfg</code> (simple feature geometry), but also have a type (e.g. <code>POINT</code>), and a dimension (e.g. <code>XYM</code>) class name. A figure illustrates the seven most common types:</p>
+<p>This means that we can represent 2-, 3- or 4-dimensional coordinates. All geometry objects inherit from <code>sfg</code> (simple feature geometry), but also have a type (e.g. <code>POINT</code>), and a dimension (e.g. <code>XYM</code>) class name. A figure illustrates six of the seven most common types.</p>
 <p>With the exception of the <code>POINT</code> which has a single point as geometry, the remaining six common single simple feature geometry types that correspond to single features (single records, or rows in a <code>data.frame</code>) are created like this</p>
 <pre class="r"><code>p &lt;- rbind(c(3.2,4), c(3,4.6), c(3.8,4.4), c(3.5,3.8), c(3.4,3.6), c(3.9,4.5))
 (mp &lt;- st_multipoint(p))
@@ -520,7 +521,7 @@ st_as_text(x)
 ## LINESTRING(10 5, 9 4, 8 3, 7 2, 6 1)
 st_as_sfc(structure(list(st_as_binary(x)), class = &quot;WKB&quot;))[[1]]
 ## LINESTRING(10 5, 9 4, 8 3, 7 2, 6 1)</code></pre>
-<p>GDAL, GEOS, spatial databases and GIS read and write WKB which is fast and precise. Conversion between R native objects and WKB is done by package sf in compiled (C++/Rcpp) code, making this a reusable and fast route for I/O of simple feature geometries in R.</p>
+<p>GDAL, GEOS, spatial databases and GIS read and write WKB which is fast and precise. Conversion between R native objects and WKB is done by package <code>sf</code> in compiled (C++/Rcpp) code, making this a reusable and fast route for I/O of simple feature geometries in R.</p>
 </div>
 <div id="precision" class="section level3">
 <h3>Precision</h3>
@@ -536,22 +537,23 @@ st_as_sfc(structure(list(st_as_binary(x)), class = &quot;WKB&quot;))[[1]]
 <div id="reading-and-writing" class="section level2">
 <h2>Reading and writing</h2>
 <p>As we’ve seen above, reading spatial data from an external file can be done by</p>
-<pre class="r"><code>filename &lt;- system.file(&quot;gpkg/nc.gpkg&quot;, package=&quot;sf&quot;)
-nc &lt;- st_read(filename, &quot;nc.gpkg&quot;, crs = 4267)
-## Reading layer nc.gpkg from data source /tmp/RtmppC6m8s/Rinst613d4bfe395e/sf/gpkg/nc.gpkg using driver &quot;GPKG&quot;
+<pre class="r"><code>filename &lt;- system.file(&quot;shape/nc.shp&quot;, package=&quot;sf&quot;)
+nc &lt;- st_read(filename, &quot;nc&quot;, crs = 4267)
+## Reading layer nc from data source /tmp/RtmpVG0S2L/Rinst186a1189f39a/sf/shape/nc.shp using driver &quot;ESRI Shapefile&quot;
 ## features:       100
 ## fields:         14
+## converted into: MULTIPOLYGON
 ## proj4string:    +proj=longlat +datum=NAD27 +no_defs</code></pre>
 <p>and writing takes place in the same fashion, using <code>st_write</code>:</p>
-<pre class="r"><code>st_write(nc, &quot;nc.gpkg&quot;, &quot;nc.gpkg&quot;, &quot;GPKG&quot;)
-## Writing layer nc.gpkg to data source nc.gpkg using driver &quot;GPKG&quot;
+<pre class="r"><code>st_write(nc, &quot;nc.shp&quot;, &quot;nc&quot;, &quot;ESRI Shapefile&quot;)
+## Writing layer nc to data source nc.shp using driver &quot;ESRI Shapefile&quot;
 ## features:       100
 ## fields:         14
 ## geometry type:  MULTIPOLYGON</code></pre>
 <p>The <code>dsn</code> and <code>layer</code> arguments to <code>st_read</code> and <code>st_write</code> denote a data source name and a layer. Their exact interpretation as well as the options they support vary per driver, the <a href="http://www.gdal.org/ogr_formats.html">GDAL driver documentation</a> is best consulted for this. For instance, a PostGIS table in database <code>postgis</code> might be read by</p>
 <pre class="r"><code>meuse &lt;- st_read(&quot;PG:dbname=postgis&quot;, &quot;meuse&quot;)</code></pre>
 <p>where the <code>PG:</code> string indicates this concerns the PostGIS driver, followed by database name, and possibly port and user credentials.</p>
-<p><code>st_read</code> typically reads the coordinate reference system as <code>proj4string</code>, but not the EPSG (SRID). GDAL cannot retrieve SRID (EPSG code) from <code>proj4string</code> strings, and, when needed, it has to be set by the user. See also the section on [crs][crs].</p>
+<p><code>st_read</code> typically reads the coordinate reference system as <code>proj4string</code>, but not the EPSG (SRID). GDAL cannot retrieve SRID (EPSG code) from <code>proj4string</code> strings, and, when needed, it has to be set by the user. See also the section on <a href="crs" class="uri">crs</a>.</p>
 <p>Two further functions, <code>st_read_db</code> and <code>st_write_db</code> attempt to read and write directly from spatial databases, using WKB. The advantage over <code>st_read</code> may be that instead of a complete table, the result of a (spatial) query may be fetched, limiting the amount of data that is read into R.</p>
 <p><code>st_drivers()</code> returns a <code>data.frame</code> listing available drivers, and their metadata: names, whether a driver can write, and whether it is a raster and/or vector driver. All drivers can read. Reading of some common data formats is illustrated below:</p>
 <pre class="r"><code># Download .shp data
@@ -584,7 +586,7 @@ microbenchmark::microbenchmark(shp_read_sp(), shp_read_sf(),
 </div>
 <div id="crs" class="section level2">
 <h2>Coordinate reference systems and transformations</h2>
-<p>Coordinate reference systems (CRS) are like measurement units for coordinates: they specify which location on Earth a particular coordinate pair refers to. We saw above that <code>sfc</code> objects (geometry list-columns) have two attributes to store a CRS, <code>epsg</code> and <code>proj4string</code>. This implies that all geometries in a geometry list-column must have the same CRS. Both may be <code>NA</code>, e.g. in case the CRS is unknown, or when we work with local coordinate systems (e.g. inside a building, a body, or an abstract space).</p>
+<p>Coordinate reference systems (CRS) are like measurement units for coordinates: they specify which location on Earth a particular coordinate pair refers to. We saw above that <code>sfc</code> objects (geometry list-columns) have two attributes to store a CRS: <code>epsg</code> and <code>proj4string</code>. This implies that all geometries in a geometry list-column must have the same CRS. Both may be <code>NA</code>, e.g. in case the CRS is unknown, or when we work with local coordinate systems (e.g. inside a building, a body, or an abstract space).</p>
 <p><code>proj4string</code> is a generic, string-based description of a CRS, understood by the <a href="http://proj4.org/">PROJ.4</a> library. It defines projection types and (often) defines parameter values for particular projections, and hence can cover an infinite amount of different projections. This library (also used by GDAL) provides functions to convert or transform between different CRS. <code>epsg</code> is the integer ID for a particular, known CRS that can be resolved into a <code>proj4string</code>. There is no (known, simple and general) way to resolve <code>proj4string</code> values into <code>epsg</code> IDs.</p>
 <p>The importance of having <code>epsg</code> values stored with data besides <code>proj4string</code> values is that the <code>epsg</code> refers to particular, well-known CRS, whose parameters may change (improve) over time; fixing only the <code>proj4string</code> may remove the possibility to benefit from such improvements, and limit the provenance of datasets.</p>
 <p>Coordinate reference system transformations can be carried out using <code>st_transform</code>, e.g. converting longitudes/latitudes in NAD27 to web mercator (EPSG:3875) can be done by</p>
@@ -634,7 +636,7 @@ all.equal(nc, nc2)
 <p><code>st_is_valid</code> and <code>st_is_simple</code> return a boolean indicating whether a geometry is valid or simple.</p>
 <pre class="r"><code>st_is_valid(nc[1:2,])
 ## [1] TRUE TRUE</code></pre>
-<p><code>st_distance</code> returns a dense numeric matrix with distances between geometries <code>st_relate</code> returns a character matrix with the <a href="https://en.wikipedia.org/wiki/DE-9IM#Illustration">DE9-IM</a> values for each pair of geometries:</p>
+<p><code>st_distance</code> returns a dense numeric matrix with distances between geometries. <code>st_relate</code> returns a character matrix with the <a href="https://en.wikipedia.org/wiki/DE-9IM#Illustration">DE9-IM</a> values for each pair of geometries:</p>
 <pre class="r"><code>st_distance(nc[c(1,4,22),], nc[c(1, 33,55,56),])
 ##           [,1]     [,2]      [,3]     [,4]
 ## [1,] 0.0000000 3.447803 1.3176060 5.264924
@@ -715,7 +717,7 @@ st_is_valid(st_sfc(x2,x3))
 </div>
 <div id="how-attributes-relate-to-geometries" class="section level1">
 <h1>How attributes relate to geometries</h1>
-<p>(this will eventually be the topic of a new vignette; now here to explain the last attribute of <code>sf</code> objects)</p>
+<p>(This will eventually be the topic of a new vignette; now here to explain the last attribute of <code>sf</code> objects)</p>
 <p>The standard documents about simple features are very detailed about the geometric aspects of features, but say nearly nothing about attributes, except that their values should be understood in another reference system (their <a href="https://CRAN.R-project.org/package=units">units of measurement</a>). But there is more to it. For variables like air temperature, interpolation makes usually sense, for others like human body temperature it doesn’t. The difference is that air temperature is a field, which continues between sensors, where body temperature is an object property that doesn’t extend beyond the body – in spatial statistics bodies would be called a point pattern, their temperature the point marks. For geometries that have a non-zero size (positive length or area), attribute values may refer to the every sub-geometry (every point), or may summarize the geometry. For example, a state’s population density summarizes the whole state, and is not a meaningful estimate of population density for a give point inside the state without the context of the state. On the other hand, land use or geological maps give polygons with constant land use or geology, every point inside the polygon is of that class. Some properties are spatially <a href="https://en.wikipedia.org/wiki/Intensive_and_extensive_properties">extensive</a>, meaning that attributes would summed up when two geometries are merged: population is an example. Other properties are spatially intensive, and should be averaged, with population density the example.</p>
 <p>Simple feature objects of class <code>sf</code> have an attribute that points out how attributes relate to their geometry, which can be defined at creation time:</p>
 <pre class="r"><code>nc &lt;- st_read(system.file(&quot;gpkg/nc.gpkg&quot;, package=&quot;sf&quot;), &quot;nc.gpkg&quot;, crs = 4267,
@@ -723,7 +725,7 @@ st_is_valid(st_sfc(x2,x3))
         CNTY_ID = &quot;entity&quot;, NAME = &quot;entity&quot;, FIPS = &quot;entity&quot;, FIPSNO = &quot;entity&quot;,
         CRESS_ID = &quot;entity&quot;, BIR74 = &quot;lattice&quot;, SID74 = &quot;lattice&quot;, NWBIR74 = &quot;lattice&quot;,
         BIR79 = &quot;lattice&quot;, SID79 = &quot;lattice&quot;, NWBIR79 = &quot;lattice&quot;))
-## Reading layer nc.gpkg from data source /tmp/RtmppC6m8s/Rinst613d4bfe395e/sf/gpkg/nc.gpkg using driver &quot;GPKG&quot;
+## Reading layer nc.gpkg from data source /tmp/RtmpVG0S2L/Rinst186a1189f39a/sf/gpkg/nc.gpkg using driver &quot;GPKG&quot;
 ## features:       100
 ## fields:         14
 ## proj4string:    +proj=longlat +datum=NAD27 +no_defs

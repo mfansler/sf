@@ -3,8 +3,8 @@ knitr::opts_chunk$set(collapse = TRUE)
 
 ## ------------------------------------------------------------------------
 library(sf)
-filename <- system.file("gpkg/nc.gpkg", package="sf")
-nc <- st_read(filename, "nc.gpkg", crs = 4267)
+filename <- system.file("shape/nc.shp", package="sf")
+nc <- st_read(filename, "nc", crs = 4267)
 
 ## ------------------------------------------------------------------------
 class(nc)
@@ -129,11 +129,11 @@ st_as_sfc("LINESTRING(10 5, 9 4, 8 3, 7 2, 6 1)")[[1]]
 st_as_sfc(structure(list(st_as_binary(x)), class = "WKB"))[[1]]
 
 ## ------------------------------------------------------------------------
-filename <- system.file("gpkg/nc.gpkg", package="sf")
-nc <- st_read(filename, "nc.gpkg", crs = 4267)
+filename <- system.file("shape/nc.shp", package="sf")
+nc <- st_read(filename, "nc", crs = 4267)
 
 ## ------------------------------------------------------------------------
-st_write(nc, "nc.gpkg", "nc.gpkg", "GPKG")
+st_write(nc, "nc.shp", "nc", "ESRI Shapefile")
 
 ## ----eval=FALSE----------------------------------------------------------
 #  meuse <- st_read("PG:dbname=postgis", "meuse")

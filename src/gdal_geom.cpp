@@ -44,9 +44,6 @@ Rcpp::List CPL_geom_op(std::string op, Rcpp::List sfc,
 		for (size_t i = 0; i < g.size(); i++)
 			out[i] = preserveTopology ?  g[i]->SimplifyPreserveTopology(dTolerance) : 
 					g[i]->Simplify(dTolerance);
-	} else if (op == "triangulate") {
-		for (size_t i = 0; i < g.size(); i++)
-			out[i] = g[i]->DelaunayTriangulation(dTolerance, bOnlyEdges);
 	} else if (op == "polygonize") {
 		for (size_t i = 0; i < g.size(); i++)
 			out[i] = g[i]->Polygonize();
@@ -62,10 +59,16 @@ Rcpp::List CPL_geom_op(std::string op, Rcpp::List sfc,
 			out[i] = gm;
 		}
 	} else
+#if GDAL_VERSION_MAJOR >= 2 && GDAL_VERSION_MINOR >= 1
+	if (op == "triangulate") {
+		for (size_t i = 0; i < g.size(); i++)
+			out[i] = g[i]->DelaunayTriangulation(dTolerance, bOnlyEdges);
+	} else
+#endif
 		throw std::invalid_argument("invalid operation"); // would leak g and out
 
 	if (op != "segmentize")
-		for (int i = 0; i < g.size(); i++)
+		for (size_t i = 0; i < g.size(); i++)
 			delete g[i];
 	Rcpp::List ret = sfc_from_ogr(out, true);
 	ret.attr("epsg") = sfc.attr("epsg");
@@ -95,13 +98,13 @@ Rcpp::List CPL_geom_op2(std::string op, Rcpp::List sfc, Rcpp::List sf0) {
 	} else 
 		throw std::invalid_argument("invalid operation"); // would leak g, g0 and out
 	// clean up:
-	for (int i = 0; i < g.size(); i++)
+	for (size_t i = 0; i < g.size(); i++)
 		delete g[i];
-	for (int i = 0; i < g0.size(); i++)
+	for (size_t i = 0; i < g0.size(); i++)
 		delete g0[i];
 
 	OGRGeometryFactory f;
-	for (int i = 0; i < out.size(); i++)
+	for (size_t i = 0; i < out.size(); i++)
 		if (out[i] == NULL)
 			out[i] = f.createGeometry(wkbGeometryCollection);
 	Rcpp::List ret = sfc_from_ogr(out, true);
