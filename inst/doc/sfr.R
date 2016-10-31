@@ -112,6 +112,7 @@ title("MULTIPOLYGON")
 plot(gc, border = 'grey', col = 'grey')
 box()
 title("GEOMETRYCOLLECTION")
+par(mfrow = c(1, 1))
 
 ## ------------------------------------------------------------------------
 (x <- st_geometrycollection())
@@ -149,9 +150,6 @@ st_write(nc, "nc.shp", "nc", "ESRI Shapefile")
 #  biketrails_shp <- st_read(dsn = ".", layer = "biketrails")
 #  ogr_layers <- rgdal::ogrListLayers(dsn = "BikePaths.kmz")
 #  biketrails_kmz <- st_read(dsn = "BikePaths.kmz", layer = ogr_layers[1])
-#  # Tidy up
-#  files_to_remove <- list.files(pattern = "[B-b]ike")
-#  file.remove(files_to_remove)
 
 ## ---- echo=TRUE, eval=FALSE----------------------------------------------
 #  shp_read_sp <- function() rgdal::readOGR(dsn = ".", layer = "biketrails")
@@ -160,6 +158,11 @@ st_write(nc, "nc.shp", "nc", "ESRI Shapefile")
 #  kmz_read_sf <- function() st_read(dsn = "BikePaths.kmz", layer = ogr_layers[1])
 #  microbenchmark::microbenchmark(shp_read_sp(), shp_read_sf(),
 #                                 kmz_read_sp(), kmz_read_sf(), times = 1)
+
+## ---- echo=FALSE---------------------------------------------------------
+# Tidy up
+files_to_remove <- list.files(pattern = "[B-b]ike")
+if(length(files_to_remove) > 0) file.remove(files_to_remove)
 
 ## ------------------------------------------------------------------------
 nc.web_mercator <- st_transform(nc, 3857)
@@ -193,7 +196,7 @@ st_intersects(nc[1:5,], nc[1:4,], sparse = FALSE)
 
 ## ----fig.height=3--------------------------------------------------------
 sel <- c(1,5,14)
-buf <- st_buffer(nc.web_mercator[sel,], 30000)
+buf <- st_buffer(nc.web_mercator[sel,], dist = 30000)
 plot(buf, border = 'red')
 plot(nc.web_mercator[sel,], add = TRUE)
 plot(st_buffer(nc.web_mercator[sel,], -5000), add = TRUE, border = 'blue')
@@ -238,7 +241,7 @@ title(st_as_text(x3))
 par(opar)
 
 ## ------------------------------------------------------------------------
-nc <- st_read(system.file("gpkg/nc.gpkg", package="sf"), "nc.gpkg", crs = 4267,
+nc <- st_read(system.file("shape/nc.shp", package="sf"), "nc", crs = 4267,
     relation_to_geometry = c(AREA = "lattice", PERIMETER = "lattice", CNTY_ = "entity",
         CNTY_ID = "entity", NAME = "entity", FIPS = "entity", FIPSNO = "entity",
         CRESS_ID = "entity", BIR74 = "lattice", SID74 = "lattice", NWBIR74 = "lattice",
