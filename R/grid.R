@@ -1,8 +1,8 @@
 # grid graphics utilities
 
-#' convert sf* object to a grob
+#' Convert sf* object to a grob
 #'
-#' convert sf* object to an grid graphics object (grob)
+#' Convert sf* object to an grid graphics object (grob)
 #' @param x object to be converted into an object class \code{grob}
 #' @param units units; see \link[grid]{unit}
 #' @param ... passed on to the xxxGrob function, e.g. \code{gp = gpar(col = 'red')}
@@ -47,9 +47,9 @@ st_as_grob.MULTIPOLYGON = function(x, ..., default.units = "native") {
 	pathGrob(get_x(x), get_y(x), id.lengths = get_l(x), ..., default.units = default.units)
 }
 
-#' create viewport from sf, sfc or sfg object
+#' Create viewport from sf, sfc or sfg object
 #' 
-#' create viewport from sf, sfc or sfg object
+#' Create viewport from sf, sfc or sfg object
 #' @param x object of class sf, sfc or sfg object
 #' @param bbox the bounding box used for aspect ratio
 #' @param asp numeric; target aspect ratio (y/x), see Details
@@ -65,7 +65,7 @@ st_as_grob.MULTIPOLYGON = function(x, ..., default.units = "native") {
 #' pushViewport(st_viewport(nc))
 #' invisible(lapply(st_geometry(nc), function(x) grid.draw(st_as_grob(x, gp = gpar(fill = 'red')))))
 #' @export
-st_viewport = function(x, ..., bbox = st_bbox(x), asp) { # FIXME: deal with asp
+st_viewport = function(x, ..., bbox = st_bbox(x), asp) {
 	xscale = bbox[c(1,3)]
 	yscale = bbox[c(2,4)]
 
@@ -81,11 +81,11 @@ st_viewport = function(x, ..., bbox = st_bbox(x), asp) { # FIXME: deal with asp
     	unclass(sz[2]) / unclass(sz[1])
 	}
 	vp.asp = current.viewport.aspect()
-	if (missing(asp)) {
-		asp = 1.0
-		if (isTRUE(st_is_longlat(x)))
-			asp = 1.0 /cos((mean(yscale) * pi)/180)
-	}
+	if (missing(asp))
+		asp = if (isTRUE(st_is_longlat(x)))
+			1.0 / cos((mean(yscale) * pi)/180)
+		else
+			1.0
 	
    	obj.asp = asp * diff(yscale) / diff(xscale)
 	height = obj.asp / vp.asp

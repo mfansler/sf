@@ -1,11 +1,5 @@
 options(warn = 2)
 library(sf)
-if ("GPKG" %in% st_drivers()$name) {
-	tst = st_read(system.file("gpkg/nc.gpkg", package="sf"), "nc.gpkg", crs = 4267)
-	tst = st_read(system.file("gpkg/nc.gpkg", package="sf")) # default layer name
-}
-
-tst = st_read(system.file("shape/nc.shp", package="sf")) # no layer specified
 
 nc = st_read(system.file("shape/nc.shp", package="sf"), "nc", crs = 4267,
 	relation_to_geometry = c(AREA = "lattice", PERIMETER = "lattice", CNTY_ = "entity",
@@ -45,19 +39,19 @@ b = nc[4:10,]
 
 x = st_intersection(a[1,] ,b)
 
-x <- st_intersection(a ,st_merge(b, TRUE)) # FIXME
+x <- st_intersection(a, st_union(b)) # FIXME
 
 x = st_union(a[1,], b)
 
-x = st_union(a, st_merge(b, TRUE))
+x = st_union(a, st_union(b))
 
 x = st_difference(a[1,], b)
 
-x = st_difference(a, st_merge(b, TRUE))
+x = st_difference(a, st_union(b))
 
 x = st_sym_difference(a[1,], b)
 
-x = st_sym_difference(a, st_merge(b, TRUE))
+x = st_sym_difference(a, st_union(b))
 
 x = st_drivers()
 cat(paste("GDAL has", nrow(x), "drivers\n"))
@@ -86,8 +80,24 @@ st_covered_by(a, b)
 
 st_equals_exact(a, b, 0.01)
 
-st_is_within_distance(a, b, 2)
+# st_is_within_distance(a, b, 2)
 
 st_geometry_type(st_sfc(st_point(1:2), st_linestring(matrix(1:4,2,2))))
 
 st_drop_zm(list(st_point(1:3), st_linestring(matrix(1:6,2,3))))
+
+cbind(suppressWarnings(st_area(a)), a$AREA)
+
+st_area(st_polygon(list(rbind(c(0,0), c(1,0), c(1,1), c(0,1), c(0,0)))))
+
+st_length(st_linestring(rbind(c(0,0),c(0,1))))
+
+st_length(st_multilinestring(list(rbind(c(0,0),c(0,1)))))
+
+st_length(st_polygon(list(rbind(c(0,0), c(1,0), c(1,1), c(0,1), c(0,0)))))
+
+st_area(st_multilinestring(list(rbind(c(0,0),c(0,1)))))
+
+# adds the (0.5 0.5) node:
+st_union(st_multilinestring(list(rbind(c(0,0),c(1,1)), rbind(c(0,1), c(1,0)))))
+

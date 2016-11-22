@@ -13,7 +13,40 @@ Rcpp::LogicalVector CPL_is_simple(Rcpp::List sfc) {
 		out[i] = g[i]->IsSimple();
 		delete g[i];
 	}
-	return(out);
+	return out;
+}
+
+// [[Rcpp::export]]
+Rcpp::NumericVector CPL_area(Rcpp::List sfc) { 
+	std::vector<OGRGeometry *> g = ogr_from_sfc(sfc, NULL);
+	Rcpp::NumericVector out(sfc.length());
+	for (size_t i = 0; i < g.size(); i++) {
+		if (g[i]->getDimension() == 2) {
+			OGRSurface *a = (OGRSurface *) g[i];
+			out[i] = a->get_Area();
+		} else
+			out[i] = 0.0;
+		delete g[i];
+	}
+	return out;
+}
+
+// [[Rcpp::export]]
+Rcpp::NumericVector CPL_length(Rcpp::List sfc) { 
+	std::vector<OGRGeometry *> g = ogr_from_sfc(sfc, NULL);
+	Rcpp::NumericVector out(sfc.length());
+	for (size_t i = 0; i < g.size(); i++) {
+		OGRwkbGeometryType gt = OGR_GT_Flatten(g[i]->getGeometryType());
+		if (gt == wkbLineString || gt == wkbCircularString || gt == wkbCompoundCurve || gt == wkbCurve) {
+			OGRCurve *a = (OGRCurve *) g[i];
+			out[i] = a->get_Length();
+		} else {
+			OGRGeometryCollection *a = (OGRGeometryCollection *) g[i];
+			out[i] = a->get_Length();
+		}
+		delete g[i];
+	}
+	return out;
 }
 
 // [[Rcpp::export]]
@@ -24,6 +57,7 @@ Rcpp::List CPL_geom_op(std::string op, Rcpp::List sfc,
 
 	if (op == "segmentize" && dfMaxLength <= 0.0)
 		throw std::invalid_argument("argument dfMaxLength should be positive\n");
+		// breaks, strangely!
 
 	std::vector<OGRGeometry *> g = ogr_from_sfc(sfc, NULL);
 	std::vector<OGRGeometry *> out(g.size());
@@ -71,9 +105,8 @@ Rcpp::List CPL_geom_op(std::string op, Rcpp::List sfc,
 		for (size_t i = 0; i < g.size(); i++)
 			delete g[i];
 	Rcpp::List ret = sfc_from_ogr(out, true);
-	ret.attr("epsg") = sfc.attr("epsg");
-	ret.attr("proj4string") = sfc.attr("proj4string");
-	return(ret);
+	ret.attr("crs") = sfc.attr("crs");
+	return ret;
 }
 
 // [[Rcpp::export]]
@@ -108,8 +141,6 @@ Rcpp::List CPL_geom_op2(std::string op, Rcpp::List sfc, Rcpp::List sf0) {
 		if (out[i] == NULL)
 			out[i] = f.createGeometry(wkbGeometryCollection);
 	Rcpp::List ret = sfc_from_ogr(out, true);
-	ret.attr("epsg") = sfc.attr("epsg");
-	ret.attr("proj4string") = sfc.attr("proj4string");
-
-	return(ret);
+	ret.attr("crs") = sfc.attr("crs");
+	return ret;
 }

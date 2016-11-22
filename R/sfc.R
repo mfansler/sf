@@ -3,17 +3,16 @@ format.sfc = function(x, ..., digits = 30) {
 	sapply(x, format, ..., digits = digits)
 }
 
-#' create simple feature collection object of class sfc from list
+#' Create simple feature collection object of class sfc from list
 #' 
-#' create simple feature list column, set class, and add coordinate reference system
+#' Create simple feature list column, set class, and add coordinate reference system
 #' 
 #' @name sfc
-#' @param ... one or more simple feature objects
+#' @param ... one or more simple feature geometries
 #' @param crs coordinate reference system: integer with the epsg code, or character with proj4string
 #' @param precision numeric; see \link{st_as_binary}
 #' 
 #' @details a simple feature collection object is a list of class \code{c("stc_TYPE", "sfc")} which contains objects of identical type. This function creates such an object from a list of simple feature objects (of class \code{sfg}), and coerces their type if necessary: collections of XX and MULTIXX are coerced to MULTIXX (with XX: POINT, LINESTRING or POLYGON), other sets are coerced to GEOMETRYCOLLECTION. 
-#' @details in case \code{epsg} is given but \code{proj4string} is not and packages \code{sp} and \code{rgdal} can be loaded, the \code{proj4string} is expanded using the PROJ.4 epsg database.
 #' @examples
 #' pt1 = st_point(c(0,1))
 #' pt2 = st_point(c(1,1))
@@ -21,7 +20,7 @@ format.sfc = function(x, ..., digits = 30) {
 #' d = data.frame(a = 1:2)
 #" d$geom = sfc
 #' @export
-st_sfc = function(..., crs = NA_integer_, precision = 0.0) {
+st_sfc = function(..., crs = NA_crs_, precision = 0.0) {
 	lst = list(...)
 	# if we have only one arg, which is already a list with sfg's, but NOT a geometrycollection:
 	# (this is the old form of calling st_sfc; it is way faster to call st_sfc(lst) if lst
@@ -29,47 +28,34 @@ st_sfc = function(..., crs = NA_integer_, precision = 0.0) {
 	if (length(lst) == 1 && is.list(lst[[1]]) && !inherits(lst[[1]], "sfg") 
 			&& (length(lst[[1]]) == 0 || inherits(lst[[1]][[1]], "sfg")))
 		lst = lst[[1]]
-	stopifnot(is.numeric(crs) || is.character(crs) || is.list(crs))
+	stopifnot(is.numeric(crs) || is.character(crs) || inherits(crs, "crs"))
 	if (length(lst) == 0) # empty set: no geometries read
 		class(lst) = c("sfc_GEOMETRY", "sfc")
 	else {
-		if (is.null(attr(lst, "non_empty"))) { # we're not comming from CPL_read_gdal
-			l = sapply(lst, function(x) length(x) > 0)
-			if (any(l))
-				non_empty = l[1] # 0-based
-			else
-				non_empty = 1
-			attr(lst, "n_empty") = sum(! l)
+		# n_empty:
+		if (is.null(attr(lst, "n_empty"))) { # we're NOT comming from CPL_read_wkb:
+			attr(lst, "n_empty") = sum(sapply(lst, function(x) length(x) == 0))
 			u = unique(sapply(lst, class)[1,])
 			if (length(u) > 1)
 				stop(paste("found multiple dimensions:", paste(u, collapse = " ")))
-		} else {
-			non_empty = attr(lst, "non_empty")
-			if (non_empty == 0)
-				non_empty = 1 # FIXME: rethink
-			attr(lst, "non_empty") = NULL # clean up
-		}
-		# do we have a mix of geometry types?
-		is_single = function(x) length(unique(sapply(x, function(y) class(y)[2]))) == 1
-		single = if (!is.null(attr(lst, "single_type"))) # we're back from CPL_read_gdal:
+		} 
+
+		# class: do we have a mix of geometry types?
+		single = if (!is.null(attr(lst, "single_type"))) # set by CPL_read_wkb:
 				attr(lst, "single_type")
 			else
-				is_single(lst)
+				length(unique(sapply(lst, function(y) class(y)[2]))) == 1L
 		if (single)
-			class(lst) = c(paste0("sfc_", class(lst[[non_empty]])[2L]), "sfc")
+			class(lst) = c(paste0("sfc_", class(lst[[1L]])[2L]), "sfc")
 		else {
 			class(lst) = c("sfc_GEOMETRY", "sfc")         # the mix
-			attr(lst, "classes") = sapply(lst, class)[2,] # Rcpp forces me to do this. Or is it me, allowing a mix?
+			attr(lst, "classes") = sapply(lst, class)[2L,] # Rcpp forces me to do this. Or is it me, allowing a mix?
 		}
 		attr(lst, "single_type") = NULL # clean up
 	}
 	attr(lst, "precision") = precision
 	attr(lst, "bbox") = st_bbox(lst)
-	if (is.na(crs))
-		st_crs(lst) = attributes(lst) # they might be in there, returned from a CPL_*
-	else
-		st_crs(lst) = crs
-	lst
+	st_set_crs(lst, crs)
 }
 
 # coerce XX and MULTIXX mixes to MULTIXX, other mixes to GeometryCollection:
@@ -130,8 +116,8 @@ print.sfc = function(x, ..., n = 5L, what = "Geometry set for", append = "") {
 	cat(paste(paste(names(bb), bb[], sep = ": "), collapse = " "))
 	cat("\n")
 	# attributes: epsg, proj4string, precision
-	cat(paste0("epsg (SRID):    ", attr(x, "epsg"), "\n"))
-	cat(paste0("proj4string:    ", attr(x, "proj4string"), "\n"))
+	cat(paste0("epsg (SRID):    ", attr(x, "crs")$epsg, "\n"))
+	cat(paste0("proj4string:    ", attr(x, "crs")$proj4string, "\n"))
 	if (attr(x, "precision") != 0.0) {
 		cat(paste0("precision:      "))
 		if (attr(x, "precision") < 0.0)
@@ -146,9 +132,9 @@ print.sfc = function(x, ..., n = 5L, what = "Geometry set for", append = "") {
 	invisible(x)
 }
 
-#' summarize simple feature column
+#' Summarize simple feature column
 #'
-#' summarize simple feature column
+#' Summarize simple feature column
 #' @param object object of class \code{sfc}
 #' @param ... ignored
 #' @param maxsum maximum number of classes to summarize the simple feature column to
@@ -157,9 +143,9 @@ print.sfc = function(x, ..., n = 5L, what = "Geometry set for", append = "") {
 #' @export
 summary.sfc = function(object, ..., maxsum = 7L, maxp4s = 10L) {
 	u = factor(sapply(object, function(x) WKT_name(x, FALSE)))
-    epsg = paste0("epsg:", attr(object, "epsg"))
+    epsg = paste0("epsg:", attr(object, "crs")$epsg)
 	levels(u) = c(levels(u), epsg)
-    p4s = attr(object, "proj4string")
+    p4s = attr(object, "crs")$proj4string
 	if (!is.na(p4s)) { 
 		if (nchar(p4s) > maxp4s)
 			p4s = paste0(substr(p4s, 1L, maxp4s), "...")
@@ -172,9 +158,9 @@ summary.sfc = function(object, ..., maxsum = 7L, maxp4s = 10L) {
 #' @export
 st_geometry.sfc = function(obj, ...) obj
 
-#' return geometry type of an object
+#' Return geometry type of an object
 #' 
-#' return geometry type of an object, as a factor
+#' Return geometry type of an object, as a factor
 #' @param x object of class \link{sf} or \link{sfc}
 #' @return returns a factor with the geometry type of each simple feature in x
 #' @export
@@ -201,29 +187,9 @@ st_geometry_type = function(x) {
 		"TRIANGLE"))
 }
 
-#' summarize simple feature type for tibble
+#' Drop Z and/or M dimensions from feature geometries
 #'
-#' summarize simple feature type for tibble
-#' @param x object of class sfc
-#' @param ... ignored
-#' @name tibble
-#' @export
-type_sum.sfc <- function(x, ...) {
-   "simple_feature"
-}
-
-#' summarize simple feature item for tibble
-#'
-#' summarize simple feature item for tibble
-#' @name tibble
-#' @export
-obj_sum.sfc <- function(x) {
-	sapply(x, function(sfg) format(sfg, digits = 15L))
-}
-
-#' drop Z and/or M dimensions from feature geometries
-#'
-#' drop Z and/or M dimensions from feature geometries, resetting classes appropriately
+#' Drop Z and/or M dimensions from feature geometries, resetting classes appropriately
 #' @param x object of class \code{sfg}, \code{sfc} or \code{sf}
 #' @param ... ignored
 #' @examples

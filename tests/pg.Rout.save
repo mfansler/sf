@@ -1,5 +1,5 @@
 
-R version 3.3.1 (2016-06-21) -- "Bug in Your Hair"
+R version 3.3.2 (2016-10-31) -- "Sincere Pumpkin Patch"
 Copyright (C) 2016 The R Foundation for Statistical Computing
 Platform: x86_64-pc-linux-gnu (64-bit)
 
@@ -24,7 +24,7 @@ Linking to GEOS 3.5.0, GDAL 2.1.0
 +   data(meuse)
 +   sf = st_as_sf(meuse, coords = c("x", "y"), crs = 28992)
 +   conn = dbConnect(PostgreSQL(), dbname = "postgis")
-+   st_write_db(conn, sf, "meuse_tbl")
++   st_write_db(conn, sf, "meuse_tbl", try_drop = TRUE)
 +   st_write_db(conn, sf, "meuse_tbl2", binary = FALSE)
 +   x = st_read_db(conn, query = "select * from meuse_tbl limit 30;")
 +   y = st_read_db(conn, "meuse_tbl2") 
@@ -33,7 +33,7 @@ Linking to GEOS 3.5.0, GDAL 2.1.0
 > 
 > options(warn = 2) # turn into error
 > if (Sys.getenv("USER") %in% c("edzer", "travis")) {
-+ # if (Sys.getenv("USER") %in% c("edzer")) {
++ #if (Sys.getenv("USER") %in% c("edzer")) {
 +   cn = dbConnect(PostgreSQL(), dbname = "postgis")
 +   round_trip = function(cn, wkt) {
 +   	query = paste0("SELECT '", wkt, "'::geometry;")
@@ -89,6 +89,13 @@ Linking to GEOS 3.5.0, GDAL 2.1.0
 +   dbDisconnect(cn)
 + }
 > 
+> if (Sys.getenv("USER") %in% c("travis", "edzer")) {
++   suppressWarnings(x <- st_read("PG:dbname=postgis"))
++   try(x <- st_read("PG:dbname=empty")) # error
++   print(st_list("PG:dbname=postgis"))
++   print(st_list("PG:dbname=empty"))
++ }
+> 
 > proc.time()
    user  system elapsed 
-  0.540   0.260   0.498 
+  0.512   0.016   0.526 

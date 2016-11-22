@@ -1,33 +1,82 @@
-#' retrieve coordinate reference system from object
-#'
-#' retrieve coordinate reference system from sf or sfc object.
-#' @name crs
-#' @param x object of class \link{sf} or \link{sfc}
-#' @param ... ignored
+#' @name st_crs
+#' @details
+#' \code{NA_crs_} is the \code{crs} object with missing values for epsg and proj4string.
 #' @export
-st_crs = function(x, ...) UseMethod("st_crs")
-
-#' @name crs
-#' @export
-st_crs.sf = function(x, ...) st_crs(st_geometry(x, ...))
-
-#' @name crs
-#' @export
-st_crs.sfc = function(x, ...)
-	structure(list(epsg = attr(x, "epsg"), proj4string = attr(x, "proj4string")), class = "crs")
-
-#' @export
-st_crs.default = function(x, ...) 
-	structure(list(epsg = NA_integer_, proj4string = NA_character_), class = "crs")
+NA_crs_ = structure(list(epsg = NA_integer_, proj4string = NA_character_), class = "crs")
 
 #' @export
 #' @method is.na crs
-is.na.crs = function(x) { is.na(x$epsg) && is.na(x$proj4string) }
+is.na.crs = function(x) {
+	is.na(x$epsg) && is.na(x$proj4string) 
+}
 
-#' set or replace coordinate reference system from object
+# this function establishes whether two crs objects are semantically identical. This is
+# the case when: (1) they are completely identical, or (2) they have identical proj4string
+# but one of them has a missing epsg ID.
+#' @export
+Ops.crs <- function(e1, e2) {
+	if (nargs() == 1)
+		stop(paste("unary", .Generic, "not defined for \"crs\" objects"))
+
+	cmp <- switch(.Generic, "==" =, "!=" = TRUE, FALSE)
+	if (!cmp)
+		stop(paste("operation", .Generic, "not supported for crs objects"))
+	if (.Generic == "!=")
+		!(e1 == e2)
+	else { # "==": check semantic equality
+		if (isTRUE(all.equal(e1, e2))) # includes both are NA_crs_
+			TRUE
+		else if (is.na(e1) || is.na(e2)) # only one of them is NA_crs_
+			FALSE
+		else if (e1$proj4string == e2$proj4string && (is.na(e1$epsg) || is.na(e2$epsg)))
+			TRUE
+		else
+			FALSE
+	}
+}
+
+#' Retrieve coordinate reference system from object
 #'
-#' set or replace retrieve coordinate reference system from object
-#' @name crs
+#' Retrieve coordinate reference system from sf or sfc object
+#' @name st_crs
+#' @param x object of class \link{sf} or \link{sfc}
+#' @param ... ignored
+#' @export
+#' @details the *crs functions get, set or replace the \code{crs} attribute of a simple feature geometry
+#' list-column. This attribute is of class \code{crs}, and is a list consisting of epsg (integer epsg
+#' code) and proj4string (character). 
+#' Two objects of class \code{crs} are semantically identical when: (1) they are completely identical, or 
+#' (2) they have identical proj4string but one of them has a missing epsg ID. As a consequence, equivalent 
+#' but different proj4strings, e.g. \code{ "+proj=longlat +datum=WGS84" } and \code{ "+datum=WGS84 +proj=longlat" },
+#' are considered different.
+#' The operators \code{==} and \code{!=} are overloaded for \code{crs} objects to establish semantical identity.
+#' @return object of class \code{crs}, which is a list with elements epsg (length-1 integer) and 
+#' proj4string (length-1 character).
+st_crs = function(x, ...) UseMethod("st_crs")
+
+#' @name st_crs
+#' @export
+st_crs.sf = function(x, ...) st_crs(st_geometry(x, ...))
+
+#' @name st_crs
+#' @export
+st_crs.numeric = function(x, ...) make_crs(x)
+
+#' @name st_crs
+#' @export
+st_crs.character = function(x, ...) make_crs(x)
+
+#' @name st_crs
+#' @export
+st_crs.sfc = function(x, ...) attr(x, "crs")
+
+#' @export
+st_crs.default = function(x, ...) NA_crs_
+
+#' Set or replace coordinate reference system from object
+#'
+#' Set or replace retrieve coordinate reference system from object
+#' @name st_crs
 #' @param value one of (i) character: a valid proj4string (ii) integer, a valid epsg value (numeric), or (iii) a list containing named elements proj4string (character) and/or epsg (integer) with (i) and (ii).
 #' @details in case a coordinate reference system is replaced, no transformation takes
 #' place and a warning is raised to stress this. epsg values are either read from proj4strings
@@ -38,7 +87,7 @@ is.na.crs = function(x) { is.na(x$epsg) && is.na(x$proj4string) }
 #' @export
 `st_crs<-` = function(x, value) UseMethod("st_crs<-")
 
-#' @name crs
+#' @name st_crs
 #' @examples
 #'  sfc = st_sfc(st_point(c(0,0)), st_point(c(1,1)))
 #'  sf = st_sf(a = 1:2, geom = sfc)
@@ -50,82 +99,57 @@ is.na.crs = function(x) { is.na(x$epsg) && is.na(x$proj4string) }
 	x
 }
 
-#' @name crs
+# return crs object from crs, integer, or character string
+make_crs = function(x) {
+	if (is.na(x))
+		NA_crs_
+	else if (inherits(x, "crs"))
+		x
+	else if (is.numeric(x)) 
+		CPL_crs_from_epsg(as.integer(x))
+	else if (is.character(x))
+		CPL_crs_from_proj4string(x)
+	else
+		stop(paste("cannot create a crs from an object of class", class(x)))
+}
+
+#' @name st_crs
 #' @examples
 #'  sfc = st_sfc(st_point(c(0,0)), st_point(c(1,1)))
 #'  st_crs(sfc) = 4326
 #'  sfc
 #' @export
 `st_crs<-.sfc` = function(x, value) {
-	trim <- function (x) gsub("^\\s+|\\s+$", "", x)
-	# init:
-	if (!is.na(value) && !(is.numeric(value) || is.character(value) || is.list(value)))
-		stop("crs should be either numeric (epsg), character (proj4string), or list")
-	check_replace(x, value)
-	attr(x, "proj4string") = NA_character_
-	attr(x, "epsg") = NA_integer_
-	if (is.list(value)) { # try to get value from the attribute list:
-		if (!is.null(value$epsg) && !is.na(value$epsg))
-			value = value$epsg
-		else if (!is.null(value$proj4string) && !is.na(value$proj4string))
-			value = value$proj4string
-		else 
-			value = NA_integer_
-	}
-	if (! is.na(value)) {
-		if (is.numeric(value)) {
-			value = as.integer(value)
-			if (value == 0) {
-				attr(x, "epsg") = NA_integer_
-				value = NA_character_
-			} else {
-				attr(x, "epsg") = value
-				value = CPL_proj4string_from_epsg(value)
-			}
-		} else 
-			attr(x, "epsg") = epsgFromProj4(value)
-		attr(x, "proj4string") = trim(value)
-	}
+
+	if (is.null(attr(x, "crs")))
+		start_crs = NA_crs_
+	else
+		start_crs = st_crs(x)
+
+	end_crs = make_crs(value)
+
+	if (!is.na(start_crs) && !is.na(end_crs) && start_crs != end_crs)
+		warning("st_crs<- : replacing crs does not reproject data; use st_transform for that")
+
+	attr(x, "crs") = end_crs
 	x
 }
 
-check_replace = function(x, value) {
-	trim <- function (x) gsub("^\\s+|\\s+$", "", x)
-	if (is.na(value) || is.list(value))
-		return()
-	epsg = attr(x, "epsg")
-	proj4string = attr(x, "proj4string")
-	if (is.null(epsg) && is.null(proj4string))
-		return()
-	if (!is.null(epsg) && is.na(epsg) && is.numeric(value) && !is.na(proj4string)
-			&& proj4string ==  trim(CPL_proj4string_from_epsg(value)))
-		return() # the epsg is "additional" info, but matches the already present proj4string
-	if (!is.null(value) && !is.na(value) && is.character(value) 
-		&& !is.null(proj4string) && !is.na(proj4string) && trim(value) == trim(proj4string))
-		return() # trying to replace proj4string with identical value
-	if (!is.na(epsg) || !is.na(proj4string))  # possibly warn:
-		warning("st_crs: replacing crs does not reproject data; use st_transform for that")
+#' @name st_crs
+#' @examples
+#' sfc = st_sfc(st_point(c(0,0)), st_point(c(1,1)))
+#' library(dplyr)
+#' x <- sfc %>% st_set_crs(4326) %>% st_transform(3857)
+#' x
+#' @export
+st_set_crs = function(x, value) {
+	st_crs(x) = value
+	x
 }
 
-epsgFromProj4 = function(x) { # grep EPSG code out of proj4string, or argue about it:
-	if (is.null(x) || !is.character(x))
-		return(NA_integer_)
-	spl = strsplit(x, " ")[[1]]
-	w = grep("+init=epsg:", spl)
-	if (length(w) == 1)
-		as.numeric(strsplit(spl[w], "+init=epsg:")[[1]][2])
-	else {
-		if (length(grep("+proj=longlat", x)) == 1 && 
-			length(grep("+datum=WGS84",  x)) == 1)
-			4326
-		else
-			NA_integer_
-	}
-}
-
-#' assert whether simple feature coordinates are longlat degrees
+#' Assert whether simple feature coordinates are longlat degrees
 #' 
-#' assert whether simple feature coordinates are longlat degrees
+#' Assert whether simple feature coordinates are longlat degrees
 #' @param x object of class \link{sf} or \link{sfc}
 #' @return TRUE if \code{+proj=longlat} is part of the proj4string, NA if this string is missing, FALSE otherwise
 #' @export

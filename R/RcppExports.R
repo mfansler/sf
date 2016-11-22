@@ -21,8 +21,12 @@ CPL_transform <- function(sfc, proj4) {
     .Call('sf_CPL_transform', PACKAGE = 'sf', sfc, proj4)
 }
 
-CPL_proj4string_from_epsg <- function(epsg) {
-    .Call('sf_CPL_proj4string_from_epsg', PACKAGE = 'sf', epsg)
+CPL_crs_from_epsg <- function(epsg) {
+    .Call('sf_CPL_crs_from_epsg', PACKAGE = 'sf', epsg)
+}
+
+CPL_crs_from_proj4string <- function(p4s) {
+    .Call('sf_CPL_crs_from_proj4string', PACKAGE = 'sf', p4s)
 }
 
 CPL_get_rgdal_drivers <- function(dummy) {
@@ -37,12 +41,24 @@ CPL_is_simple <- function(sfc) {
     .Call('sf_CPL_is_simple', PACKAGE = 'sf', sfc)
 }
 
+CPL_area <- function(sfc) {
+    .Call('sf_CPL_area', PACKAGE = 'sf', sfc)
+}
+
+CPL_length <- function(sfc) {
+    .Call('sf_CPL_length', PACKAGE = 'sf', sfc)
+}
+
 CPL_geom_op <- function(op, sfc, bufferDist = 0.0, nQuadSegs = 30L, dTolerance = 0.0, preserveTopology = FALSE, bOnlyEdges = 1L, dfMaxLength = 0.0) {
     .Call('sf_CPL_geom_op', PACKAGE = 'sf', op, sfc, bufferDist, nQuadSegs, dTolerance, preserveTopology, bOnlyEdges, dfMaxLength)
 }
 
 CPL_geom_op2 <- function(op, sfc, sf0) {
     .Call('sf_CPL_geom_op2', PACKAGE = 'sf', op, sfc, sf0)
+}
+
+CPL_get_layers <- function(datasource, options, do_count = FALSE) {
+    .Call('sf_CPL_get_layers', PACKAGE = 'sf', datasource, options, do_count)
 }
 
 CPL_read_ogr <- function(datasource, layer, options, quiet = FALSE, iGeomField = 0L, toTypeUser = 0L, promote_to_multi = TRUE) {
@@ -59,6 +75,10 @@ CPL_geos_binop <- function(sfc0, sfc1, op, par = 0.0, sparse = TRUE) {
 
 CPL_geos_is_valid <- function(sfc) {
     .Call('sf_CPL_geos_is_valid', PACKAGE = 'sf', sfc)
+}
+
+CPL_geos_union <- function(sfc) {
+    .Call('sf_CPL_geos_union', PACKAGE = 'sf', sfc)
 }
 
 CPL_geos_version <- function(b = FALSE) {

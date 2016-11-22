@@ -1,11 +1,11 @@
 ---
-title: "Simple Features for R"
+title: "1. Simple Features for R"
 output:
   html_document:
     toc: true
     theme: united
 vignette: >
-  %\VignetteIndexEntry{Simple Features for R}
+  %\VignetteIndexEntry{1. Simple Features for R}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -160,10 +160,10 @@ command reads the `nc` dataset from a file that is contained in the
 
 ```{r}
 library(sf)
-filename <- system.file("shape/nc.shp", package="sf")
-nc <- st_read(filename, "nc", crs = 4267)
+nc <- st_read(system.file("shape/nc.shp", package="sf"))
 ```
 
+(Note that users will not use \code{system.file} but give a \code{filename} directly, and that shapefiles consist of more than one file, all with identical basename, which reside in the same directory.)
 The short report printed gives the file name, the driver (ESRI Shapefile), mentions that there are 100 features (records, represented as rows) and 14
 fields (attributes, represented as columns). This object is of class
 
@@ -450,21 +450,21 @@ As we've seen above, reading spatial data from an external file can be done by
 
 ```{r}
 filename <- system.file("shape/nc.shp", package="sf")
-nc <- st_read(filename, "nc", crs = 4267)
+nc <- st_read(filename)
 ```
 
 and writing takes place in the same fashion, using `st_write`:
 
 ```{r}
-st_write(nc, "nc.shp", "nc", "ESRI Shapefile")
+st_write(nc, "nc.shp")
 ```
 
-The `dsn` and `layer` arguments to `st_read` and `st_write` denote a
-data source name and a layer.  Their exact interpretation as well
-as the options they support vary per driver, the [GDAL driver
-documentation](http://www.gdal.org/ogr_formats.html) is best
-consulted for this.  For instance, a PostGIS table in database
-`postgis` might be read by
+The `dsn` and `layer` arguments to `st_read` and `st_write`
+denote a data source name and optionally a layer name.  Their exact
+interpretation as well as the options they support vary per driver,
+the [GDAL driver documentation](http://www.gdal.org/ogr_formats.html)
+is best consulted for this.  For instance, a PostGIS table in
+database `postgis` might be read by
 
 ```{r eval=FALSE}
 meuse <- st_read("PG:dbname=postgis", "meuse")
@@ -497,9 +497,8 @@ unzip("biketrails.zip")
 u_kmz <- "http://coagisweb.cabq.gov/datadownload/BikePaths.kmz"
 download.file(u_kmz, "BikePaths.kmz")
 # Read file formats
-biketrails_shp <- st_read(dsn = ".", layer = "biketrails")
-ogr_layers <- rgdal::ogrListLayers(dsn = "BikePaths.kmz")
-biketrails_kmz <- st_read(dsn = "BikePaths.kmz", layer = ogr_layers[1])
+biketrails_shp <- st_read("biketrails.shp")
+biketrails_kmz <- st_read("BikePaths.kmz")
 ```
 
 ### Benchmarks
@@ -508,9 +507,9 @@ Benchmarks show that `st_read()` is faster than `rgdal::readOGR()`, for example:
 
 ```{r, echo=TRUE, eval=FALSE}
 shp_read_sp <- function() rgdal::readOGR(dsn = ".", layer = "biketrails")
-shp_read_sf <- function() st_read(dsn = ".", layer = "biketrails")
+shp_read_sf <- function() st_read("biketrails.shp")
 kmz_read_sp <- function() rgdal::readOGR(dsn = "BikePaths.kmz", layer = ogr_layers[1])
-kmz_read_sf <- function() st_read(dsn = "BikePaths.kmz", layer = ogr_layers[1])
+kmz_read_sf <- function() st_read("BikePaths.kmz")
 microbenchmark::microbenchmark(shp_read_sp(), shp_read_sf(),
                                kmz_read_sp(), kmz_read_sf(), times = 1)
 ```
@@ -532,8 +531,9 @@ On a modern laptop (with an Intel i5-2520M processor) the results were as follow
 ##  kmz_read_sf() 2096.9094 2096.9094 2096.9094 2096.9094 2096.9094 2096.9094
 ```
 
-This shows that `sf::st_read()` is substantially faster than `rgdal::readOGR()`:
-by a factor of 3 and 10 for the Shapefile and KML file used in this benchmark, respectively.
+This shows that `sf::st_read()` is not only simpler to use but also
+substantially faster than `rgdal::readOGR()`: by a factor of 3 and 10
+for the Shapefile and KML file used in this benchmark, respectively.
 
 ## Coordinate reference systems and transformations {#crs}
 
@@ -631,7 +631,7 @@ st_intersects(nc[1:5,], nc[1:4,], sparse = FALSE)
 
 The commands `st_buffer`, `st_boundary`, `st_convexhull`,
 `st_union_cascaded`, `st_simplify`, `st_triangulate`,
-`st_polygonize`, `st_centroid`, `st_segmentize`, and `st_merge`
+`st_polygonize`, `st_centroid`, `st_segmentize`, and `st_union`
 return new geometries, e.g.:
 
 ```{r fig.height=3}
@@ -647,9 +647,8 @@ Commands `st_intersection`, `st_union`, `st_difference`,
 pairs of geometries:
 
 ```{r fig.height=3}
-# u <- st_union(nc[1,], nc)
 par(mar = rep(0,4))
-u <- st_merge(nc, union = TRUE)
+u <- st_union(nc)
 plot(u)
 ```
 
@@ -707,7 +706,7 @@ Simple feature objects of class `sf` have an attribute that points out how attri
 which can be defined at creation time:
 
 ```{r}
-nc <- st_read(system.file("shape/nc.shp", package="sf"), "nc", crs = 4267,
+nc <- st_read(system.file("shape/nc.shp", package="sf"),
     relation_to_geometry = c(AREA = "lattice", PERIMETER = "lattice", CNTY_ = "entity",
         CNTY_ID = "entity", NAME = "entity", FIPS = "entity", FIPSNO = "entity",
         CRESS_ID = "entity", BIR74 = "lattice", SID74 = "lattice", NWBIR74 = "lattice",

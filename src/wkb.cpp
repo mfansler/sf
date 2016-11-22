@@ -1,5 +1,5 @@
 /*
- everything with "write" is meant as "write form R into foreign (wkb)",
+ everything with "write" is meant as "write from R into foreign (wkb)",
  "read" as "read from foreign (wkb) into R".
 */
 
@@ -62,11 +62,11 @@ T swap_endian(T u) {
 
 inline unsigned char char2int(char c) {
 	if (c >= '0' && c <= '9')
-		return(c - '0');
+		return c - '0';
 	if (c >= 'a' && c <= 'f')
-		return(c - 'a' + 10);
+		return c - 'a' + 10;
 	if (c >= 'A' && c <= 'F')
-		return(c - 'A' + 10);
+		return c - 'A' + 10;
 	throw std::range_error("char2int: false character in hex string");
 }
 
@@ -93,7 +93,7 @@ Rcpp::List CPL_hex_to_raw(Rcpp::CharacterVector cx) {
 		if (j % 1000 == 0)
 			Rcpp::checkUserInterrupt();
 	}
-	return(output);
+	return output;
 }
 
 // [[Rcpp::export]]
@@ -108,11 +108,11 @@ Rcpp::CharacterVector CPL_raw_to_hex(Rcpp::RawVector raw) {
   		os.write(&hex[high], sizeof(char));
   		os.write(&hex[low], sizeof(char));
 	}
-	return(Rcpp::CharacterVector::create(os.str()));
+	return Rcpp::CharacterVector::create(os.str());
 }
 
 Rcpp::NumericMatrix read_multipoint(const unsigned char **pt, int n_dims, bool swap, 
-		bool EWKB = 0, int endian = 0, Rcpp::CharacterVector cls = "") {
+		bool EWKB = 0, int endian = 0, Rcpp::CharacterVector cls = "", bool *empty = NULL) {
 	uint32_t npts;
 	memcpy(&npts, *pt, sizeof(uint32_t));
 	if (swap)
@@ -127,24 +127,26 @@ Rcpp::NumericMatrix read_multipoint(const unsigned char **pt, int n_dims, bool s
 	}
 	if (cls.size() == 3)
 		ret.attr("class") = cls;
-	return(ret);
+	if (empty != NULL)
+		*empty = npts == 0;
+	return ret;
 }
 
 Rcpp::List read_geometrycollection(const unsigned char **pt, int n_dims, bool swap, bool EWKB = 0, 
-		int endian = 0, Rcpp::CharacterVector cls = "", bool isGC = true, bool *isEmpty = NULL) {
+		int endian = 0, Rcpp::CharacterVector cls = "", bool isGC = true, bool *empty = NULL) {
 	uint32_t nlst;
 	memcpy(&nlst, *pt, sizeof(uint32_t));
 	if (swap)
 		nlst = swap_endian<uint32_t>(nlst);
 	(*pt) += 4;
-	if (isEmpty != NULL)
-		*isEmpty = (nlst == 0);
 	Rcpp::List ret(nlst);
 	for (size_t i = 0; i < nlst; i++)
 		ret[i] = read_data(pt, EWKB, endian, isGC, NULL, NULL)[0];
 	if (cls.size() == 3)
 		ret.attr("class") = cls;
-	return(ret);
+	if (empty != NULL)
+		*empty = nlst == 0;
+	return ret;
 }
 
 Rcpp::NumericVector read_numeric_vector(const unsigned char **pt, int n, bool swap,
@@ -165,7 +167,7 @@ Rcpp::NumericVector read_numeric_vector(const unsigned char **pt, int n, bool sw
 }
 
 Rcpp::NumericMatrix read_numeric_matrix(const unsigned char **pt, int n_dims, bool swap,
-		Rcpp::CharacterVector cls = "") {
+		Rcpp::CharacterVector cls = "", bool *empty = NULL) {
 	uint32_t npts;
 	memcpy(&npts, *pt, sizeof(uint32_t));
 	if (swap)
@@ -184,10 +186,13 @@ Rcpp::NumericMatrix read_numeric_matrix(const unsigned char **pt, int n_dims, bo
 		}
 	if (cls.size() == 3)
 		ret.attr("class") = cls;
+	if (empty != NULL)
+		*empty = npts == 0;
 	return ret;
 }
 
-Rcpp::List read_matrix_list(const unsigned char **pt, int n_dims, bool swap, Rcpp::CharacterVector cls = "") {
+Rcpp::List read_matrix_list(const unsigned char **pt, int n_dims, bool swap, 
+		Rcpp::CharacterVector cls = "", bool *empty = NULL) {
 	uint32_t nlst;
 	memcpy(&nlst, *pt, sizeof(uint32_t));
 	if (swap)
@@ -198,7 +203,9 @@ Rcpp::List read_matrix_list(const unsigned char **pt, int n_dims, bool swap, Rcp
 		ret[i] = read_numeric_matrix(pt, n_dims, swap, "");
 	if (cls.size() == 3)
 		ret.attr("class") = cls;
-	return(ret);
+	if (empty != NULL)
+		*empty = nlst == 0;
+	return ret;
 }
 
 Rcpp::List read_data(const unsigned char **pt, bool EWKB = false, int endian = 0, 
@@ -212,9 +219,8 @@ Rcpp::List read_data(const unsigned char **pt, bool EWKB = false, int endian = 0
  srid: IF NOT NULL: output the srid read
  */
 
-	Rcpp::List output(1); // to make result type opaque
-	// do endian check, only support native endian WKB:
-	bool swap = ((int) (**pt) != (int) endian);
+	Rcpp::List output(1); // to deal with varying result type
+	bool swap = ((int) (**pt) != (int) endian); // endian check
 	(*pt)++;
 	// read type:
 	uint32_t wkbType;
@@ -257,7 +263,7 @@ Rcpp::List read_data(const unsigned char **pt, bool EWKB = false, int endian = 0
 				throw std::range_error("unknown wkbType dim in switch");
 		}
 	}
-	bool gcEmpty = false;
+	bool empty = false;
 	switch(sf_type) {
 		case SF_Point: 
 			output[0] = read_numeric_vector(pt, n_dims, swap, addclass ?
@@ -265,68 +271,68 @@ Rcpp::List read_data(const unsigned char **pt, bool EWKB = false, int endian = 0
 			break;
 		case SF_LineString:
 			output[0] = read_numeric_matrix(pt, n_dims, swap, addclass ?
-				Rcpp::CharacterVector::create(dim_str, "LINESTRING", "sfg") : ""); 
+				Rcpp::CharacterVector::create(dim_str, "LINESTRING", "sfg") : "", &empty);
 			break;
 		case SF_Polygon: 
 			output[0] = read_matrix_list(pt, n_dims, swap, addclass ?
-				Rcpp::CharacterVector::create(dim_str, "POLYGON", "sfg") : "");
+				Rcpp::CharacterVector::create(dim_str, "POLYGON", "sfg") : "", &empty);
 			break;
 		case SF_MultiPoint: 
-			output[0] = read_multipoint(pt, n_dims, swap, EWKB, endian,
-				addclass ?  Rcpp::CharacterVector::create(dim_str, "MULTIPOINT", "sfg") : ""); 
+			output[0] = read_multipoint(pt, n_dims, swap, EWKB, endian, addclass ?  
+				Rcpp::CharacterVector::create(dim_str, "MULTIPOINT", "sfg") : "", &empty); 
 			break;
 		case SF_MultiLineString:
 			output[0] = read_geometrycollection(pt, n_dims, swap, EWKB, endian,
-				Rcpp::CharacterVector::create(dim_str, "MULTILINESTRING", "sfg"), false);
+				Rcpp::CharacterVector::create(dim_str, "MULTILINESTRING", "sfg"), false, &empty);
 			break;
 		case SF_MultiPolygon:
 			output[0] = read_geometrycollection(pt, n_dims, swap, EWKB, endian,
-				Rcpp::CharacterVector::create(dim_str, "MULTIPOLYGON", "sfg"), false);
+				Rcpp::CharacterVector::create(dim_str, "MULTIPOLYGON", "sfg"), false, &empty);
 			break;
 		case SF_GeometryCollection: 
 			output[0] = read_geometrycollection(pt, n_dims, swap, EWKB, endian,
 				Rcpp::CharacterVector::create(dim_str, "GEOMETRYCOLLECTION", "sfg"), true,
-				&gcEmpty);
+				&empty);
 			break;
 		case SF_CircularString:
 			output[0] = read_numeric_matrix(pt, n_dims, swap, addclass ?
-				Rcpp::CharacterVector::create(dim_str, "CIRCULARSTRING", "sfg") : ""); 
+				Rcpp::CharacterVector::create(dim_str, "CIRCULARSTRING", "sfg") : "", &empty);
 			break;
 		case SF_CompoundCurve:
 			output[0] = read_geometrycollection(pt, n_dims, swap, EWKB, endian,
-				Rcpp::CharacterVector::create(dim_str, "COMPOUNDCURVE", "sfg"), true, &gcEmpty); 
+				Rcpp::CharacterVector::create(dim_str, "COMPOUNDCURVE", "sfg"), true, &empty); 
 			break;
 		case SF_CurvePolygon:
 			output[0] = read_geometrycollection(pt, n_dims, swap, EWKB, endian,
-				Rcpp::CharacterVector::create(dim_str, "CURVEPOLYGON", "sfg"), true, &gcEmpty); 
+				Rcpp::CharacterVector::create(dim_str, "CURVEPOLYGON", "sfg"), true, &empty); 
 			break;
 		case SF_MultiCurve:
 			output[0] = read_geometrycollection(pt, n_dims, swap, EWKB, endian,
-				Rcpp::CharacterVector::create(dim_str, "MULTICURVE", "sfg"), true, &gcEmpty);
+				Rcpp::CharacterVector::create(dim_str, "MULTICURVE", "sfg"), true, &empty);
 			break;
 		case SF_MultiSurface:
 			output[0] = read_geometrycollection(pt, n_dims, swap, EWKB, endian,
-				Rcpp::CharacterVector::create(dim_str, "MULTISURFACE", "sfg"), true, &gcEmpty);
+				Rcpp::CharacterVector::create(dim_str, "MULTISURFACE", "sfg"), true, &empty);
 			break;
 		case SF_Curve:
 			output[0] = read_numeric_matrix(pt, n_dims, swap, addclass ?
-				Rcpp::CharacterVector::create(dim_str, "CURVE", "sfg") : ""); 
+				Rcpp::CharacterVector::create(dim_str, "CURVE", "sfg") : ""), &empty; 
 			break;
 		case SF_Surface: 
 			output[0] = read_matrix_list(pt, n_dims, swap, addclass ?
-				Rcpp::CharacterVector::create(dim_str, "SURFACE", "sfg") : "");
+				Rcpp::CharacterVector::create(dim_str, "SURFACE", "sfg") : "", &empty);
 			break;
 		case SF_PolyhedralSurface: 
 			output[0] = read_geometrycollection(pt, n_dims, swap, EWKB, endian,
-				Rcpp::CharacterVector::create(dim_str, "POLYHEDRALSURFACE", "sfg"), false);
+				Rcpp::CharacterVector::create(dim_str, "POLYHEDRALSURFACE", "sfg"), false, &empty);
 			break;
 		case SF_TIN: 
 			output[0] = read_geometrycollection(pt, n_dims, swap, EWKB, endian,
-				Rcpp::CharacterVector::create(dim_str, "TIN", "sfg"), false);
+				Rcpp::CharacterVector::create(dim_str, "TIN", "sfg"), false, &empty);
 			break;
 		case SF_Triangle:
 			output[0] = read_matrix_list(pt, n_dims, swap,
-				Rcpp::CharacterVector::create(dim_str, "TRIANGLE", "sfg"));
+				Rcpp::CharacterVector::create(dim_str, "TRIANGLE", "sfg"), &empty);
 			break;
 		default: {
 			Rcpp::Rcout << "type is " << sf_type << std::endl;
@@ -334,12 +340,12 @@ Rcpp::List read_data(const unsigned char **pt, bool EWKB = false, int endian = 0
 		}
 	}
 	if (type != NULL) {
-		if (sf_type == SF_GeometryCollection && gcEmpty)
+		if (empty)
 			*type = 0;
 		else
 			*type = sf_type;
 	}
-	return(output);
+	return output;
 }
 
 // [[Rcpp::export]]
@@ -356,17 +362,15 @@ Rcpp::List CPL_read_wkb(Rcpp::List wkb_list, bool EWKB = false, int endian = 0) 
 		output[i] = read_data(&pt, EWKB, endian, true, &type, &srid)[0];
 		if (type == 0)
 			n_empty++;
-		else if (n_types <= 1 && type != last_type) {
+		if (n_types <= 1 && type != last_type) {
 			last_type = type;
 			n_types++; // check if there's more than 1 type:
-			non_empty = i; // communicates the (first) type of this set
 		}
 	}
-	output.attr("single_type") = n_types <= 1; // if 1, we can skip coerceTypes() later on
-	                                           // if 0, we have only empty geometrycollections
+	output.attr("single_type") = n_types <= 1; // if 0, we have only empty geometrycollections
 	output.attr("n_empty") = (int) n_empty;
-	output.attr("non_empty") = (int) non_empty + 1; // 1-based index -- 0 if all empty
-	output.attr("epsg") = (int) srid;
+	if (EWKB == true)
+		output.attr("epsg") = (int) srid;
 	return output;
 }
 
@@ -436,7 +440,7 @@ unsigned int make_type(const char *cls, const char *dim, bool EWKB = false, int 
 		else if (strcmp(dim, "XYZM") == 0)
 			type += 3000;
 	}
-	return(type);
+	return type;
 }
 
 void add_byte(std::ostringstream& os, char c) {
@@ -450,12 +454,12 @@ void add_int(std::ostringstream& os, unsigned int i) {
 
 double make_precise(double d, double precision) {
 	if (precision == 0.0)
-		return(d);
+		return d;
 	if (precision < 0.0) { // float, 4-byte precision
 		float f = d;
-		return((double) f);
+		return (double) f;
 	}
-	return(round(d * precision) / precision);
+	return round(d * precision) / precision;
 }
 
 void add_double(std::ostringstream& os, double d, double prec = 0.0) {
@@ -590,7 +594,7 @@ void write_data(std::ostringstream& os, Rcpp::List sfc, int i = 0, bool EWKB = f
 int native_endian(void) {
 	const int one = 1;
 	unsigned char *cp = (unsigned char *) &one;
-	return((int) *cp);
+	return (int) *cp;
 }
 
 // [[Rcpp::export]]
@@ -611,7 +615,8 @@ Rcpp::List CPL_write_wkb(Rcpp::List sfc, bool EWKB = false, int endian = 0,
 			throw std::range_error("classes has wrong size; please file an issue");
 	}
 
-	int srid = sfc.attr("epsg"); 
+	Rcpp::List crs = sfc.attr("crs"); 
+	int srid = crs(0);
 	if (srid == NA_INTEGER)
 		srid = 0; // non-zero now means: we have an srid
 

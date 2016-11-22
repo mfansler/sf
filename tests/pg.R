@@ -5,7 +5,7 @@ if (Sys.getenv("USER") %in% c("travis", "edzer")) {
   data(meuse)
   sf = st_as_sf(meuse, coords = c("x", "y"), crs = 28992)
   conn = dbConnect(PostgreSQL(), dbname = "postgis")
-  st_write_db(conn, sf, "meuse_tbl")
+  st_write_db(conn, sf, "meuse_tbl", try_drop = TRUE)
   st_write_db(conn, sf, "meuse_tbl2", binary = FALSE)
   x = st_read_db(conn, query = "select * from meuse_tbl limit 30;")
   y = st_read_db(conn, "meuse_tbl2") 
@@ -14,7 +14,7 @@ if (Sys.getenv("USER") %in% c("travis", "edzer")) {
 
 options(warn = 2) # turn into error
 if (Sys.getenv("USER") %in% c("edzer", "travis")) {
-# if (Sys.getenv("USER") %in% c("edzer")) {
+#if (Sys.getenv("USER") %in% c("edzer")) {
   cn = dbConnect(PostgreSQL(), dbname = "postgis")
   round_trip = function(cn, wkt) {
   	query = paste0("SELECT '", wkt, "'::geometry;")
@@ -68,4 +68,11 @@ if (Sys.getenv("USER") %in% c("edzer", "travis")) {
 
   #m = st_read_db(cn, query = "select * from meuse;")
   dbDisconnect(cn)
+}
+
+if (Sys.getenv("USER") %in% c("travis", "edzer")) {
+  suppressWarnings(x <- st_read("PG:dbname=postgis"))
+  try(x <- st_read("PG:dbname=empty")) # error
+  print(st_list("PG:dbname=postgis"))
+  print(st_list("PG:dbname=empty"))
 }

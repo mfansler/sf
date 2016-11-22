@@ -5,7 +5,7 @@
 \alias{st_transform.sf}
 \alias{st_transform.sfc}
 \alias{st_transform.sfg}
-\title{transform or convert coordinates of simple feature}
+\title{Transform or convert coordinates of simple feature}
 \usage{
 st_transform(x, crs)
 
@@ -23,7 +23,7 @@ st_transform(x, crs)
 \item{...}{ignored}
 }
 \description{
-transform or convert coordinates of simple feature
+Transform or convert coordinates of simple feature
 }
 \details{
 transforms coordinates of object to new projection
@@ -36,6 +36,7 @@ p2 = st_point(c(-30,20))
 sfc = st_sfc(p1, p2, crs = "+init=epsg:4326")
 st_transform(sfc, "+init=epsg:3857")
 st_transform(st_sf(a=2:1, geom=sfc), "+init=epsg:3857")
+# FIXME: do we really want this?
 st_transform(structure(p1, proj4string = "+init=epsg:4326"), "+init=epsg:3857")
 }
 

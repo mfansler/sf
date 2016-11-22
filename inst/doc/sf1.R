@@ -3,8 +3,7 @@ knitr::opts_chunk$set(collapse = TRUE)
 
 ## ------------------------------------------------------------------------
 library(sf)
-filename <- system.file("shape/nc.shp", package="sf")
-nc <- st_read(filename, "nc", crs = 4267)
+nc <- st_read(system.file("shape/nc.shp", package="sf"))
 
 ## ------------------------------------------------------------------------
 class(nc)
@@ -131,10 +130,10 @@ st_as_sfc(structure(list(st_as_binary(x)), class = "WKB"))[[1]]
 
 ## ------------------------------------------------------------------------
 filename <- system.file("shape/nc.shp", package="sf")
-nc <- st_read(filename, "nc", crs = 4267)
+nc <- st_read(filename)
 
 ## ------------------------------------------------------------------------
-st_write(nc, "nc.shp", "nc", "ESRI Shapefile")
+st_write(nc, "nc.shp")
 
 ## ----eval=FALSE----------------------------------------------------------
 #  meuse <- st_read("PG:dbname=postgis", "meuse")
@@ -147,15 +146,14 @@ st_write(nc, "nc.shp", "nc", "ESRI Shapefile")
 #  u_kmz <- "http://coagisweb.cabq.gov/datadownload/BikePaths.kmz"
 #  download.file(u_kmz, "BikePaths.kmz")
 #  # Read file formats
-#  biketrails_shp <- st_read(dsn = ".", layer = "biketrails")
-#  ogr_layers <- rgdal::ogrListLayers(dsn = "BikePaths.kmz")
-#  biketrails_kmz <- st_read(dsn = "BikePaths.kmz", layer = ogr_layers[1])
+#  biketrails_shp <- st_read("biketrails.shp")
+#  biketrails_kmz <- st_read("BikePaths.kmz")
 
 ## ---- echo=TRUE, eval=FALSE----------------------------------------------
 #  shp_read_sp <- function() rgdal::readOGR(dsn = ".", layer = "biketrails")
-#  shp_read_sf <- function() st_read(dsn = ".", layer = "biketrails")
+#  shp_read_sf <- function() st_read("biketrails.shp")
 #  kmz_read_sp <- function() rgdal::readOGR(dsn = "BikePaths.kmz", layer = ogr_layers[1])
-#  kmz_read_sf <- function() st_read(dsn = "BikePaths.kmz", layer = ogr_layers[1])
+#  kmz_read_sf <- function() st_read("BikePaths.kmz")
 #  microbenchmark::microbenchmark(shp_read_sp(), shp_read_sf(),
 #                                 kmz_read_sp(), kmz_read_sf(), times = 1)
 
@@ -202,9 +200,8 @@ plot(nc.web_mercator[sel,], add = TRUE)
 plot(st_buffer(nc.web_mercator[sel,], -5000), add = TRUE, border = 'blue')
 
 ## ----fig.height=3--------------------------------------------------------
-# u <- st_union(nc[1,], nc)
 par(mar = rep(0,4))
-u <- st_merge(nc, union = TRUE)
+u <- st_union(nc)
 plot(u)
 
 ## ----fig.height=3, fig.width=7-------------------------------------------
@@ -241,7 +238,7 @@ title(st_as_text(x3))
 par(opar)
 
 ## ------------------------------------------------------------------------
-nc <- st_read(system.file("shape/nc.shp", package="sf"), "nc", crs = 4267,
+nc <- st_read(system.file("shape/nc.shp", package="sf"),
     relation_to_geometry = c(AREA = "lattice", PERIMETER = "lattice", CNTY_ = "entity",
         CNTY_ID = "entity", NAME = "entity", FIPS = "entity", FIPSNO = "entity",
         CRESS_ID = "entity", BIR74 = "lattice", SID74 = "lattice", NWBIR74 = "lattice",

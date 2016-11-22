@@ -1,6 +1,6 @@
-#' convert foreign object to an sf object
+#' Convert foreign object to an sf object
 #'
-#' convert foreign object to an sf object
+#' Convert foreign object to an sf object
 #' @param x object to be converted into an object class \code{sf}
 #' @export
 st_as_sf = function(x, ...) UseMethod("st_as_sf")
@@ -48,9 +48,9 @@ st_as_sf.data.frame = function(x, ..., relation_to_geometry = NA_character_, coo
 	st_sf(x, ..., relation_to_geometry = relation_to_geometry)
 }
 
-#' get, set, or replace geometry from an sf object
+#' Get, set, or replace geometry from an sf object
 #' 
-#' get, set, or replace geometry from an sf object
+#' Get, set, or replace geometry from an sf object
 #' @param obj object of class \code{sf} or \code{sfc}
 #' @param ... ignored
 #' @return st_geometry returns an object of class \link{sfc}, a list-column with geometries
@@ -97,17 +97,17 @@ st_geometry.sfg = function(obj, ...) st_sfc(obj)
 	x
 }
 
-#' create sf object
+#' Create sf object
 #' 
-#' create sf, which extends data.frame-like objects with a simple feature list column
+#' Create sf, which extends data.frame-like objects with a simple feature list column
 #' @name sf
 #' @param ... column elements to be binded into an \code{sf} object, one of them being of class \code{sfc}
 #' @param crs coordinate reference system: integer with the epsg code, or character with proj4string
 #' @param relation_to_geometry character vector; see details below.
 #' @param row.names row.names for the created \code{sf} object
-#' @param stringsAsFactors logical; see \link{data.frame}
+#' @param stringsAsFactors logical; logical: should character vectors be converted to factors?  The `factory-fresh' default is \code{TRUE}, but this can be changed by setting \code{options(stringsAsFactors = FALSE)}.  
 #' @param precision numeric; see \link{st_as_binary}
-#' @details \code{relation_to_geometry} specified for each non-geometry column how it relates to the geometry, and can have one of following values: "field", "lattice", "entity". "field" is used for attributes that are constant throughout the geometry (e.g. land use), "lattice" where the attribute is an aggregate value over the geometry (e.g. population density), "entity" when the attributes identifies the geometry of particular "thing", such as a building or a city. The default value, \code{NA_character_}, implies we don't know.  
+#' @details \code{relation_to_geometry} specified for each non-geometry attribute column how it relates to the geometry, and can have one of following values: "field", "lattice", "entity". "field" is used for attributes that are constant throughout the geometry (e.g. land use), "lattice" where the attribute is an aggregate value over the geometry (e.g. population density or population count), "entity" when the attributes uniquely identifies the geometry of particular "thing", such as a building ID or a city name. The default value, \code{NA_character_}, implies we don't know.  
 #' @examples
 #' g = st_sfc(st_point(1:2))
 #' st_sf(a=3,g)
@@ -121,7 +121,7 @@ st_sf = function(..., relation_to_geometry = NA_character_, row.names,
 		x = x[[1]]
 	# find & remove the sfc column:
 	sf = sapply(x, function(x) inherits(x, "sfc"))
-	if (!any(sf))
+	if (! any(sf))
 		stop("no simple features geometry column present")
 	sf_column = which(sf)
 	if (length(sf_column) > 1) {
@@ -133,8 +133,13 @@ st_sf = function(..., relation_to_geometry = NA_character_, row.names,
 		row.names = seq_along(x[[sf_column]])
 	df = if (length(x) == 1) # ONLY sfc
 			data.frame(row.names = row.names)
-		else 
-			data.frame(x[-sf_column], row.names = row.names, stringsAsFactors = stringsAsFactors)
+		else {
+			if (inherits(x, "data.frame"))
+				x[-sf_column]
+			else # create a data.frame from list:
+				data.frame(x[-sf_column], row.names = row.names, 
+					stringsAsFactors = stringsAsFactors)
+		}
 
 	# add sfc column, with right name:
 	sfc_name = if (!is.null(names(x)) && nzchar(names(x)[sf_column]))
@@ -145,7 +150,7 @@ st_sf = function(..., relation_to_geometry = NA_character_, row.names,
 		make.names(arg_nm[sf_column])
 	}
 	df[[sfc_name]] = x[[sf_column]]
-	if (!missing(precision))
+	if (! missing(precision))
 		attr(df[[sfc_name]], "precision") = precision
 
 	# add attributes:
@@ -204,11 +209,36 @@ print.sf = function(x, ..., n =
 	nf = length(x) - 1
 	app = paste("and", nf, ifelse(nf == 1, "field", "fields"))
 	print(st_geometry(x), n = 0, what = "Simple feature collection with", append = app)
-	y <- x
-	if (nrow(y) > n) {
-		cat(paste("First", n, "features:\n"))
-		y <- x[1:n, , drop = FALSE]
+	if (n > 0) {
+		y <- x
+		if (nrow(y) > n) {
+			cat(paste("First", n, "features:\n"))
+			y <- x[1:n, , drop = FALSE]
+		}
+		print.data.frame(y, ...)
 	}
-	print.data.frame(y, ...)
 	invisible(x)
+}
+
+#' Bind rows (features) of sf objects
+#'
+#' Bind rows (features) of sf objects
+#' @param ... objects to bind
+#' @param deparse.level integer; see \link[base]{rbind}
+#' @name bind
+#' @export
+rbind.sf = function(..., deparse.level = 1) {
+	ret = base::rbind.data.frame(...)
+	st_geometry(ret) = do.call(st_sfc, st_geometry(ret))
+	ret
+}
+
+#' Bind columns (variables) of sf objects
+#'
+#' Bind columns (variables) of sf objects
+#' @name bind
+#' @return if \code{cbind} is called with multiple \code{sf} objects, it warns and removes all but the first geometry column from the input objects.
+#' @export
+cbind.sf = function(..., deparse.level = 1) {
+	st_sf(base::cbind.data.frame(...))
 }

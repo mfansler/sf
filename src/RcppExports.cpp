@@ -58,14 +58,25 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// CPL_proj4string_from_epsg
-Rcpp::CharacterVector CPL_proj4string_from_epsg(int epsg);
-RcppExport SEXP sf_CPL_proj4string_from_epsg(SEXP epsgSEXP) {
+// CPL_crs_from_epsg
+Rcpp::List CPL_crs_from_epsg(int epsg);
+RcppExport SEXP sf_CPL_crs_from_epsg(SEXP epsgSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< int >::type epsg(epsgSEXP);
-    rcpp_result_gen = Rcpp::wrap(CPL_proj4string_from_epsg(epsg));
+    rcpp_result_gen = Rcpp::wrap(CPL_crs_from_epsg(epsg));
+    return rcpp_result_gen;
+END_RCPP
+}
+// CPL_crs_from_proj4string
+Rcpp::List CPL_crs_from_proj4string(Rcpp::CharacterVector p4s);
+RcppExport SEXP sf_CPL_crs_from_proj4string(SEXP p4sSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::CharacterVector >::type p4s(p4sSEXP);
+    rcpp_result_gen = Rcpp::wrap(CPL_crs_from_proj4string(p4s));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -102,6 +113,28 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// CPL_area
+Rcpp::NumericVector CPL_area(Rcpp::List sfc);
+RcppExport SEXP sf_CPL_area(SEXP sfcSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::List >::type sfc(sfcSEXP);
+    rcpp_result_gen = Rcpp::wrap(CPL_area(sfc));
+    return rcpp_result_gen;
+END_RCPP
+}
+// CPL_length
+Rcpp::NumericVector CPL_length(Rcpp::List sfc);
+RcppExport SEXP sf_CPL_length(SEXP sfcSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::List >::type sfc(sfcSEXP);
+    rcpp_result_gen = Rcpp::wrap(CPL_length(sfc));
+    return rcpp_result_gen;
+END_RCPP
+}
 // CPL_geom_op
 Rcpp::List CPL_geom_op(std::string op, Rcpp::List sfc, double bufferDist, int nQuadSegs, double dTolerance, bool preserveTopology, int bOnlyEdges, double dfMaxLength);
 RcppExport SEXP sf_CPL_geom_op(SEXP opSEXP, SEXP sfcSEXP, SEXP bufferDistSEXP, SEXP nQuadSegsSEXP, SEXP dToleranceSEXP, SEXP preserveTopologySEXP, SEXP bOnlyEdgesSEXP, SEXP dfMaxLengthSEXP) {
@@ -130,6 +163,19 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< Rcpp::List >::type sfc(sfcSEXP);
     Rcpp::traits::input_parameter< Rcpp::List >::type sf0(sf0SEXP);
     rcpp_result_gen = Rcpp::wrap(CPL_geom_op2(op, sfc, sf0));
+    return rcpp_result_gen;
+END_RCPP
+}
+// CPL_get_layers
+Rcpp::List CPL_get_layers(Rcpp::CharacterVector datasource, Rcpp::CharacterVector options, bool do_count);
+RcppExport SEXP sf_CPL_get_layers(SEXP datasourceSEXP, SEXP optionsSEXP, SEXP do_countSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::CharacterVector >::type datasource(datasourceSEXP);
+    Rcpp::traits::input_parameter< Rcpp::CharacterVector >::type options(optionsSEXP);
+    Rcpp::traits::input_parameter< bool >::type do_count(do_countSEXP);
+    rcpp_result_gen = Rcpp::wrap(CPL_get_layers(datasource, options, do_count));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -191,6 +237,17 @@ BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< Rcpp::List >::type sfc(sfcSEXP);
     rcpp_result_gen = Rcpp::wrap(CPL_geos_is_valid(sfc));
+    return rcpp_result_gen;
+END_RCPP
+}
+// CPL_geos_union
+Rcpp::List CPL_geos_union(Rcpp::List sfc);
+RcppExport SEXP sf_CPL_geos_union(SEXP sfcSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::List >::type sfc(sfcSEXP);
+    rcpp_result_gen = Rcpp::wrap(CPL_geos_union(sfc));
     return rcpp_result_gen;
 END_RCPP
 }
