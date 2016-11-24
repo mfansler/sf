@@ -66,16 +66,22 @@ Rcpp::List CPL_geos_binop(Rcpp::List sfc0, Rcpp::List sfc1, std::string op, doub
 	if (op == "relate") { // character return matrix:
 		Rcpp::CharacterVector out(sfc0.length() * sfc1.length());
 		for (int i = 0; i < sfc0.length(); i++)
-			for (int j = 0; j < sfc1.length(); j++)
-				out[j * sfc0.length() + i] = GEOSRelate_r(hGEOSCtxt, gmv0[i], gmv1[j]);
+			for (int j = 0; j < sfc1.length(); j++) {
+				char *cp = GEOSRelate_r(hGEOSCtxt, gmv0[i], gmv1[j]);
+				if (cp == NULL)
+					throw std::range_error("GEOS error in GEOSRelate_r");
+				out[j * sfc0.length() + i] = cp;
+				GEOSFree_r(hGEOSCtxt, cp);
+			}
 		out.attr("dim") = get_dim(sfc0.length(), sfc1.length());
 		ret_list = Rcpp::List::create(out);
 	} else if (op == "distance") { // return double matrix:
 		Rcpp::NumericMatrix out(sfc0.length(), sfc1.length());
 		for (int i = 0; i < gmv0.size(); i++)
 			for (int j = 0; j < gmv1.size(); j++) {
-				double dist;
-				GEOSDistance_r(hGEOSCtxt, gmv0[i], gmv1[j], &dist);
+				double dist = -1.0;
+				if (GEOSDistance_r(hGEOSCtxt, gmv0[i], gmv1[j], &dist) == 0)
+					throw std::range_error("GEOS error in GEOSDistance_r");
 				out(i,j) = dist;
 			}
 		ret_list = Rcpp::List::create(out);
@@ -162,12 +168,11 @@ Rcpp::LogicalVector CPL_geos_is_valid(Rcpp::List sfc) {
 Rcpp::List CPL_geos_union(Rcpp::List sfc) { 
 	GEOSContextHandle_t hGEOSCtxt = OGRGeometry::createGEOSContext();
 	std::vector<GEOSGeom> gmv = geometries_from_sfc(hGEOSCtxt, sfc);
-	std::vector<GEOSGeom> gmv_out(gmv.size());
-	for (int i = 0; i < gmv.size(); i++) {
-		gmv_out[i] = GEOSUnaryUnion_r(hGEOSCtxt, gmv[i]);
-		GEOSGeom_destroy_r(hGEOSCtxt, gmv[i]);
-	}
-	Rcpp::List out(sfc_from_geometry(hGEOSCtxt, gmv_out)); // destroys gmv
+	GEOSGeom gc = GEOSGeom_createCollection_r(hGEOSCtxt, GEOS_GEOMETRYCOLLECTION, gmv.data(), gmv.size());
+	std::vector<GEOSGeom> gmv_out(1);
+	gmv_out[0] = GEOSUnaryUnion_r(hGEOSCtxt, gc);
+	GEOSGeom_destroy_r(hGEOSCtxt, gc);
+	Rcpp::List out(sfc_from_geometry(hGEOSCtxt, gmv_out)); // destroys gmv_out
 	OGRGeometry::freeGEOSContext(hGEOSCtxt);
 	return out;
 }
@@ -187,4 +192,51 @@ Rcpp::NumericMatrix CPL_geos_dist(Rcpp::List sfc0, Rcpp::List sfc1) {
 Rcpp::CharacterVector CPL_geos_relate(Rcpp::List sfc0, Rcpp::List sfc1) {
 	Rcpp::CharacterVector out = CPL_geos_binop(sfc0, sfc1, "relate", 0.0, false)[0];
 	return out;	
+}
+
+static void __errorHandler(const char *fmt, ...) {
+
+    char buf[BUFSIZ], *p;
+    va_list(ap);
+    va_start(ap, fmt);
+    vsprintf(buf, fmt, ap);
+    va_end(ap);
+    p = buf + strlen(buf) - 1;
+    if(strlen(buf) > 0 && *p == '\n') *p = '\0';
+
+	Rcpp::Function error("error");
+    error(buf);
+
+    return;
+}
+
+static void __warningHandler(const char *fmt, ...) {
+
+    char buf[BUFSIZ], *p;
+    va_list(ap);
+    va_start(ap, fmt);
+    vsprintf(buf, fmt, ap);
+    va_end(ap);
+    p = buf + strlen(buf) - 1;
+    if(strlen(buf) > 0 && *p == '\n') *p = '\0';
+
+	Rcpp::Function warning("warning");
+	warning(buf);
+    
+    return;
+}
+
+GEOSContextHandle_t geos_ctxt_ptr;  // global variable -- can it do any harm?
+
+// [[Rcpp::export]]
+void CPL_geos_init() {
+	// geos_ctxt_ptr = GEOS_init_r();
+	geos_ctxt_ptr =
+    	initGEOS_r((GEOSMessageHandler) __warningHandler, (GEOSMessageHandler) __errorHandler);
+}
+
+// [[Rcpp::export]]
+void CPL_geos_finish() {
+	// GEOS_finish_r(geos_ctxt_ptr); // needs context handler, we don't have one
+	finishGEOS_r(geos_ctxt_ptr);
 }

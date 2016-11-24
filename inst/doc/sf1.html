@@ -305,7 +305,7 @@ $(document).ready(function () {
 <pre class="r"><code>library(sf)
 ## Linking to GEOS 3.5.0, GDAL 2.1.0
 nc &lt;- st_read(system.file(&quot;shape/nc.shp&quot;, package=&quot;sf&quot;))
-## Reading layer `nc' from data source `/tmp/RtmpWMGaDf/Rinst7acd31bc15dd/sf/shape/nc.shp' using driver `ESRI Shapefile'
+## Reading layer `nc' from data source `/tmp/Rtmpx8QUzZ/Rinst66177d7b3c0c/sf/shape/nc.shp' using driver `ESRI Shapefile'
 ## converted into: MULTIPOLYGON
 ## Simple feature collection with 100 features and 14 fields
 ## geometry type:  MULTIPOLYGON
@@ -550,7 +550,7 @@ st_as_sfc(structure(list(st_as_binary(x)), class = &quot;WKB&quot;))[[1]]
 <p>As we’ve seen above, reading spatial data from an external file can be done by</p>
 <pre class="r"><code>filename &lt;- system.file(&quot;shape/nc.shp&quot;, package=&quot;sf&quot;)
 nc &lt;- st_read(filename)
-## Reading layer `nc' from data source `/tmp/RtmpWMGaDf/Rinst7acd31bc15dd/sf/shape/nc.shp' using driver `ESRI Shapefile'
+## Reading layer `nc' from data source `/tmp/Rtmpx8QUzZ/Rinst66177d7b3c0c/sf/shape/nc.shp' using driver `ESRI Shapefile'
 ## converted into: MULTIPOLYGON
 ## Simple feature collection with 100 features and 14 fields
 ## geometry type:  MULTIPOLYGON
@@ -560,7 +560,7 @@ nc &lt;- st_read(filename)
 ## proj4string:    +proj=longlat +datum=NAD27 +no_defs</code></pre>
 <p>and writing takes place in the same fashion, using <code>st_write</code>:</p>
 <pre class="r"><code>st_write(nc, &quot;nc.shp&quot;)
-## Writing layer `nc.shp' to data source `/tmp/RtmpWMGaDf/Rbuild7acd8e704f3/sf/vignettes/nc.shp' using driver `ESRI Shapefile'
+## Writing layer `nc.shp' to data source `/tmp/Rtmpx8QUzZ/Rbuild66175f1c0de6/sf/vignettes/nc.shp' using driver `ESRI Shapefile'
 ## features:       100
 ## fields:         14
 ## geometry type:  MULTIPOLYGON</code></pre>
@@ -616,6 +616,7 @@ st_geometry(nc.web_mercator)[[4]][[2]][[1]][1:3,]
 <p><code>sf</code> objects and objects deriving from <code>Spatial</code> (package <code>sp</code>) can be coerced both ways:</p>
 <pre class="r"><code>showMethods(&quot;coerce&quot;, classes = &quot;sf&quot;)
 ## Function: coerce (package methods)
+## from=&quot;Spatial&quot;, to=&quot;sf&quot;
 ## from=&quot;sf&quot;, to=&quot;Spatial&quot;
 methods(st_as_sf)
 ## [1] st_as_sf.Spatial*    st_as_sf.data.frame*
@@ -742,7 +743,7 @@ st_is_valid(st_sfc(x2,x3))
         CNTY_ID = &quot;entity&quot;, NAME = &quot;entity&quot;, FIPS = &quot;entity&quot;, FIPSNO = &quot;entity&quot;,
         CRESS_ID = &quot;entity&quot;, BIR74 = &quot;lattice&quot;, SID74 = &quot;lattice&quot;, NWBIR74 = &quot;lattice&quot;,
         BIR79 = &quot;lattice&quot;, SID79 = &quot;lattice&quot;, NWBIR79 = &quot;lattice&quot;))
-## Reading layer `nc' from data source `/tmp/RtmpWMGaDf/Rinst7acd31bc15dd/sf/shape/nc.shp' using driver `ESRI Shapefile'
+## Reading layer `nc' from data source `/tmp/Rtmpx8QUzZ/Rinst66177d7b3c0c/sf/shape/nc.shp' using driver `ESRI Shapefile'
 ## converted into: MULTIPOLYGON
 ## Simple feature collection with 100 features and 14 fields
 ## geometry type:  MULTIPOLYGON
