@@ -305,7 +305,7 @@ $(document).ready(function () {
 <pre class="r"><code>library(sf)
 ## Linking to GEOS 3.5.0, GDAL 2.1.0
 nc &lt;- st_read(system.file(&quot;shape/nc.shp&quot;, package=&quot;sf&quot;))
-## Reading layer `nc' from data source `/tmp/Rtmpx8QUzZ/Rinst66177d7b3c0c/sf/shape/nc.shp' using driver `ESRI Shapefile'
+## Reading layer `nc' from data source `/tmp/RtmpVCdz9a/Rinst1ee327138d36/sf/shape/nc.shp' using driver `ESRI Shapefile'
 ## converted into: MULTIPOLYGON
 ## Simple feature collection with 100 features and 14 fields
 ## geometry type:  MULTIPOLYGON
@@ -337,8 +337,8 @@ nc &lt;- st_read(system.file(&quot;shape/nc.shp&quot;, package=&quot;sf&quot;))
 <pre class="r"><code>methods(class = &quot;sf&quot;)
 ##  [1] [             cbind         coerce        initialize    plot         
 ##  [6] print         rbind         show          slotsFromS3   st_bbox      
-## [11] st_crs        st_crs&lt;-      st_drop_zm    st_geometry   st_geometry&lt;-
-## [16] st_transform 
+## [11] st_cast       st_crs        st_crs&lt;-      st_drop_zm    st_geometry  
+## [16] st_geometry&lt;- st_transform 
 ## see '?methods' for accessing help and source code</code></pre>
 <p>It is also possible to create <code>data.frame</code> objects with geometry list-columns that are not of class <code>sf</code>, e.g. by</p>
 <pre class="r"><code>nc.no_sf &lt;- as.data.frame(nc)
@@ -395,8 +395,8 @@ plot(nc[w,], col = 2:7)</code></pre>
 <pre class="r"><code>methods(class = 'sfc')
 ##  [1] Ops          [            coerce       format       initialize  
 ##  [6] print        show         slotsFromS3  st_as_binary st_as_text  
-## [11] st_bbox      st_crs       st_crs&lt;-     st_drop_zm   st_geometry 
-## [16] st_transform summary     
+## [11] st_bbox      st_cast      st_crs       st_crs&lt;-     st_drop_zm  
+## [16] st_geometry  st_transform summary     
 ## see '?methods' for accessing help and source code</code></pre>
 <p>Coordinate reference systems (<code>st_crs</code> and <code>st_transform</code>) are discussed in the section on <a href="#crs">coordinate reference systems</a>. <code>st_as_wkb</code> and <code>st_as_text</code> convert geometry list-columns into well-known-binary or well-known-text, explained <a href="#wkb">below</a>. <code>st_bbox</code> retrieves the coordinate bounding box.</p>
 <p>Attributes include</p>
@@ -550,7 +550,7 @@ st_as_sfc(structure(list(st_as_binary(x)), class = &quot;WKB&quot;))[[1]]
 <p>As we’ve seen above, reading spatial data from an external file can be done by</p>
 <pre class="r"><code>filename &lt;- system.file(&quot;shape/nc.shp&quot;, package=&quot;sf&quot;)
 nc &lt;- st_read(filename)
-## Reading layer `nc' from data source `/tmp/Rtmpx8QUzZ/Rinst66177d7b3c0c/sf/shape/nc.shp' using driver `ESRI Shapefile'
+## Reading layer `nc' from data source `/tmp/RtmpVCdz9a/Rinst1ee327138d36/sf/shape/nc.shp' using driver `ESRI Shapefile'
 ## converted into: MULTIPOLYGON
 ## Simple feature collection with 100 features and 14 fields
 ## geometry type:  MULTIPOLYGON
@@ -560,7 +560,7 @@ nc &lt;- st_read(filename)
 ## proj4string:    +proj=longlat +datum=NAD27 +no_defs</code></pre>
 <p>and writing takes place in the same fashion, using <code>st_write</code>:</p>
 <pre class="r"><code>st_write(nc, &quot;nc.shp&quot;)
-## Writing layer `nc.shp' to data source `/tmp/Rtmpx8QUzZ/Rbuild66175f1c0de6/sf/vignettes/nc.shp' using driver `ESRI Shapefile'
+## Writing layer `nc.shp' to data source `/tmp/RtmpVCdz9a/Rbuild1ee333e4453/sf/vignettes/nc.shp' using driver `ESRI Shapefile'
 ## features:       100
 ## fields:         14
 ## geometry type:  MULTIPOLYGON</code></pre>
@@ -743,7 +743,7 @@ st_is_valid(st_sfc(x2,x3))
         CNTY_ID = &quot;entity&quot;, NAME = &quot;entity&quot;, FIPS = &quot;entity&quot;, FIPSNO = &quot;entity&quot;,
         CRESS_ID = &quot;entity&quot;, BIR74 = &quot;lattice&quot;, SID74 = &quot;lattice&quot;, NWBIR74 = &quot;lattice&quot;,
         BIR79 = &quot;lattice&quot;, SID79 = &quot;lattice&quot;, NWBIR79 = &quot;lattice&quot;))
-## Reading layer `nc' from data source `/tmp/Rtmpx8QUzZ/Rinst66177d7b3c0c/sf/shape/nc.shp' using driver `ESRI Shapefile'
+## Reading layer `nc' from data source `/tmp/RtmpVCdz9a/Rinst1ee327138d36/sf/shape/nc.shp' using driver `ESRI Shapefile'
 ## converted into: MULTIPOLYGON
 ## Simple feature collection with 100 features and 14 fields
 ## geometry type:  MULTIPOLYGON
@@ -800,7 +800,7 @@ attr(meuse_sf, &quot;relation_to_geometry&quot;)
 <p>Further reading:</p>
 <ol style="list-style-type: decimal">
 <li>S. Scheider, B. Gräler, E. Pebesma, C. Stasch, 2016. Modelling spatio-temporal information generation. Int J of Geographic Information Science, 30 (10), 1980-2008. (<a href="http://pebesma.staff.ifgi.de/generativealgebra.pdf">pdf</a>)</li>
-<li>Stasch, C., S. Scheider, E. Pebesma, W. Kuhn, 2014. Meaningful Spatial Prediction and Aggregation. Environmental Modelling &amp; Software, 51, (149–165, <a href="http://www.sciencedirect.com/science/article/pii/S1364815213001977">open access</a>).</li>
+<li>Stasch, C., S. Scheider, E. Pebesma, W. Kuhn, 2014. Meaningful Spatial Prediction and Aggregation. Environmental Modelling &amp; Software, 51, (149–165, <a href="http://dx.doi.org/10.1016/j.envsoft.2013.09.006">open access</a>).</li>
 </ol>
 </div>
 

@@ -21,8 +21,8 @@
 #'  (s = st_read("PG:dbname=postgis", "meuse"))
 #'  summary(s)
 #' }
-#' # nc = st_read(system.file("gpkg/nc.gpkg", package="sf"), "nc.gpkg", crs = 4267)
-#' nc = st_read(system.file("shape/nc.shp", package="sf"), "nc", crs = 4267)
+#' # nc = st_read(system.file("gpkg/nc.gpkg", package="sf"))
+#' nc = st_read(system.file("shape/nc.shp", package="sf"))
 #' summary(nc)
 #' @name st_read
 #' @note The use of \code{system.file} in examples make sure that examples run regardless where R is installed: typical users will not use \code{system.file} but give the file name directly, either with full path or relative to the current working directory (see \link{getwd}). "Shapefiles" consist of several files with the same basename that reside in the same directory, only one of them having extension \code{.shp}. 
@@ -30,14 +30,14 @@
 st_read = function(dsn, layer, ..., options = NULL, quiet = FALSE, iGeomField = 1L, type = 0,
 		promote_to_multi = TRUE, stringsAsFactors = default.stringsAsFactors()) {
 
-  if (missing(dsn))
-    stop("dsn should specify a data source or filename")
+	if (missing(dsn))
+		stop("dsn should specify a data source or filename")
   
 	if (missing(layer))
 		layer = character(0)
 	
-  if (file.exists(dsn))
-    dsn = normalizePath(dsn)
+	if (file.exists(dsn))
+		dsn = normalizePath(dsn)
 
 	x = CPL_read_ogr(dsn, layer, as.character(options), quiet, iGeomField - 1L, type, 
 		promote_to_multi)
@@ -79,7 +79,7 @@ st_read = function(dsn, layer, ..., options = NULL, quiet = FALSE, iGeomField = 
 #'  demo(nc, ask = FALSE)
 #'  st_write(nc, "PG:dbname=postgis", "sids", layer_options = "OVERWRITE=true")
 #' }
-#' nc = st_read(system.file("shape/nc.shp", package="sf"), "nc", crs = 4267)
+#' nc = st_read(system.file("shape/nc.shp", package="sf"))
 #' st_write(nc, "nc.shp")
 #' @export
 st_write = function(obj, dsn, layer = basename(dsn), driver = guess_driver(dsn), ..., 

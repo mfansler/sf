@@ -156,9 +156,9 @@ $(document).ready(function () {
 <pre class="r"><code>library(sf)
 fname &lt;- system.file(&quot;shape/nc.shp&quot;, package=&quot;sf&quot;)
 fname
-## [1] &quot;/tmp/Rtmpx8QUzZ/Rinst66177d7b3c0c/sf/shape/nc.shp&quot;
+## [1] &quot;/tmp/RtmpVCdz9a/Rinst1ee327138d36/sf/shape/nc.shp&quot;
 nc &lt;- st_read(fname)
-## Reading layer `nc' from data source `/tmp/Rtmpx8QUzZ/Rinst66177d7b3c0c/sf/shape/nc.shp' using driver `ESRI Shapefile'
+## Reading layer `nc' from data source `/tmp/RtmpVCdz9a/Rinst1ee327138d36/sf/shape/nc.shp' using driver `ESRI Shapefile'
 ## converted into: MULTIPOLYGON
 ## Simple feature collection with 100 features and 14 fields
 ## geometry type:  MULTIPOLYGON
@@ -203,7 +203,7 @@ Available layers:
 <p>Alternatively, a user can set the global option <code>stringsAsFactors</code>, and this will have the same effect:</p>
 <pre class="r"><code>options(stringsAsFactors = FALSE)
 st_read(fname)
-## Reading layer `nc' from data source `/tmp/Rtmpx8QUzZ/Rinst66177d7b3c0c/sf/shape/nc.shp' using driver `ESRI Shapefile'
+## Reading layer `nc' from data source `/tmp/RtmpVCdz9a/Rinst1ee327138d36/sf/shape/nc.shp' using driver `ESRI Shapefile'
 ## converted into: MULTIPOLYGON
 ## Simple feature collection with 100 features and 14 fields
 ## geometry type:  MULTIPOLYGON
@@ -216,13 +216,13 @@ st_read(fname)
 <h3>Using st_write</h3>
 <p>To write a simple features object to a file, we need at least two arguments, the object and a filename:</p>
 <pre class="r"><code>st_write(nc, &quot;nc.shp&quot;)
-## Writing layer `nc.shp' to data source `/tmp/Rtmpx8QUzZ/Rbuild66175f1c0de6/sf/vignettes/nc.shp' using driver `ESRI Shapefile'
+## Writing layer `nc.shp' to data source `/tmp/RtmpVCdz9a/Rbuild1ee333e4453/sf/vignettes/nc.shp' using driver `ESRI Shapefile'
 ## features:       100
 ## fields:         14
 ## geometry type:  MULTIPOLYGON</code></pre>
 <p>The file name is taken as the data source name. The default for the layer name is the basename (filename without path) of the the data source name. For this, <code>st_write</code> needs to guess the driver. The above command is, for instance, equivalent to:</p>
 <pre class="r"><code>st_write(nc, dsn = &quot;nc.shp&quot;, layer = &quot;nc.shp&quot;, driver = &quot;ESRI Shapefile&quot;)
-## Writing layer `nc.shp' to data source `/tmp/Rtmpx8QUzZ/Rbuild66175f1c0de6/sf/vignettes/nc.shp' using driver `ESRI Shapefile'
+## Writing layer `nc.shp' to data source `/tmp/RtmpVCdz9a/Rbuild1ee333e4453/sf/vignettes/nc.shp' using driver `ESRI Shapefile'
 ## features:       100
 ## fields:         14
 ## geometry type:  MULTIPOLYGON</code></pre>
