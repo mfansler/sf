@@ -13,7 +13,7 @@ st_is_valid = function(x) CPL_geos_is_valid(st_geometry(x))
 #' @return st_area returns the area of a geometry, in the coordinate reference system used
 st_area = function(x) { 
 	if (isTRUE(st_is_longlat(x)))
-		warning("st_area does not give a meaningful area measure for longitude/latitude data.")
+		stop("st_area does not give area measures for longitude/latitude data.")
 	CPL_area(st_geometry(x))
 }
 
@@ -22,7 +22,7 @@ st_area = function(x) {
 #' @return st_length returns the length of a geometry, in the coordinate reference system used
 st_length = function(x) { 
 	if (isTRUE(st_is_longlat(x)))
-		warning("st_length does not give a meaningful length measure for longitude/latitude data.")
+		stop("st_length does not give length measures for longitude/latitude data.")
 	x = st_geometry(x)
 	stopifnot(inherits(x, "sfc_LINESTRING") || inherits(x, "sfc_MULTILINESTRING"))
 	ret = CPL_length(x)
@@ -42,6 +42,14 @@ st_is_simple = function(x) CPL_geos_is_simple(st_geometry(x))
 st_geos_binop = function(op = "intersects", x, y, par = 0.0, sparse = TRUE) {
 	if (missing(y))
 		y = x
+	else 
+		stopifnot(st_crs(x) == st_crs(y))
+	if (isTRUE(st_is_longlat(x))) {
+		if (op %in% "distance")
+			stop("st_distance does not give distance measures for longitude/latitude data.")
+		if (!(op %in% c("equals", "equals_exact", "polygonize"))) 
+			message("although coordinates are longitude/latitude, it is assumed that they are planar")
+	}
 	ret = CPL_geos_binop(st_geometry(x), st_geometry(y), op, par, sparse)
 	if (sparse)
 		ret
@@ -128,8 +136,11 @@ st_equals_exact     = function(x, y, par, sparse = TRUE)
 #' @param dist buffer distance
 #' @param nQuadSegs integer; number of segments per quadrant (fourth of a circle)
 #' @return st_buffer ... st_segmentize return an \link{sfc} object with the same number of geometries as in \code{x}
-st_buffer = function(x, dist, nQuadSegs = 30)
+st_buffer = function(x, dist, nQuadSegs = 30) {
+	if (isTRUE(st_is_longlat(x)))
+		warning("st_buffer does not correctly buffer longitude/latitude data, dist needs to be in decimal degrees.")
 	st_sfc(CPL_geos_op("buffer", st_geometry(x), dist, nQuadSegs))
+}
 
 #' @name geos
 #' @export
@@ -147,8 +158,11 @@ st_convex_hull = function(x) st_sfc(CPL_geos_op("convex_hull", st_geometry(x)))
 #' @export
 #' @param preserveTopology logical; carry out topology preserving simplification?
 #' @param dTolerance numeric; tolerance parameter
-st_simplify = function(x, preserveTopology = FALSE, dTolerance = 0.0)
+st_simplify = function(x, preserveTopology = FALSE, dTolerance = 0.0) {
+	if (isTRUE(st_is_longlat(x)))
+		warning("st_simplify does not correctly simplify longitude/latitude data, dTolerance needs to be in decimal degrees.")
 	st_sfc(CPL_geos_op("simplify", st_geometry(x), preserveTopology = preserveTopology, dTolerance = dTolerance))
+}
 
 #' @name geos
 #' @export
@@ -156,6 +170,8 @@ st_simplify = function(x, preserveTopology = FALSE, dTolerance = 0.0)
 #' @details requires GEOS version 3.4 or above
 # nocov start
 st_triangulate = function(x, dTolerance = 0.0, bOnlyEdges = FALSE) {
+	if (isTRUE(st_is_longlat(x)))
+		stop("st_triangulate does not correctly triangulate longitude/latitude data.")
 	if (CPL_gdal_version() >= "2.1.0")
 		st_sfc(CPL_geos_op("triangulate", st_geometry(x), dTolerance = dTolerance, bOnlyEdges = bOnlyEdges))
 	else
@@ -180,12 +196,18 @@ st_polygonize = function(mlst) {
 #' @examples
 #' plot(nc, axes = TRUE)
 #' plot(st_centroid(nc), add = TRUE, pch = 3)
-st_centroid = function(x) st_sfc(CPL_geos_op("centroid", st_geometry(x)))
+st_centroid = function(x) { 
+	if (isTRUE(st_is_longlat(x)))
+		warning("st_centroid does not give correct centroids for longitude/latitude data.")
+	st_sfc(CPL_geos_op("centroid", st_geometry(x)))
+}
 
 #' @name geos
 #' @export
 #' @param dfMaxLength numeric; max length of a line segment
 st_segmentize  = function(x, dfMaxLength) {
+	if (isTRUE(st_is_longlat(x)))
+		warning("st_segmentize does not correctly segmentize longitude/latitude data.")
 	st_sfc(CPL_gdal_geom_op("segmentize", st_geometry(x), dfMaxLength = dfMaxLength))
 }
 
@@ -199,30 +221,36 @@ st_combine = function(x) {
 }
 
 geos_op2 = function(op, x, y) {
+	stopifnot(st_crs(x) == st_crs(y))
 	st_sfc(CPL_geos_op2(op, x, y), crs = st_crs(x))
 }
 
 #' @name geos
 #' @export
-#' @param y0 object of class \code{sfc} which is merged, using \code{c.sfg} (\link{st}), before intersection etc. with it is computed 
-st_intersection = function(x, y0)   geos_op2("intersection", st_geometry(x), st_combine(y0))
+st_intersection = function(x, y) {
+	geos_op2("intersection", st_geometry(x), st_geometry(y))
+}
 
 #' @name geos
 #' @export
 #' @return \code{st_union(x)} unions geometries.  Unioning a set of overlapping polygons has the effect of merging the areas (i.e. the same effect as iteratively unioning all individual polygons together). Unioning a set of LineStrings has the effect of fully noding and dissolving the input linework. In this context "fully noded" means that there will be a node or endpoint in the output for every endpoint or line segment crossing in the input. "Dissolved" means that any duplicate (e.g. coincident) line segments or portions of line segments will be reduced to a single line segment in the output.  Unioning a set of Points has the effect of merging al identical points (producing a set with no duplicates). If \code{y0} in a call to \code{st_union} is not missing, each of the geometries in \code{x} are unioned to the combination of \code{y0}.
 #' @examples
 #' plot(st_union(nc))
-st_union = function(x, y0) {
-	if (! missing(y0))
-		geos_op2("union", st_geometry(x), st_combine(y0))
+st_union = function(x, y) {
+	if (! missing(y))
+		geos_op2("union", st_geometry(x), st_geometry(y))
 	else
 		st_sfc(CPL_geos_union(st_geometry(x)), crs = st_crs(x))
 }
 
 #' @name geos
 #' @export
-st_difference = function(x, y0)     geos_op2("difference", st_geometry(x), st_combine(y0))
+st_difference = function(x, y) {
+	geos_op2("difference", st_geometry(x), st_geometry(y))
+}
 
 #' @name geos
 #' @export
-st_sym_difference = function(x, y0) geos_op2("sym_difference", st_geometry(x), st_combine(y0))
+st_sym_difference = function(x, y) {
+	geos_op2("sym_difference", st_geometry(x), st_geometry(y))
+}

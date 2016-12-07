@@ -81,8 +81,8 @@ CPL_geos_op <- function(op, sfc, bufferDist = 0.0, nQuadSegs = 30L, dTolerance =
     .Call('sf_CPL_geos_op', PACKAGE = 'sf', op, sfc, bufferDist, nQuadSegs, dTolerance, preserveTopology, bOnlyEdges, dfMaxLength)
 }
 
-CPL_geos_op2 <- function(op, sfc, sf0) {
-    .Call('sf_CPL_geos_op2', PACKAGE = 'sf', op, sfc, sf0)
+CPL_geos_op2 <- function(op, sfcx, sfcy) {
+    .Call('sf_CPL_geos_op2', PACKAGE = 'sf', op, sfcx, sfcy)
 }
 
 CPL_geos_version <- function(b = FALSE) {
@@ -95,14 +95,6 @@ CPL_geos_dist <- function(sfc0, sfc1) {
 
 CPL_geos_relate <- function(sfc0, sfc1) {
     .Call('sf_CPL_geos_relate', PACKAGE = 'sf', sfc0, sfc1)
-}
-
-CPL_geos_init <- function() {
-    invisible(.Call('sf_CPL_geos_init', PACKAGE = 'sf'))
-}
-
-CPL_geos_finish <- function() {
-    invisible(.Call('sf_CPL_geos_finish', PACKAGE = 'sf'))
 }
 
 CPL_hex_to_raw <- function(cx) {

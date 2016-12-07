@@ -156,9 +156,9 @@ $(document).ready(function () {
 <pre class="r"><code>library(sf)
 fname &lt;- system.file(&quot;shape/nc.shp&quot;, package=&quot;sf&quot;)
 fname
-## [1] &quot;/tmp/RtmpVCdz9a/Rinst1ee327138d36/sf/shape/nc.shp&quot;
+## [1] &quot;/tmp/Rtmp4DpeGZ/Rinst5af7241332ca/sf/shape/nc.shp&quot;
 nc &lt;- st_read(fname)
-## Reading layer `nc' from data source `/tmp/RtmpVCdz9a/Rinst1ee327138d36/sf/shape/nc.shp' using driver `ESRI Shapefile'
+## Reading layer `nc' from data source `/tmp/Rtmp4DpeGZ/Rinst5af7241332ca/sf/shape/nc.shp' using driver `ESRI Shapefile'
 ## converted into: MULTIPOLYGON
 ## Simple feature collection with 100 features and 14 fields
 ## geometry type:  MULTIPOLYGON
@@ -170,7 +170,7 @@ nc &lt;- st_read(fname)
 <p>We see here that a single argument is used to find both the datasource and the layer. This works when the datasource contains a single layer. In case the number of layers is zero (e.g. a database with no tables), an error message is given. In case there are more layers than one, the first layer is returned, but a message and a warning are given:</p>
 <pre class="r"><code>&gt; st_read(&quot;PG:dbname=postgis&quot;)
 Multiple layers are present in data source PG:dbname=postgis, reading layer `meuse'.
-Use `st_list' to list all layer names and their type in a data source.
+Use `st_layers' to list all layer names and their type in a data source.
 Set the `layer' argument in `st_read' to read a particular layer.
 Reading layer `meuse' from data source `PG:dbname=postgis' using driver `PostgreSQL'
 Simple feature collection with 155 features and 12 fields
@@ -182,8 +182,8 @@ proj4string:    +proj=sterea +lat_0=52.15616055555555 ...
 Warning message:
 In eval(substitute(expr), envir, enclos) :
   automatically selected the first layer in a data source containing more than one.</code></pre>
-<p>The message points to the <code>st_list</code> command, which lists the driver and layers in a datasource, e.g.</p>
-<pre class="r"><code>&gt; st_list(&quot;PG:dbname=postgis&quot;)
+<p>The message points to the <code>st_layers</code> command, which lists the driver and layers in a datasource, e.g.</p>
+<pre class="r"><code>&gt; st_layers(&quot;PG:dbname=postgis&quot;)
 Driver: PostgreSQL 
 Available layers:
   layer_name geometry_type features fields
@@ -195,7 +195,7 @@ Available layers:
 &gt; </code></pre>
 <p>A particular layer can now be read by e.g.</p>
 <pre class="r"><code>st_read(&quot;PG:dbname=postgis&quot;, &quot;sids&quot;)</code></pre>
-<p><code>st_list</code> has the option to count the number of features in case these are missing: some datasources (e.g. OSM xml files) do not report the number of features, but need to be completely read for this. GDAL allows for more than one geometry column for a feature layer; these are reported by <code>st_list</code>.</p>
+<p><code>st_layers</code> has the option to count the number of features in case these are missing: some datasources (e.g. OSM xml files) do not report the number of features, but need to be completely read for this. GDAL allows for more than one geometry column for a feature layer; these are reported by <code>st_layers</code>.</p>
 <p>In case a layer contains only geometries but no attributes (fields), <code>st_read</code> still returns an <code>sf</code> object, with a geometry column only.</p>
 <p>We see that GDAL automatically detects the driver (file format) of the datasource, by trying them all in turn.</p>
 <p><code>st_read</code> follows the conventions of base R, similar to how it reads tabular data into <code>data.frame</code>s. This means that character data are read, by default as <code>factor</code>s. For those who insist on retrieving character data as character vectors, the argument <code>stringsAsFactors</code> can be set to <code>FALSE</code>:</p>
@@ -203,7 +203,7 @@ Available layers:
 <p>Alternatively, a user can set the global option <code>stringsAsFactors</code>, and this will have the same effect:</p>
 <pre class="r"><code>options(stringsAsFactors = FALSE)
 st_read(fname)
-## Reading layer `nc' from data source `/tmp/RtmpVCdz9a/Rinst1ee327138d36/sf/shape/nc.shp' using driver `ESRI Shapefile'
+## Reading layer `nc' from data source `/tmp/Rtmp4DpeGZ/Rinst5af7241332ca/sf/shape/nc.shp' using driver `ESRI Shapefile'
 ## converted into: MULTIPOLYGON
 ## Simple feature collection with 100 features and 14 fields
 ## geometry type:  MULTIPOLYGON
@@ -216,13 +216,13 @@ st_read(fname)
 <h3>Using st_write</h3>
 <p>To write a simple features object to a file, we need at least two arguments, the object and a filename:</p>
 <pre class="r"><code>st_write(nc, &quot;nc.shp&quot;)
-## Writing layer `nc.shp' to data source `/tmp/RtmpVCdz9a/Rbuild1ee333e4453/sf/vignettes/nc.shp' using driver `ESRI Shapefile'
+## Writing layer `nc.shp' to data source `/tmp/Rtmp4DpeGZ/Rbuild5af72d9b1312/sf/vignettes/nc.shp' using driver `ESRI Shapefile'
 ## features:       100
 ## fields:         14
 ## geometry type:  MULTIPOLYGON</code></pre>
 <p>The file name is taken as the data source name. The default for the layer name is the basename (filename without path) of the the data source name. For this, <code>st_write</code> needs to guess the driver. The above command is, for instance, equivalent to:</p>
 <pre class="r"><code>st_write(nc, dsn = &quot;nc.shp&quot;, layer = &quot;nc.shp&quot;, driver = &quot;ESRI Shapefile&quot;)
-## Writing layer `nc.shp' to data source `/tmp/RtmpVCdz9a/Rbuild1ee333e4453/sf/vignettes/nc.shp' using driver `ESRI Shapefile'
+## Writing layer `nc.shp' to data source `/tmp/Rtmp4DpeGZ/Rbuild5af72d9b1312/sf/vignettes/nc.shp' using driver `ESRI Shapefile'
 ## features:       100
 ## fields:         14
 ## geometry type:  MULTIPOLYGON</code></pre>

@@ -165,7 +165,7 @@ Rcpp::List CPL_read_ogr(Rcpp::CharacterVector datasource, Rcpp::CharacterVector 
 				if (! quiet) {
 					Rcpp::Rcout << "Multiple layers are present in data source " << datasource[0] << ", ";
 					Rcpp::Rcout << "reading layer `" << layer[0] << "'." << std::endl;
-					Rcpp::Rcout << "Use `st_list' to list all layer names and their type in a data source." << std::endl;
+					Rcpp::Rcout << "Use `st_layers' to list all layer names and their type in a data source." << std::endl;
 					Rcpp::Rcout << "Set the `layer' argument in `st_read' to read a particular layer." << std::endl;
 				}
 				Rcpp::Function warning("warning");
@@ -223,6 +223,7 @@ Rcpp::List CPL_read_ogr(Rcpp::CharacterVector datasource, Rcpp::CharacterVector 
 					Rcpp::NumericVector nv;
 					nv = out[iField];
 					nv[i] = (double) poFeature->GetFieldAsInteger64(iField);
+					// OR: poFeature->GetFieldAsString(iField);
 					if (nv[i] > dbl_max_int64)
 						warn_int64 = true;
 					}

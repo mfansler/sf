@@ -10,7 +10,7 @@ nc <- st_read(fname)
 ## ----eval=FALSE----------------------------------------------------------
 #  > st_read("PG:dbname=postgis")
 #  Multiple layers are present in data source PG:dbname=postgis, reading layer `meuse'.
-#  Use `st_list' to list all layer names and their type in a data source.
+#  Use `st_layers' to list all layer names and their type in a data source.
 #  Set the `layer' argument in `st_read' to read a particular layer.
 #  Reading layer `meuse' from data source `PG:dbname=postgis' using driver `PostgreSQL'
 #  Simple feature collection with 155 features and 12 fields
@@ -24,7 +24,7 @@ nc <- st_read(fname)
 #    automatically selected the first layer in a data source containing more than one.
 
 ## ----eval=FALSE----------------------------------------------------------
-#  > st_list("PG:dbname=postgis")
+#  > st_layers("PG:dbname=postgis")
 #  Driver: PostgreSQL
 #  Available layers:
 #    layer_name geometry_type features fields

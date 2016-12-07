@@ -285,6 +285,8 @@ p * rot(pi)
 <p>Just to make the point, we can for instance rotate the counties of North Carolina 90 degrees clockwise around their centroid, and shrink them to 75% of their original size:</p>
 <pre class="r"><code>nc = st_read(system.file(&quot;shape/nc.shp&quot;, package=&quot;sf&quot;), quiet = TRUE)
 cntrd = st_centroid(nc)
+## Warning in st_centroid(nc): st_centroid does not give correct centroids for
+## longitude/latitude data.
 nc2 = (st_geometry(nc) - cntrd) * rot(pi/2) * .75 + cntrd
 plot(nc, border = 'grey')
 plot(nc2, add = TRUE)
@@ -403,8 +405,8 @@ plot(y, border = 'green', add = TRUE)</code></pre>
 <pre class="r"><code>b0 = st_polygon(list(rbind(c(-1,-1), c(1,-1), c(1,1), c(-1,1), c(-1,-1))))
 b1 = st_polygon(list(rbind(c(-1,-1), c(1,-1), c(1,1), c(0,-1), c(-1,-1))))
 st_is_valid(st_sfc(b0,b1))
-## Warning in CPL_geos_is_valid(st_geometry(x)): GDAL Message 1: Self-
-## intersection at or near point -1 -1
+## Warning in eval(substitute(expr), envir, enclos): Self-intersection at or
+## near point -1 -1
 ## [1]  TRUE FALSE</code></pre>
 <p>and <code>st_is_simple</code> whether line geometries are simple:</p>
 <pre class="r"><code>s = st_sfc(st_linestring(rbind(c(0,0), c(1,1))), 
