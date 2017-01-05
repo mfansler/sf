@@ -74,12 +74,9 @@ transmute_.sf <- function(.data, ..., .dots) {
 #' nc %>% select(SID74, SID79, geometry) %>% names()
 #' nc %>% select(SID74, SID79) %>% class()
 #' nc %>% select(SID74, SID79, geometry) %>% class()
-select_.sf <- function(.data, ..., .dots) {
-	ret = NextMethod()
-	if (any(sapply(ret, function(x) inherits(x, "sfc"))))
-		st_as_sf(ret)
-	else
-		structure(ret, class = class(ret)[-1])
+select_.sf <- function(.data, ..., .dots=NULL) {
+  .dots <- c(.dots, attr(.data, "sf_column")) 
+  NextMethod()
 }
 
 #' @name dplyr
@@ -155,7 +152,9 @@ gather_.sf <- function(data, key_col, value_col, gather_cols, na.rm = FALSE,
 spread_.sf <- function(data, key_col, value_col, fill = NA, 
 		convert = FALSE, drop = TRUE, sep = NULL) {
 	sf_column = attr(data, "sf_column")
-	structure(NextMethod(), sf_column = sf_column)
+	st_geometry(data) = NULL # drop
+	#structure(NextMethod(), sf_column = sf_column)
+	NextMethod()
 }
 
 ## tibble methods:

@@ -28,14 +28,14 @@ class(nc.no_sf)
 nc.geom[[1]]
 
 ## ----fig.height=3--------------------------------------------------------
-par(mar = rep(0,4))
-plot(nc)
-plot(nc[1,], col = 'red', add = TRUE)
+par(mar = c(0,0,1,0))
+plot(nc[1])
+plot(nc[1,1], col = 'grey', add = TRUE)
 
 ## ----fig.height=3.5------------------------------------------------------
-par(mar = rep(0,4))
+par(mar = c(0,0,1,0))
 (w <- which(sapply(nc.geom, length) > 1))
-plot(nc[w,], col = 2:7)
+plot(nc[w,1], col = 2:7)
 
 ## ------------------------------------------------------------------------
 nc.geom[[4]][[2]][[1]][1:3,]
@@ -185,7 +185,8 @@ all.equal(nc, nc2)
 st_is_valid(nc[1:2,])
 
 ## ------------------------------------------------------------------------
-st_distance(nc[c(1,4,22),], nc[c(1, 33,55,56),])
+x = st_transform(nc, 32119)
+st_distance(x[c(1,4,22),], x[c(1, 33,55,56),])
 st_relate(nc[1:5,], nc[1:4,])
 
 ## ------------------------------------------------------------------------
@@ -194,10 +195,11 @@ st_intersects(nc[1:5,], nc[1:4,], sparse = FALSE)
 
 ## ----fig.height=3--------------------------------------------------------
 sel <- c(1,5,14)
-buf <- st_buffer(nc.web_mercator[sel,], dist = 30000)
+geom = st_geometry(nc.web_mercator[sel,])
+buf <- st_buffer(geom, dist = 30000)
 plot(buf, border = 'red')
-plot(nc.web_mercator[sel,], add = TRUE)
-plot(st_buffer(nc.web_mercator[sel,], -5000), add = TRUE, border = 'blue')
+plot(geom, add = TRUE)
+plot(st_buffer(geom, -5000), add = TRUE, border = 'blue')
 
 ## ----fig.height=3--------------------------------------------------------
 par(mar = rep(0,4))

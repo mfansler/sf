@@ -55,7 +55,7 @@ p * rot(pi)
 nc = st_read(system.file("shape/nc.shp", package="sf"), quiet = TRUE)
 cntrd = st_centroid(nc)
 nc2 = (st_geometry(nc) - cntrd) * rot(pi/2) * .75 + cntrd
-plot(nc, border = 'grey')
+plot(nc[1], border = 'grey')
 plot(nc2, add = TRUE)
 plot(cntrd, col = 'red', add = TRUE, cex = .5)
 
@@ -83,12 +83,6 @@ s3 <- s1  %>% st_set_crs(NA) %>% st_set_crs(3857)
 ## ------------------------------------------------------------------------
 s3 <- s1 %>% st_transform(3857)
 s3
-
-## ------------------------------------------------------------------------
-st_crs("+proj=longlat +datum=idontknow")
-
-## ------------------------------------------------------------------------
-s3 %>% st_transform("+proj=longlat +datum=idontknow") %>% st_crs()
 
 ## ----figure=TRUE---------------------------------------------------------
 b0 = st_polygon(list(rbind(c(-1,-1), c(1,-1), c(1,1), c(-1,1), c(-1,-1))))

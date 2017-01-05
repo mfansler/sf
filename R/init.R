@@ -1,11 +1,13 @@
-#' @importFrom utils head tail object.size
-#' @importFrom stats na.omit
+#' @importFrom utils head tail object.size str
+#' @importFrom stats runif aggregate
 #' @importFrom tools file_ext file_path_sans_ext
 #' @importFrom methods as slotNames new
 #' @importFrom grid convertUnit current.viewport linesGrob pathGrob pointsGrob polylineGrob unit viewport
 #' @import graphics
 #' @importFrom Rcpp evalCpp
 #' @importFrom DBI dbConnect dbDisconnect dbWriteTable dbGetQuery dbSendQuery dbReadTable
+#' @importFrom units make_unit
+#' @importFrom grDevices rgb
 #' @useDynLib sf
 NULL
 
@@ -46,5 +48,14 @@ setOldClass("sfg")
 
 .onAttach = function(libname, pkgname) {
 	packageStartupMessage(paste0("Linking to GEOS ", CPL_geos_version(), ", GDAL ", 
-		CPL_gdal_version()))
+		CPL_gdal_version(), ", proj.4 ", CPL_proj_version()))
+}
+
+#' provide the external dependencies versions of the libraries linked to sf
+#' 
+#' provide the external dependencies versions of the libraries linked to sf
+#' @export
+sf_extSoftVersion = function() {
+	structure(c(CPL_geos_version(), CPL_gdal_version(), CPL_proj_version()),
+		names = c("GEOS", "GDAL", "proj.4"))
 }
