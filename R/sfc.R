@@ -66,12 +66,13 @@ st_sfc = function(..., crs = NA_crs_, precision = 0.0) {
 			attr(lst, "classes") = sapply(lst, class)[2L,] # Rcpp forces me to do this. Or is it me, allowing a mix?
 		}
 		attr(lst, "single_type") = NULL # clean up
-		if (is.na(crs) && !is.null(attr(lst, "crs")))
-			crs = attr(lst, "crs")
 	}
-	attr(lst, "precision") = precision
-	attr(lst, "bbox") = st_bbox(lst)
-	st_set_crs(lst, crs)
+	if (is.na(crs) && !is.null(attr(lst, "crs")))
+		crs = attr(lst, "crs")
+	if (! missing(precision) || is.null(attr(lst, "precision")))
+		attr(lst, "precision") = precision
+	st_crs(lst) = crs
+	structure(lst, "bbox" = c(st_bbox(lst)))
 }
 
 #' @export
@@ -161,7 +162,7 @@ st_geometry.sfc = function(obj, ...) obj
 #' 
 #' Return geometry type of an object, as a factor
 #' @param x object of class \link{sf} or \link{sfc}
-#' @return returns a factor with the geometry type of each simple feature in x
+#' @return a factor with the geometry type of each simple feature in x
 #' @export
 st_geometry_type = function(x) {
 	x = st_geometry(x)
@@ -186,44 +187,121 @@ st_geometry_type = function(x) {
 		"TRIANGLE"))
 }
 
-#' Drop Z and/or M dimensions from feature geometries
+#' Drop or add Z and/or M dimensions from feature geometries
 #'
 #' Drop Z and/or M dimensions from feature geometries, resetting classes appropriately
 #' @param x object of class \code{sfg}, \code{sfc} or \code{sf}
 #' @param ... ignored
+#' @param drop logical; drop, or (FALSE) add?
+#' @param what character which dimensions to drop or add
+#' @details only combinations \code{drop=TRUE}, \code{what = "ZM"}, and \code{drop=FALSE}, \code{what="Z"} are supported so far. In case \code{add=TRUE}, zero values are added.
 #' @examples
-#' st_drop_zm(st_linestring(matrix(1:32,8)))
+#' st_zm(st_linestring(matrix(1:32,8)))
 #' x = st_sfc(st_linestring(matrix(1:32,8)), st_linestring(matrix(1:8,2)))
-#' st_drop_zm(x)
+#' st_zm(x)
 #' a = st_sf(a = 1:2, geom=x)
-#' st_drop_zm(a)
+#' st_zm(a)
 #' @export
-st_drop_zm <- function(x, ...) UseMethod("st_drop_zm")
+st_zm <- function(x, ..., drop = TRUE, what = "ZM") UseMethod("st_zm")
 
 #' @export
-st_drop_zm.sf <- function(x, ...) {
-	st_geometry(x) = st_drop_zm(st_geometry(x))
+st_zm.sf <- function(x, ..., drop = TRUE, what = "ZM") {
+	st_geometry(x) = st_zm(st_geometry(x), drop = drop, what = what)
 	x
 }
 
 #' @export
-st_drop_zm.sfc <- function(x, ...) {
-	st_sfc(lapply(x, st_drop_zm))
+st_zm.sfc <- function(x, ..., drop = TRUE, what = "ZM") {
+	st_sfc(lapply(x, st_zm, drop = drop, what = what), crs = st_crs(x))
 }
 
 #' @export
-st_drop_zm.sfg <- function(x, ...) {
-	ret = if (is.list(x))
-		lapply(x, st_drop_zm)
-	else if (is.matrix(x))
+st_zm.sfg <- function(x, ..., drop = TRUE, what = "ZM") {
+	if (drop && what == "ZM") {
+		ret = if (is.list(x))
+			lapply(x, st_zm, drop = drop, what = what)
+		else if (is.matrix(x))
+			x[,1:2]
+		else
+			x[1:2]
+		structure(ret, class = c("XY", class(x)[2:3]))
+	} else if (!drop && what == "Z") {
+		ret = if (is.list(x))
+			lapply(x, st_zm, drop = drop, what = what)
+		else if (is.matrix(x))
+			cbind(unclass(x), 0)
+		else
+			c(unclass(x), 0)
+		structure(ret, class = c("XYZ", class(x)[2:3]))
+	} else 
+		stop("this combination of drop and what is not implemented")
+}
+
+#' @export
+st_zm.list <- function(x, ..., drop = TRUE, what = "ZM") 
+	lapply(x, st_zm, drop = drop, what = what)
+
+#' @export
+st_zm.matrix <- function(x, ..., drop = TRUE, what = "ZM")  {
+	if (drop && what == "ZM") {
 		x[,1:2]
-	else
-		x[1:2]
-	structure(ret, class = c("XY", class(x)[2:3]))
+	} else if (!drop && what == "Z") {
+		cbind(unclass(x), 0)
+	} else 
+		stop("this combination of drop and what is not implemented")
+}
+
+#' Get precision
+#' 
+#' @param x object of class \code{sfc} or \code{sf}
+#' @export
+st_precision <- function(x) {
+  UseMethod("st_precision")
 }
 
 #' @export
-st_drop_zm.list <- function(x, ...) lapply(x, st_drop_zm)
+st_precision.sf <- function(x) {
+  x <- st_geometry(x)
+  st_precision(x)
+}
 
 #' @export
-st_drop_zm.matrix <- function(x, ...) x[, 1:2, drop = FALSE]
+st_precision.sfc <- function(x) {
+  attr(x, "precision")
+}
+
+#' Set precision
+#' 
+#' @name st_precision
+#' @param precision numeric; see \link{st_as_binary}
+#' @examples 
+#' x <- st_sfc(st_point(c(pi, pi)))
+#' st_precision(x)
+#' st_precision(x) <- 0.01
+#' st_precision(x)
+#' @export
+st_set_precision <- function(x, precision) {
+    UseMethod("st_set_precision")
+}
+
+st_set_precision.sfc <- function(x, precision) {
+    if (length(precision) != 1) {
+        stop("Precision applies to all dimensions and must be of length 1.", call. = FALSE)
+    }
+    if (is.na(precision) || !is.numeric(precision)) {
+        stop("Precision must be numeric", call. = FALSE)
+    }
+    structure(x, precision = precision)
+}
+
+st_set_precision.sf <- function(x, precision) {
+    st_geometry(x) <- st_set_precision(st_geometry(x), precision)
+    return(x)
+}
+
+#' @name st_precision
+#' @param value precision value
+#' @export
+"st_precision<-" <- function(x, value) {
+    st_set_precision(x, value)
+}

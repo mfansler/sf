@@ -17,16 +17,24 @@ CPL_gdal_version <- function(what = "RELEASE_NAME") {
     .Call('sf_CPL_gdal_version', PACKAGE = 'sf', what)
 }
 
-CPL_crs_pars <- function(p4s) {
-    .Call('sf_CPL_crs_pars', PACKAGE = 'sf', p4s)
-}
-
-CPL_transform <- function(sfc, proj4) {
-    .Call('sf_CPL_transform', PACKAGE = 'sf', sfc, proj4)
+CPL_crs_parameters <- function(p4s) {
+    .Call('sf_CPL_crs_parameters', PACKAGE = 'sf', p4s)
 }
 
 CPL_crs_from_epsg <- function(epsg) {
     .Call('sf_CPL_crs_from_epsg', PACKAGE = 'sf', epsg)
+}
+
+CPL_crs_from_wkt <- function(wkt) {
+    .Call('sf_CPL_crs_from_wkt', PACKAGE = 'sf', wkt)
+}
+
+CPL_roundtrip <- function(sfc) {
+    .Call('sf_CPL_roundtrip', PACKAGE = 'sf', sfc)
+}
+
+CPL_transform <- function(sfc, proj4, epsg) {
+    .Call('sf_CPL_transform', PACKAGE = 'sf', sfc, proj4, epsg)
 }
 
 CPL_crs_from_proj4string <- function(p4s) {
@@ -85,8 +93,8 @@ CPL_geos_is_simple <- function(sfc) {
     .Call('sf_CPL_geos_is_simple', PACKAGE = 'sf', sfc)
 }
 
-CPL_geos_union <- function(sfc) {
-    .Call('sf_CPL_geos_union', PACKAGE = 'sf', sfc)
+CPL_geos_union <- function(sfc, by_feature = FALSE) {
+    .Call('sf_CPL_geos_union', PACKAGE = 'sf', sfc, by_feature)
 }
 
 CPL_geos_op <- function(op, sfc, bufferDist = 0.0, nQuadSegs = 30L, dTolerance = 0.0, preserveTopology = FALSE, bOnlyEdges = 1L, dfMaxLength = 0.0) {

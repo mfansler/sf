@@ -8,23 +8,23 @@
 #' @param quiet logical; suppress info on name, driver, size and spatial reference, or signaling no or multiple layers
 #' @param iGeomField integer; in case of multiple geometry fields, which one to take?
 #' @param type integer; ISO number of desired simple feature type; see details. If left zero, in case of mixed feature geometry types, conversion to the highest numeric type value found will be attempted.
-#' @param promote_to_multi logical; in case of a mix of LineString and MultiLineString, or of Polygon and MultiPolygon, convert all to the Multi variety; defaults to \code{TRUE}
+#' @param promote_to_multi logical; in case of a mix of Point and MultiPoint, or of LineString and MultiLineString, or of Polygon and MultiPolygon, convert all to the Multi variety; defaults to \code{TRUE}
 #' @param stringsAsFactors logical; logical: should character vectors be converted to factors?  The `factory-fresh' default is \code{TRUE}, but this can be changed by setting \code{options(stringsAsFactors = FALSE)}.  
 #' @param int64_as_string logical; if TRUE, Int64 attributes are returned as string; if FALSE, they are returned as double and a warning is given when precision is lost (i.e., values are larger than 2^53).
 #' @details for iGeomField, see also \url{https://trac.osgeo.org/gdal/wiki/rfc41_multiple_geometry_fields}; for \code{type} values see \url{https://en.wikipedia.org/wiki/Well-known_text#Well-known_binary}, but note that not every target value may lead to succesful conversion. The typical conversion from POLYGON (3) to MULTIPOLYGON (6) should work; the other way around (type=3), secondary rings from MULTIPOLYGONS may be dropped without warnings. 
 #' @return object of class \link{sf} when a layer was succesfully read; in case argument \code{layer} is missing and data source \code{dsn} does not contain a single layer, an object of class \code{sf_layers} is returned with the layer names, each with their geometry type(s). Note that the number of layers may also be zero.
 #' @examples
-#' if (Sys.getenv("USER") %in% c("edzer", "travis")) { # load meuse to postgis
-#'  library(sp)
-#'  example(meuse, ask = FALSE, echo = FALSE)
-#'  st_write(st_as_sf(meuse), "PG:dbname=postgis", "meuse", 
-#'      layer_options = "OVERWRITE=true")
-#'  (s = st_read("PG:dbname=postgis", "meuse"))
-#'  summary(s)
-#' }
-#' # nc = st_read(system.file("gpkg/nc.gpkg", package="sf"))
 #' nc = st_read(system.file("shape/nc.shp", package="sf"))
 #' summary(nc)
+#' 
+#' \dontrun{  
+#' library(sp)
+#' example(meuse, ask = FALSE, echo = FALSE)
+#' st_write(st_as_sf(meuse), "PG:dbname=postgis", "meuse", 
+#'      layer_options = "OVERWRITE=true")
+#' st_meuse = st_read("PG:dbname=postgis", "meuse")
+#' summary(st_meuse)}
+
 #' @name st_read
 #' @note The use of \code{system.file} in examples make sure that examples run regardless where R is installed: typical users will not use \code{system.file} but give the file name directly, either with full path or relative to the current working directory (see \link{getwd}). "Shapefiles" consist of several files with the same basename that reside in the same directory, only one of them having extension \code{.shp}. 
 #' @export
@@ -59,6 +59,15 @@ st_read = function(dsn, layer, ..., options = NULL, quiet = FALSE, iGeomField = 
 		x
 }
 
+#' @name st_read
+#' @export
+#' @details \code{read_st} and \code{write_sf} are aliases for \code{st_read} and \code{st_write}, respectively.
+read_sf <- function(...) st_read(...)
+
+#' @name st_read
+#' @export
+write_sf <- function(...) st_write(...)
+
 #' Write simple features object to file or database
 #'
 #' Write simple features object to file or database
@@ -66,7 +75,6 @@ st_read = function(dsn, layer, ..., options = NULL, quiet = FALSE, iGeomField = 
 #' @param dsn data source name (interpretation varies by driver - for some drivers, dsn is a file name, but may also be a folder or contain a database name)
 #' @param layer layer name (varies by driver, may be a file name without extension); if layer is missing, the \link{basename} of \code{dsn} is taken.
 #' @param driver character; driver name to be used, if missing, a driver name is guessed from \code{dsn}; \code{st_drivers()} returns the drivers that are available with their properties; links to full driver documentation are found at \url{http://www.gdal.org/ogr_formats.html}.
-#' @param ... ignored
 #' @param dataset_options character; driver dependent dataset creation options; multiple options supported.
 #' @param layer_options character; driver dependent layer creation options; multiple options supported.
 #' @param quiet logical; suppress info on name, driver, size and spatial reference
@@ -74,16 +82,16 @@ st_read = function(dsn, layer, ..., options = NULL, quiet = FALSE, iGeomField = 
 #' @details columns (variables) of a class not supported are dropped with a warning.
 #' @seealso \link{st_drivers}
 #' @examples
-#' if (Sys.getenv("USER") %in% c("edzer", "travis")) { # load meuse to postgis
-#'  library(sp)
-#'  example(meuse, ask = FALSE, echo = FALSE)
-#'  st_write(st_as_sf(meuse), "PG:dbname=postgis", "meuse_sf",
-#'    layer_options = c("OVERWRITE=yes", "LAUNDER=true"))
-#'  demo(nc, ask = FALSE)
-#'  st_write(nc, "PG:dbname=postgis", "sids", layer_options = "OVERWRITE=true")
-#' }
 #' nc = st_read(system.file("shape/nc.shp", package="sf"))
 #' st_write(nc, "nc.shp")
+#' 
+#' \dontrun{
+#' library(sp)
+#' example(meuse, ask = FALSE, echo = FALSE)
+#' st_write(st_as_sf(meuse), "PG:dbname=postgis", "meuse_sf",
+#'     layer_options = c("OVERWRITE=yes", "LAUNDER=true"))
+#' demo(nc, ask = FALSE)
+#' st_write(nc, "PG:dbname=postgis", "sids", layer_options = "OVERWRITE=true")}
 #' @export
 st_write = function(obj, dsn, layer = basename(dsn), driver = guess_driver_can_write(dsn), ..., 
 		dataset_options = NULL, layer_options = NULL, quiet = FALSE, factorsAsCharacter = TRUE) {
@@ -186,7 +194,7 @@ guess_driver = function(dsn) {
   
 	# find match: try extension first
 	drv = extension_map[tolower(tools::file_ext(dsn))]
-	if (any(grep(":", gsub(":/", "/", dsn)))) {
+	if (any(grep(":", gsub(":[/\\]", "/", dsn)))) {
 			drv = prefix_map[tolower(strsplit(dsn, ":")[[1]][1])]
 	}
 	drv <- unlist(drv)
@@ -245,40 +253,40 @@ is_driver_can = function(drv, drivers = st_drivers(), operation = "write") {
 #' Map extension to driver
 #' @docType data
 extension_map <- list(
-     "bna" = "BNA",
-     "csv" = "CSV",
-     "e00" = "AVCE00",
-     "gdb" = "OpenFileGDB",
-     "geojson" = "GeoJSON",
-     "gml" = "GML",
-     "gmt" = "GMT",
-     "gpkg" = "GPKG",
-     "gps" = "GPSBabel",
-     "gtm" = "GPSTrackMaker",   
-     "gxt" = "Geoconcept",
-     "jml" = "JML",
-     "map" = "WAsP",
-     "mdb" = "Geomedia",
-     "nc" = "netCDF",
-     "ods" = "ODS",
-     "osm" = "OSM",
-     "pbf" = "OSM",
-     "shp" = "ESRI Shapefile",
-     "sqlite" = "SQLite",
-     "vdv" = "VDV",
-     "xls" = "xls",
-     "xlsx" = "XLSX")
+        "bna" = "BNA",
+        "csv" = "CSV",
+        "e00" = "AVCE00",
+        "gdb" = "OpenFileGDB",
+        "geojson" = "GeoJSON",
+        "gml" = "GML",
+        "gmt" = "GMT",
+        "gpkg" = "GPKG",
+        "gps" = "GPSBabel",
+        "gtm" = "GPSTrackMaker",   
+        "gxt" = "Geoconcept",
+        "jml" = "JML",
+        "map" = "WAsP",
+        "mdb" = "Geomedia",
+        "nc" = "netCDF",
+        "ods" = "ODS",
+        "osm" = "OSM",
+        "pbf" = "OSM",
+        "shp" = "ESRI Shapefile",
+        "sqlite" = "SQLite",
+        "vdv" = "VDV",
+        "xls" = "xls",
+        "xlsx" = "XLSX")
 
 #' Map prefix to driver
 #' @docType data
 prefix_map <- list(
-  "couchdb" = "CouchDB",
-  "db2odbc" = "DB2ODBC",
-  "dods" = "DODS",
-  "gft" = "GFT",
-  "mssql" = "MSSQLSpatial",
-  "mysql" = "MySQL",
-  "oci" = "OCI",
-  "odbc" = "ODBC",
-  "pg" = "PostgreSQL",
-  "sde" = "SDE") 
+        "couchdb" = "CouchDB",
+        "db2odbc" = "DB2ODBC",
+        "dods" = "DODS",
+        "gft" = "GFT",
+        "mssql" = "MSSQLSpatial",
+        "mysql" = "MySQL",
+        "oci" = "OCI",
+        "odbc" = "ODBC",
+        "pg" = "PostgreSQL",
+        "sde" = "SDE") 

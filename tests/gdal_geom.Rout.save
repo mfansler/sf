@@ -15,14 +15,13 @@ Type 'demo()' for some demos, 'help()' for on-line help, or
 'help.start()' for an HTML browser interface to help.
 Type 'q()' to quit R.
 
-> options(warn = 2)
 > suppressPackageStartupMessages(library(sf))
 > 
 > nc = st_read(system.file("shape/nc.shp", package="sf"), "nc", crs = 4267,
-+ 	relation_to_geometry = c(AREA = "lattice", PERIMETER = "lattice", CNTY_ = "entity",
-+ 		CNTY_ID = "entity", NAME = "entity", FIPS = "entity", FIPSNO = "entity",
-+ 		CRESS_ID = "entity", BIR74 = "lattice", SID74 = "lattice", NWBIR74 = "lattice",
-+ 		BIR79 = "lattice", SID79 = "lattice", NWBIR79  = "lattice"), quiet = TRUE)
++ 	agr = c(AREA = "aggregate", PERIMETER = "aggregate", CNTY_ = "identity",
++ 		CNTY_ID = "identity", NAME = "identity", FIPS = "identity", FIPSNO = "identity",
++ 		CRESS_ID = "identity", BIR74 = "aggregate", SID74 = "aggregate", NWBIR74 = "aggregate",
++ 		BIR79 = "aggregate", SID79 = "aggregate", NWBIR79  = "aggregate"), quiet = TRUE)
 > 
 > st_is_valid(nc)
   [1] TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE
@@ -61,7 +60,7 @@ Type 'q()' to quit R.
 > x = st_segmentize(nc_tr, 5e4)
 > 
 > try(x <- st_segmentize(nc_tr, -0.1))
-Error in CPL_gdal_segmentize(st_geometry(x), dfMaxLength) : 
+Error in CPL_gdal_segmentize(x, dfMaxLength) : 
   argument dfMaxLength should be positive
 
 > 
@@ -70,23 +69,37 @@ Error in CPL_gdal_segmentize(st_geometry(x), dfMaxLength) :
 > a = nc[1:5,]
 > b = nc[4:10,]
 > 
-> x = st_intersection(a[1,] ,b)
+> x <- st_intersection(a[1,] ,b)
+Warning message:
+attribute variables are assumed to be spatially constant throughout all geometries 
 > 
 > u = st_union(b) 
 > 
 > x <- st_intersection(st_geometry(a), st_geometry(u))
 > 
 > x = st_union(a[1,], b)
+Warning message:
+attribute variables are assumed to be spatially constant throughout all geometries 
 > 
 > x = st_union(a, st_union(b))
+Warning message:
+attribute variables are assumed to be spatially constant throughout all geometries 
 > 
 > x = st_difference(a[1,], b)
+Warning message:
+attribute variables are assumed to be spatially constant throughout all geometries 
 > 
 > x = st_difference(a, st_union(b))
+Warning message:
+attribute variables are assumed to be spatially constant throughout all geometries 
 > 
 > x = st_sym_difference(a[1,], b)
+Warning message:
+attribute variables are assumed to be spatially constant throughout all geometries 
 > 
 > x = st_sym_difference(a, st_union(b))
+Warning message:
+attribute variables are assumed to be spatially constant throughout all geometries 
 > 
 > x = st_drivers()
 > cat(paste("GDAL has", nrow(x), "drivers\n"))
@@ -293,13 +306,30 @@ integer(0)
 [1] POINT      LINESTRING
 18 Levels: GEOMETRY POINT LINESTRING POLYGON MULTIPOINT ... TRIANGLE
 > 
-> st_drop_zm(list(st_point(1:3), st_linestring(matrix(1:6,2,3))))
+> st_zm(list(st_point(1:3), st_linestring(matrix(1:6,2,3))))
 [[1]]
-POINT(1 2) 
+POINT(1 2)
 
 [[2]]
-LINESTRING(1 3, 2 4) 
+LINESTRING(1 3, 2 4)
 
+> 
+> st_zm(list(st_point(1:2), st_linestring(matrix(1:6,3,2))), add = TRUE, "Z")
+[[1]]
+POINT(1 2)
+
+[[2]]
+LINESTRING(1 4, 2 5, 3 6)
+
+> 
+> st_transform(st_sfc(st_point(c(0,0)), crs=4326), st_crs("+proj=geocent"))
+Geometry set for 1 feature 
+geometry type:  POINT
+dimension:      XYZ
+bbox:           xmin: 6378137 ymin: 0 xmax: 6378137 ymax: 0
+epsg (SRID):    NA
+proj4string:    +proj=geocent +ellps=WGS84 +units=m +no_defs
+POINTZ(6378137 0 0)
 > 
 > cbind(st_area(nc_tr[1:5,]), a$AREA)
            [,1]  [,2]
@@ -326,15 +356,9 @@ Error : inherits(x, "sfc_LINESTRING") || inherits(x, "sfc_MULTILINESTRING") is n
 > 
 > # adds the (0.5 0.5) node:
 > st_union(st_multilinestring(list(rbind(c(0,0),c(1,1)), rbind(c(0,1), c(1,0)))))
-Geometry set for 1 feature 
-geometry type:  MULTILINESTRING
-dimension:      XY
-bbox:           xmin: 0 ymin: 0 xmax: 1 ymax: 1
-epsg (SRID):    NA
-proj4string:    NA
-MULTILINESTRING((0 0, 0.5 0.5), (0.5 0.5, 1 1),... 
+MULTILINESTRING((0 0, 0.5 0.5), (0.5 0.5, 1 1), (0 1, 0.5 0.5), (0.5 0.5, 1 0))
 > 
 > 
 > proc.time()
    user  system elapsed 
-  0.772   0.020   0.788 
+  0.560   0.036   0.593 

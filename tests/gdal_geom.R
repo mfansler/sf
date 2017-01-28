@@ -1,11 +1,10 @@
-options(warn = 2)
 suppressPackageStartupMessages(library(sf))
 
 nc = st_read(system.file("shape/nc.shp", package="sf"), "nc", crs = 4267,
-	relation_to_geometry = c(AREA = "lattice", PERIMETER = "lattice", CNTY_ = "entity",
-		CNTY_ID = "entity", NAME = "entity", FIPS = "entity", FIPSNO = "entity",
-		CRESS_ID = "entity", BIR74 = "lattice", SID74 = "lattice", NWBIR74 = "lattice",
-		BIR79 = "lattice", SID79 = "lattice", NWBIR79  = "lattice"), quiet = TRUE)
+	agr = c(AREA = "aggregate", PERIMETER = "aggregate", CNTY_ = "identity",
+		CNTY_ID = "identity", NAME = "identity", FIPS = "identity", FIPSNO = "identity",
+		CRESS_ID = "identity", BIR74 = "aggregate", SID74 = "aggregate", NWBIR74 = "aggregate",
+		BIR79 = "aggregate", SID79 = "aggregate", NWBIR79  = "aggregate"), quiet = TRUE)
 
 st_is_valid(nc)
 
@@ -36,7 +35,7 @@ x = st_centroid(nc_tr)
 a = nc[1:5,]
 b = nc[4:10,]
 
-x = st_intersection(a[1,] ,b)
+x <- st_intersection(a[1,] ,b)
 
 u = st_union(b) 
 
@@ -85,7 +84,11 @@ st_equals_exact(a, b, 0.01)
 
 st_geometry_type(st_sfc(st_point(1:2), st_linestring(matrix(1:4,2,2))))
 
-st_drop_zm(list(st_point(1:3), st_linestring(matrix(1:6,2,3))))
+st_zm(list(st_point(1:3), st_linestring(matrix(1:6,2,3))))
+
+st_zm(list(st_point(1:2), st_linestring(matrix(1:6,3,2))), add = TRUE, "Z")
+
+st_transform(st_sfc(st_point(c(0,0)), crs=4326), st_crs("+proj=geocent"))
 
 cbind(st_area(nc_tr[1:5,]), a$AREA)
 

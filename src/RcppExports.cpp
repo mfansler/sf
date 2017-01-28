@@ -46,26 +46,14 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// CPL_crs_pars
-Rcpp::List CPL_crs_pars(std::string p4s);
-RcppExport SEXP sf_CPL_crs_pars(SEXP p4sSEXP) {
+// CPL_crs_parameters
+Rcpp::List CPL_crs_parameters(std::string p4s);
+RcppExport SEXP sf_CPL_crs_parameters(SEXP p4sSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< std::string >::type p4s(p4sSEXP);
-    rcpp_result_gen = Rcpp::wrap(CPL_crs_pars(p4s));
-    return rcpp_result_gen;
-END_RCPP
-}
-// CPL_transform
-Rcpp::List CPL_transform(Rcpp::List sfc, Rcpp::CharacterVector proj4);
-RcppExport SEXP sf_CPL_transform(SEXP sfcSEXP, SEXP proj4SEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< Rcpp::List >::type sfc(sfcSEXP);
-    Rcpp::traits::input_parameter< Rcpp::CharacterVector >::type proj4(proj4SEXP);
-    rcpp_result_gen = Rcpp::wrap(CPL_transform(sfc, proj4));
+    rcpp_result_gen = Rcpp::wrap(CPL_crs_parameters(p4s));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -77,6 +65,41 @@ BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< int >::type epsg(epsgSEXP);
     rcpp_result_gen = Rcpp::wrap(CPL_crs_from_epsg(epsg));
+    return rcpp_result_gen;
+END_RCPP
+}
+// CPL_crs_from_wkt
+Rcpp::List CPL_crs_from_wkt(Rcpp::CharacterVector wkt);
+RcppExport SEXP sf_CPL_crs_from_wkt(SEXP wktSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::CharacterVector >::type wkt(wktSEXP);
+    rcpp_result_gen = Rcpp::wrap(CPL_crs_from_wkt(wkt));
+    return rcpp_result_gen;
+END_RCPP
+}
+// CPL_roundtrip
+Rcpp::List CPL_roundtrip(Rcpp::List sfc);
+RcppExport SEXP sf_CPL_roundtrip(SEXP sfcSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::List >::type sfc(sfcSEXP);
+    rcpp_result_gen = Rcpp::wrap(CPL_roundtrip(sfc));
+    return rcpp_result_gen;
+END_RCPP
+}
+// CPL_transform
+Rcpp::List CPL_transform(Rcpp::List sfc, Rcpp::CharacterVector proj4, Rcpp::IntegerVector epsg);
+RcppExport SEXP sf_CPL_transform(SEXP sfcSEXP, SEXP proj4SEXP, SEXP epsgSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::List >::type sfc(sfcSEXP);
+    Rcpp::traits::input_parameter< Rcpp::CharacterVector >::type proj4(proj4SEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type epsg(epsgSEXP);
+    rcpp_result_gen = Rcpp::wrap(CPL_transform(sfc, proj4, epsg));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -258,13 +281,14 @@ BEGIN_RCPP
 END_RCPP
 }
 // CPL_geos_union
-Rcpp::List CPL_geos_union(Rcpp::List sfc);
-RcppExport SEXP sf_CPL_geos_union(SEXP sfcSEXP) {
+Rcpp::List CPL_geos_union(Rcpp::List sfc, bool by_feature);
+RcppExport SEXP sf_CPL_geos_union(SEXP sfcSEXP, SEXP by_featureSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< Rcpp::List >::type sfc(sfcSEXP);
-    rcpp_result_gen = Rcpp::wrap(CPL_geos_union(sfc));
+    Rcpp::traits::input_parameter< bool >::type by_feature(by_featureSEXP);
+    rcpp_result_gen = Rcpp::wrap(CPL_geos_union(sfc, by_feature));
     return rcpp_result_gen;
 END_RCPP
 }

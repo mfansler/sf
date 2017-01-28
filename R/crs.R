@@ -1,15 +1,3 @@
-#' @name st_crs
-#' @details
-#' \code{NA_crs_} is the \code{crs} object with missing values for epsg and proj4string.
-#' @export
-NA_crs_ = structure(list(epsg = NA_integer_, proj4string = NA_character_), class = "crs")
-
-#' @export
-#' @method is.na crs
-is.na.crs = function(x) {
-	is.na(x$epsg) && is.na(x$proj4string) 
-}
-
 # this function establishes whether two crs objects are semantically identical. This is
 # the case when: (1) they are completely identical, or (2) they have identical proj4string
 # but one of them has a missing epsg ID.
@@ -39,10 +27,11 @@ Ops.crs <- function(e1, e2) {
 #'
 #' Retrieve coordinate reference system from sf or sfc object
 #' @name st_crs
-#' @param x object of class \link{sf} or \link{sfc}
+#' @param x numeric, character, or object of class \link{sf} or \link{sfc}
 #' @param ... ignored
 #' @export
-#' @details the *crs functions get, set or replace the \code{crs} attribute of a simple feature geometry
+#' @return if \code{x} is numeric, return \code{crs} object for SRID \code{x}; if \code{x} is character, return \code{crs} object for proj4string \code{x}; if \code{wkt} is given, return \code{crs} object for well-known-text representation \code{wkt}; if \code{x} is of class \code{sf} or \code{sfc}, return its \code{crs} object.
+#' @details the *crs functions create, get, set or replace the \code{crs} attribute of a simple feature geometry
 #' list-column. This attribute is of class \code{crs}, and is a list consisting of epsg (integer epsg
 #' code) and proj4string (character). 
 #' Two objects of class \code{crs} are semantically identical when: (1) they are completely identical, or 
@@ -64,11 +53,25 @@ st_crs.numeric = function(x, ...) make_crs(x)
 
 #' @name st_crs
 #' @export
-st_crs.character = function(x, ...) make_crs(x)
+#' @param wkt character well-known-text representation of the crs
+st_crs.character = function(x, ..., wkt) {
+	if (missing(wkt))
+		make_crs(x)
+	else
+		make_crs(wkt, wkt = TRUE)
+}
 
 #' @name st_crs
 #' @export
 st_crs.sfc = function(x, ...) attr(x, "crs")
+
+#' @name st_crs
+#' @export
+st_crs.bbox = function(x, ...) attr(x, "crs")
+
+#' @name st_crs
+#' @export
+st_crs.crs = function(x, ...) x
 
 #' @export
 st_crs.default = function(x, ...) NA_crs_
@@ -89,10 +92,10 @@ st_crs.default = function(x, ...) NA_crs_
 
 #' @name st_crs
 #' @examples
-#'  sfc = st_sfc(st_point(c(0,0)), st_point(c(1,1)))
-#'  sf = st_sf(a = 1:2, geom = sfc)
-#'  st_crs(sf) = 4326
-#'  st_geometry(sf)
+#' sfc = st_sfc(st_point(c(0,0)), st_point(c(1,1)))
+#' sf = st_sf(a = 1:2, geom = sfc)
+#' st_crs(sf) = 4326
+#' st_geometry(sf)
 #' @export
 `st_crs<-.sf` = function(x, value) {
 	st_crs(x[[ attr(x, "sf_column") ]]) = value
@@ -105,8 +108,10 @@ valid_proj4string = function(p4s) {
 }
 
 # return crs object from crs, integer, or character string
-make_crs = function(x) {
-	if (is.na(x))
+make_crs = function(x, wkt = FALSE) {
+	if (wkt)
+		CPL_crs_from_wkt(x)
+	else if (is.na(x))
 		NA_crs_
 	else if (inherits(x, "crs"))
 		x
@@ -123,9 +128,9 @@ make_crs = function(x) {
 
 #' @name st_crs
 #' @examples
-#'  sfc = st_sfc(st_point(c(0,0)), st_point(c(1,1)))
-#'  st_crs(sfc) = 4326
-#'  sfc
+#' sfc = st_sfc(st_point(c(0,0)), st_point(c(1,1)))
+#' st_crs(sfc) = 4326
+#' sfc
 #' @export
 `st_crs<-.sfc` = function(x, value) {
 
@@ -147,7 +152,7 @@ make_crs = function(x) {
 #' @examples
 #' sfc = st_sfc(st_point(c(0,0)), st_point(c(1,1)))
 #' library(dplyr)
-#' x <- sfc %>% st_set_crs(4326) %>% st_transform(3857)
+#' x = sfc %>% st_set_crs(4326) %>% st_transform(3857)
 #' x
 #' @export
 st_set_crs = function(x, value) {
@@ -169,9 +174,10 @@ st_is_longlat = function(x) {
 		length(grep("+proj=longlat", crs$proj4string)) > 0
 }
 
-crs_pars = function(x) {
-	ret = structure(CPL_crs_pars(x$proj4string), 
-		names = c("SemiMajor", "InvFlattening", "units_gdal", "IsVertical"))
+crs_parameters = function(x) {
+	stopifnot(!is.na(x))
+	ret = structure(CPL_crs_parameters(x$proj4string), 
+		names = c("SemiMajor", "InvFlattening", "units_gdal", "IsVertical", "WktPretty", "Wkt"))
 	ret$SemiMajor = ret$SemiMajor * make_unit("m")
 	ret$ud_unit = switch(ret$units_gdal,
 		"Meter"                = make_unit("m"),
@@ -181,3 +187,28 @@ crs_pars = function(x) {
 		stop("unknown unit: please file an issue at http://github.com/edzer/sfr/"))
 	ret
 }
+
+#' @name st_as_text
+#' @param pretty logical; if TRUE, print human-readable well-known-text representation of a coordinate reference system
+#' @export
+st_as_text.crs = function(x, ..., pretty = FALSE) {
+	if (pretty)
+		crs_parameters(x)$WktPretty
+	else
+		crs_parameters(x)$Wkt
+}
+
+
+#' @name st_crs
+#' @details
+#' \code{NA_crs_} is the \code{crs} object with missing values for epsg and proj4string.
+#' @export
+NA_crs_ = structure(list(epsg = NA_integer_, proj4string = NA_character_), class = "crs")
+
+#' @name st_crs
+#' @export
+#' @method is.na crs
+is.na.crs = function(x) {
+  is.na(x$epsg) && is.na(x$proj4string) 
+}
+

@@ -2,11 +2,10 @@
 % Please edit documentation in R/graticule.R
 \name{st_graticule}
 \alias{st_graticule}
-\title{compute graticules and their parameters}
+\title{Compute graticules and their parameters}
 \usage{
 st_graticule(x = c(-180, -90, 180, 90), crs = st_crs(x),
-  datum = st_crs(4326), ..., lon = pretty(st_bbox(box)[c(1, 3)]),
-  lat = pretty(st_bbox(box)[c(2, 4)]), ndiscr = 100)
+  datum = st_crs(4326), ..., lon = NULL, lat = NULL, ndiscr = 100)
 }
 \arguments{
 \item{x}{object of class \code{sf}, \code{sfc} or \code{sfg} or numeric vector with bounding box (minx,miny,maxx,maxy).}
@@ -29,29 +28,33 @@ an object of class \code{sf} with additional attributes describing the type
 see example.
 }
 \description{
-compute graticules and their parameters
+Compute graticules and their parameters
+}
+\section{Use of graticules}{
+
+ In cartographic visualization, the use of graticules is not advised, unless
+ the graphical output will be used for measurement or navigation, or the
+ direction of North is important for the interpretation of the content, or
+ the content is intended to display distortions and artefacts created by 
+ projection. Unnecessary use of graticules only adds visual clutter but 
+ little relevant information. Use of coastlines, administrative boundaries
+ or place names permits most viewers of the output to orient themselves
+ better than a graticule.
 }
 \examples{
-library(sp)
+library(sf)
 library(maps)
 
-m = map('usa', plot = FALSE, fill = TRUE)
-ID0 <- sapply(strsplit(m$names, ":"), function(x) x[1])
-
-library(maptools)
-m <- map2SpatialPolygons(m, IDs=ID0, proj4string = CRS("+init=epsg:4326"))
-
-library(sf)
-
+usa = st_as_sf(map('usa', plot = FALSE, fill = TRUE))
 laea = st_crs("+proj=laea +lat_0=30 +lon_0=-95") # Lambert equal area
-m <- st_transform(st_as_sf(m), laea)
+usa <- st_transform(usa, laea)
 
-bb = st_bbox(m)
+bb = st_bbox(usa)
 bbox = st_linestring(rbind(c( bb[1],bb[2]),c( bb[3],bb[2]),
    c( bb[3],bb[4]),c( bb[1],bb[4]),c( bb[1],bb[2])))
 
-g = st_graticule(m)
-plot(m, xlim = 1.2 * c(-2450853.4, 2186391.9))
+g = st_graticule(usa)
+plot(usa, xlim = 1.2 * c(-2450853.4, 2186391.9))
 plot(g[1], add = TRUE, col = 'grey')
 plot(bbox, add = TRUE)
 points(g$x_start, g$y_start, col = 'red')
@@ -71,6 +74,6 @@ if (g$type[i] == "E" && g$y_end[i] - max(g$y_end) > -1000)
 	text(g[i,"x_end"], g[i,"y_end"], labels = parse(text = g[i,"degree_label"]), 
 		srt = g$angle_end[i] - 90, pos = 3, cex = .7)
 }))
-plot(m, graticule = st_crs(4326), axes = TRUE, lon = seq(-60,-130,by=-10))
+plot(usa, graticule = st_crs(4326), axes = TRUE, lon = seq(-60,-130,by=-10))
 }
 

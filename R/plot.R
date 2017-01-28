@@ -89,7 +89,7 @@ plot.sf <- function(x, y, ..., ncol = 10, col = NULL) {
 		par(opar)
 	} else {
 		if (is.null(col) && ncol(x) == 2)
-			col = sf.colors(ncol, x[[1]])
+			col = sf.colors(ncol, x[[setdiff(names(x), attr(x, "sf_column"))]])
 		if (is.null(col))
 			plot(st_geometry(x), ...)
 		else 
@@ -303,7 +303,8 @@ plot.sfg = function(x, ...) {
 #' @param bgMap object of class \code{ggmap}, or returned by function \code{RgoogleMaps::GetMap}
 #' @param expandBB numeric; fractional values to expand the bounding box with, 
 #' in each direction (bottom, left, top, right)
-#' @param graticule object of class \code{crs}, or object returned by \link{st_graticule}
+#' @param graticule object of class \code{crs} (e.g., \code{st_crs(4326)} for a WGS84 graticule), 
+#' or object returned by \link{st_graticule}
 #' @param col_graticule color to used for the graticule (if present)
 #' @export
 #' @details \code{plot_sf} sets up the plotting area, axes, graticule, or webmap background; it
@@ -386,8 +387,8 @@ plot_sf = function(x, xlim = NULL, ylim = NULL, asp = NA, axes = FALSE, bgc = pa
 			mercator = TRUE
 		} else
 			bb = c(xlim[1], ylim[1], xlim[2], ylim[2]) # can be any crs!
-		if (mercator &&  st_crs(x) != st_crs(3875))
-			warning("crs of plotting object differs from that of bgMap, which is assumed to be st_crs(3857)")
+		if (mercator &&  st_crs(x) != st_crs(3857))
+			warning("crs of plotting object differs from that of bgMap, which is assumed to be st_crs(3857)") # nocov
 		rasterImage(bgMap, bb[1], bb[2], bb[3], bb[4], interpolate = FALSE)
 	}
 }
@@ -426,6 +427,9 @@ sf.colors = function (n = 10, xc, cutoff.tails = c(0.35, 0.2), alpha = 1, catego
     		rgb(r, g, b, alpha)
 		}
 	} else {
+		if (is.character(xc))
+			xc <- as.factor(xc)
+
 		if (is.factor(xc))
 			sf.colors(nlevels(xc), categorical = TRUE)[as.numeric(xc)]
 		else {

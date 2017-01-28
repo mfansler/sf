@@ -11,6 +11,7 @@
 #' p1 = st_point(c(7,52))
 #' p2 = st_point(c(-30,20))
 #' sfc = st_sfc(p1, p2, crs = "+init=epsg:4326")
+#' sfc
 #' st_transform(sfc, "+init=epsg:3857")
 #' @export
 st_transform = function(x, crs) UseMethod("st_transform")
@@ -24,10 +25,13 @@ st_transform.sfc = function(x, crs, ...) {
 		stop("sfc object should have crs set")
 	if (missing(crs))
 		stop("argument crs cannot be missing")
-	#suppressWarnings(st_sfc(CPL_transform(x, crs), crs = crs))
 	crs = make_crs(crs)
+
+	if (grepl("+proj=geocent", crs$proj4string) && length(x) && Dimension(x[[1]]) == "XY") # add z:
+		x = st_zm(x, drop = FALSE, what = "Z")
+
 	if (crs != st_crs(x))
-		st_sfc(CPL_transform(x, crs$proj4string), crs = crs)
+		st_sfc(CPL_transform(x, crs$proj4string, crs$epsg))
 	else
 		x
 }
@@ -55,5 +59,6 @@ st_transform.sfg = function(x, crs , ...) {
 	x = st_sfc(x, crs = attr(x, "proj4string"))
 	if (missing(crs))
 		stop("argument crs cannot be missing")
-	CPL_transform(x, make_crs(crs)$proj4string)[[1]]
+	crs = make_crs(crs)
+	CPL_transform(x, crs$proj4string, crs$epsg)[[1]]
 }

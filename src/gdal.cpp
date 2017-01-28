@@ -27,23 +27,23 @@ static void __err_handler(CPLErr eErrClass, int err_no, const char *msg)
     switch ( eErrClass )
     {
         case 0:
-            break;
+            break; // #nocov
         case 1:
         case 2:
-            Rf_warning("GDAL Message %d: %s\n", err_no, msg);
-            break;
+            Rf_warning("GDAL Message %d: %s\n", err_no, msg); // #nocov
+            break; // #nocov
         case 3:
             Rf_warning("GDAL Error %d: %s\n", err_no, msg);
             break;
         case 4:
-            Rf_warning("GDAL Error %d: %s\n", err_no, msg);
+            Rf_warning("GDAL Error %d: %s\n", err_no, msg); // #nocov
             #ifndef CONTINUE_ON_ERROR
-            Rcpp::stop("Unrecoverable GDAL error\n");
+            Rcpp::stop("Unrecoverable GDAL error\n"); // #nocov
             #endif
             break;        
         default:
-            Rf_warning("Received invalid error class %d (errno %d: %s)\n", eErrClass, err_no, msg);
-            break;
+            Rf_warning("Received invalid error class %d (errno %d: %s)\n", eErrClass, err_no, msg); // #nocov
+            break; // #nocov
     }
     return;
 }
@@ -72,32 +72,85 @@ const char* CPL_gdal_version(const char* what = "RELEASE_NAME")
 void handle_error(OGRErr err) {
 	if (err != 0) {
 		if (err == OGRERR_NOT_ENOUGH_DATA)
-			Rcpp::Rcout << "OGR: Not enough data " << std::endl;
+			Rcpp::Rcout << "OGR: Not enough data " << std::endl; // #nocov
 		else if (err == OGRERR_UNSUPPORTED_GEOMETRY_TYPE)
 			Rcpp::Rcout << "OGR: Unsupported geometry type" << std::endl;
 		else if (err == OGRERR_CORRUPT_DATA)
 			Rcpp::Rcout << "OGR: Corrupt data" << std::endl;
 		else 
-			Rcpp::Rcout << "Error code: " << err << std::endl;
+			Rcpp::Rcout << "Error code: " << err << std::endl; // #nocov
 		throw std::range_error("OGR error");
 	}
 }
 
 // [[Rcpp::export]]
-Rcpp::List CPL_crs_pars(std::string p4s) {
-	Rcpp::List out(4);
+Rcpp::List CPL_crs_parameters(std::string p4s) {
+	Rcpp::List out(6);
 	OGRSpatialReference *srs = new OGRSpatialReference;
 	handle_error(srs->importFromProj4(p4s.c_str()));
 	out(0) = Rcpp::NumericVector::create(srs->GetSemiMajor());
 	out(1) = Rcpp::NumericVector::create(srs->GetInvFlattening());
 	out(2) = Rcpp::CharacterVector::create(srs->GetAttrValue("UNIT", 0));
 	out(3) = Rcpp::LogicalVector::create(srs->IsVertical());
+	char *cp;
+	srs->exportToPrettyWkt(&cp);
+	out(4) = Rcpp::CharacterVector::create(cp);
+	CPLFree(cp);
+	srs->exportToWkt(&cp);
+	out(5) = Rcpp::CharacterVector::create(cp);
+	CPLFree(cp);
 	return out;
+}
+
+Rcpp::CharacterVector get_dim(Rcpp::List sfc) {
+
+	if (sfc.length() == 0)
+		return "XY";
+
+	// we have data:
+	Rcpp::CharacterVector cls = sfc.attr("class");
+	unsigned int tp = make_type(cls[0], "", false, NULL, 0);
+	if (tp == SF_Unknown) {
+		cls = sfc.attr("classes");
+		tp = make_type(cls[0], "", false, NULL, 0);
+	}
+	switch (tp) {
+		case SF_Unknown: { // further check:
+			throw std::range_error("impossible classs in get_dim()"); // #nocov
+		} break;
+		case SF_Point: { // numeric:
+			Rcpp::NumericVector v = sfc[0];
+			cls = v.attr("class");
+		} break;
+		case SF_LineString:  // matrix:
+		case SF_MultiPoint:
+		case SF_CircularString:
+		case SF_Curve: {
+			Rcpp::NumericMatrix m = sfc[0];
+			cls = m.attr("class");
+		} break;
+		case SF_Polygon: // list:
+		case SF_MultiLineString:
+		case SF_MultiPolygon:
+		case SF_GeometryCollection:
+		case SF_CompoundCurve:
+		case SF_CurvePolygon:
+		case SF_MultiCurve:
+		case SF_MultiSurface:
+		case SF_Surface:
+		case SF_PolyhedralSurface:
+		case SF_TIN:
+		case SF_Triangle: {
+			Rcpp::List l = sfc[0];
+			cls = l.attr("class");
+		} break;
+	}
+	return cls;
 }
 
 std::vector<OGRGeometry *> ogr_from_sfc(Rcpp::List sfc, OGRSpatialReference **sref) {
 	double precision = sfc.attr("precision");
-	Rcpp::List wkblst = CPL_write_wkb(sfc, false, native_endian(), "XY", precision);
+	Rcpp::List wkblst = CPL_write_wkb(sfc, false, native_endian(), get_dim(sfc), precision);
 	std::vector<OGRGeometry *> g(sfc.length());
 	OGRGeometryFactory f;
 	OGRSpatialReference *local_srs = NULL;
@@ -110,7 +163,7 @@ std::vector<OGRGeometry *> ogr_from_sfc(Rcpp::List sfc, OGRSpatialReference **sr
 	}
 	for (int i = 0; i < wkblst.length(); i++) {
 		Rcpp::RawVector r = wkblst[i];
-		handle_error(f.createFromWkb(&(r[0]), local_srs, &(g[i]), -1, wkbVariantIso));
+		handle_error(f.createFromWkb(&(r[0]), local_srs, &(g[i]), r.length(), wkbVariantIso));
 	}
 	if (sref != NULL)
 		*sref = local_srs; // return and release later, or
@@ -177,10 +230,10 @@ Rcpp::List get_crs(OGRSpatialReference *ref) {
 
 Rcpp::List sfc_from_ogr(std::vector<OGRGeometry *> g, bool destroy = false) {
 	Rcpp::List lst(g.size());
-	Rcpp::List crs = get_crs(g.size() ? g[0]->getSpatialReference() : NULL);
+	Rcpp::List crs = get_crs(g.size() && g[0] != NULL ? g[0]->getSpatialReference() : NULL);
 	for (size_t i = 0; i < g.size(); i++) {
 		if (g[i] == NULL)
-			throw std::range_error("NULL error in sfc_from_ogr");
+			throw std::range_error("NULL error in sfc_from_ogr"); // #nocov
 		Rcpp::RawVector raw(g[i]->WkbSize());
 		handle_error(g[i]->exportToWkb(wkbNDR, &(raw[0]), wkbVariantIso));
 		lst[i] = raw;
@@ -194,7 +247,38 @@ Rcpp::List sfc_from_ogr(std::vector<OGRGeometry *> g, bool destroy = false) {
 }
 
 // [[Rcpp::export]]
-Rcpp::List CPL_transform(Rcpp::List sfc, Rcpp::CharacterVector proj4) {
+Rcpp::List CPL_crs_from_epsg(int epsg) {
+	OGRSpatialReference ref;
+	if (ref.importFromEPSG(epsg) == OGRERR_NONE)
+		return get_crs(&ref);
+	else
+		return get_crs(NULL);
+}
+
+// [[Rcpp::export]]
+Rcpp::List CPL_crs_from_wkt(Rcpp::CharacterVector wkt) {
+	char *cp = wkt[0];
+	OGRSpatialReference ref;
+	handle_error(ref.importFromWkt(&cp));
+	return get_crs(&ref);
+}
+
+// [[Rcpp::export]]
+Rcpp::List CPL_roundtrip(Rcpp::List sfc) { // for debug purposes
+	std::vector<OGRGeometry *> g = ogr_from_sfc(sfc, NULL);
+	for (size_t i; i < g.size(); i++) {
+		char *out;
+		g[i]->exportToWkt(&out);
+		Rcpp::Rcout << out << std::endl;
+		CPLFree(out);
+	}
+	return sfc_from_ogr(g, true); // destroys g;
+}
+
+// [[Rcpp::export]]
+Rcpp::List CPL_transform(Rcpp::List sfc, Rcpp::CharacterVector proj4, Rcpp::IntegerVector epsg) {
+	// a hard (but quite sane) assumption here is that in case epsg[0] != NA_INTEGER,
+	// proj4 and epsg correspond, and point to the same SRS.
 
 	// import proj4string:
 	OGRSpatialReference *dest = new OGRSpatialReference;
@@ -210,18 +294,14 @@ Rcpp::List CPL_transform(Rcpp::List sfc, Rcpp::CharacterVector proj4) {
 		handle_error(g[i]->transform(ct));
 
 	Rcpp::List ret = sfc_from_ogr(g, true); // destroys g;
+	if (epsg[0] != NA_INTEGER) {
+		Rcpp::List crs = ret.attr("crs");
+		crs(0) = epsg;
+		ret.attr("crs") = crs;
+	}
 	ct->DestroyCT(ct);
 	dest->Release();
 	return ret; 
-}
-
-// [[Rcpp::export]]
-Rcpp::List CPL_crs_from_epsg(int epsg) {
-	OGRSpatialReference ref;
-	if (ref.importFromEPSG(epsg) == OGRERR_NONE)
-		return get_crs(&ref);
-	else
-		return get_crs(NULL);
 }
 
 // [[Rcpp::export]]

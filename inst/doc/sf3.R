@@ -53,10 +53,11 @@ p * rot(pi)
 
 ## ----fig=TRUE------------------------------------------------------------
 nc = st_read(system.file("shape/nc.shp", package="sf"), quiet = TRUE)
-cntrd = st_centroid(nc)
-nc2 = (st_geometry(nc) - cntrd) * rot(pi/2) * .75 + cntrd
-plot(nc[1], border = 'grey')
-plot(nc2, add = TRUE)
+ncg = st_geometry(nc)
+plot(ncg, border = 'grey')
+cntrd = st_centroid(ncg)
+ncg2 = (ncg - cntrd) * rot(pi/2) * .75 + cntrd
+plot(ncg2, add = TRUE)
 plot(cntrd, col = 'red', add = TRUE, cex = .5)
 
 ## ------------------------------------------------------------------------

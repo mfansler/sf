@@ -13,7 +13,6 @@ std::vector<OGRFieldType> SetupFields(OGRLayer *poLayer, Rcpp::List obj) {
 	for (int i = 0; i < obj.size(); i++) {
 		if (strcmp(cls[i], "character") == 0)
 			ret[i] = OFTString;
-			// oField.SetWidth(32); // FIXME: should this be known here???
 		else if (strcmp(cls[i], "integer") == 0)
 			ret[i] = OFTInteger;
 		else if (strcmp(cls[i], "numeric") == 0)
@@ -22,15 +21,15 @@ std::vector<OGRFieldType> SetupFields(OGRLayer *poLayer, Rcpp::List obj) {
 			ret[i] = OFTDate;
 		else if (strcmp(cls[i], "POSIXct") == 0)
 			ret[i] = OFTDateTime;
-		else {
+		else { // #nocov start
 			Rcpp::Rcout << "Field of type " << nm[i] << " not supported." << std::endl;
 			throw std::invalid_argument("Layer creation failed.\n");
-		}
+		}      // #nocov end
 		OGRFieldDefn oField(nm[i], ret[i]);
-		if (poLayer->CreateField(&oField) != OGRERR_NONE) {
+		if (poLayer->CreateField(&oField) != OGRERR_NONE) { // #nocov start
 			Rcpp::Rcout << "Creating field " << nm[i] << " failed." << std::endl;
 			throw std::invalid_argument("Layer creation failed.\n");
-		}
+		} // #nocov end
 	}
 	return ret;
 }
@@ -54,25 +53,25 @@ void SetFields(OGRFeature *poFeature, std::vector<OGRFieldType> tp, Rcpp::List o
 			case OFTString: {
 				Rcpp::CharacterVector cv;
 				cv = obj[j];
-				if (cv[i] != NA_STRING)
+				if (! Rcpp::CharacterVector::is_na(cv[i]))
 					poFeature->SetField(j, (const char *) cv[i]);
 				} break;
 			case OFTInteger: {
 				Rcpp::IntegerVector iv;
 				iv = obj[j];
-				if (iv[i] != NA_INTEGER)
+				if (! Rcpp::IntegerVector::is_na(iv[i]))
 					poFeature->SetField(j, (int) iv[i]);
 				} break;
 			case OFTReal: {
 				Rcpp::NumericVector nv;
 				nv = obj[j];
-				if (nv[i] != NA_REAL)
+				if (! Rcpp::NumericVector::is_na(nv[i]))
 					poFeature->SetField(j, (double) nv[i]);
 				} break;
 			case OFTDate: {
 				Rcpp::NumericVector nv;
 				nv = obj[j];
-				if (nv[i] == NA_REAL)
+				if (Rcpp::NumericVector::is_na(nv[i]))
 					break;
 				Rcpp::NumericVector nv0(1);
 				nv0[0] = nv[i];
@@ -85,7 +84,7 @@ void SetFields(OGRFeature *poFeature, std::vector<OGRFieldType> tp, Rcpp::List o
 			case OFTDateTime: {
 				Rcpp::NumericVector nv;
 				nv = obj[j];
-				if (nv[i] == NA_REAL)
+				if (Rcpp::NumericVector::is_na(nv[i]))
 					break;
 				Rcpp::NumericVector nv0(1);
 				nv0[0] = nv[i];
@@ -96,10 +95,10 @@ void SetFields(OGRFeature *poFeature, std::vector<OGRFieldType> tp, Rcpp::List o
 					(float) rd[0], 100); // nTZFlag 100: GMT
 				} break;
 			default:
-				// we should never get here!
+				// we should never get here! // #nocov start
 				Rcpp::Rcout << "field with unsupported type ignored" << std::endl; 
 				throw std::invalid_argument("Layer creation failed.\n");
-				break;
+				break; // #nocov end
 		}
 	}
 }
@@ -154,7 +153,7 @@ void CPL_write_ogr(Rcpp::List obj, Rcpp::CharacterVector dsn, Rcpp::CharacterVec
 	if (! quiet) {
 		Rcpp::Rcout << "features:       " << geomv.size() << std::endl;
 		Rcpp::Rcout << "fields:         " << fieldTypes.size() << std::endl;
-		Rcpp::Rcout << "geometry type:  " << geomv[0]->getGeometryName() << std::endl;
+		Rcpp::Rcout << "geometry type:  " << OGRGeometryTypeToName(wkbType) << std::endl;
 	}
 	for (size_t i = 0; i < geomv.size(); i++) { // create all features & add to layer:
 		OGRFeature *poFeature = OGRFeature::CreateFeature(poLayer->GetLayerDefn());
@@ -163,7 +162,7 @@ void CPL_write_ogr(Rcpp::List obj, Rcpp::CharacterVector dsn, Rcpp::CharacterVec
 		if (poLayer->CreateFeature(poFeature) != OGRERR_NONE) {
 			Rcpp::Rcout << "Failed to create feature " << i << " in " << layer[0] << std::endl;
 			GDALClose(poDS);
-			throw std::invalid_argument("Layer creation failed.\n");
+			throw std::invalid_argument("Feature creation failed.\n");
 		}
 		OGRFeature::DestroyFeature(poFeature); // deletes geom[i] as well
 	}

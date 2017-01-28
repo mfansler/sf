@@ -4,7 +4,6 @@
 #'
 #' @param x object of class \code{sfg}, \code{sfc} or \code{sf}
 #' @param to character; target type, if missing, simplification is tried; when \code{x} is of type \code{sfg} (i.e., a single geometry) then \code{to} needs to be specified.
-#' @param ... ignored
 #' @return object of class \code{to} if successful, or unmodified object if unsuccesful. If information gets lost while type casting, a warning is raised.
 #' @examples
 #' s = st_multipoint(rbind(c(1,0)))
@@ -88,35 +87,61 @@ get_lengths = function(x) {
 	)
 }
 
-st_cast_default = function(x) {
-	gtp = substr(class(x)[1], 5, 100)
-	tp = st_geometry_type(x)
-	utp = unique(tp)
-	if (length(utp) == 1) {
-		if (utp != gtp) # simple: they're all identical, but e.g. held in a GEOMETRY
-			structure(x, class = c(paste0("sfc_", utp), "sfc"))
-		else if (utp == "GEOMETRYCOLLECTION") # unwrap geometrycollection:
-			structure(do.call(st_sfc, unlist(x, recursive = FALSE)), ids = get_lengths(x))
-		else 
-			x
-	} else
-		x
+#' Coerce geometry to MULTI* geometry
+#' 
+#' Mixes of POINTS and MULTIPOINTS, LINESTRING and MULTILINESTRING, 
+#' POLYGON and MULTIPOLYGON are returned as MULTIPOINTS, MULTILINESTRING and MULTIPOLYGONS respectively
+#' @param x list of geometries or simple features
+#' @details Geometries that are already MULTI* are left unchanged. 
+#' Features that can't be cast to a single  MULTI* geometry are return as a 
+#' GEOMETRYCOLLECTION
+st_cast_sfc_default = function(x) {
+  if (!identical(unique(sapply(x, function(w) class(w)[3L])), "sfg"))
+    stop("list item(s) not of class sfg") # sanity check
+  
+  a <- attributes(x)
+  ids = NULL
+  cls = unique(sapply(x, function(x) class(x)[2L]))
+  if (length(cls) > 1) {
+    if (all(cls %in% c("POINT", "MULTIPOINT"))) {
+      x <- lapply(x, function(x) if (inherits(x, "POINT")) POINT2MULTIPOINT(x) else x)
+      class(x) <- c("sfc_MULTIPOINT", "sfc") 
+    } else if (all(cls %in% c("LINESTRING", "MULTILINESTRING"))) {
+      x <- lapply(x, function(x) if (inherits(x, "LINESTRING")) LINESTRING2MULTILINESTRING(x) else x)
+      class(x) <- c("sfc_MULTILINESTRING", "sfc")
+    } else if (all(cls %in% c("POLYGON", "MULTIPOLYGON"))) {
+      x <- lapply(x, function(x) if (inherits(x, "POLYGON")) POLYGON2MULTIPOLYGON(x) else x)
+      class(x) <- c("sfc_MULTIPOLYGON", "sfc")
+    }
+  } else if (cls == "GEOMETRYCOLLECTION") {
+    ids = get_lengths(x)
+    x <- do.call(st_sfc, unlist(x, recursive = FALSE))
+  }
+  attributes(x) <- a
+  structure(st_sfc(x), ids = ids)
 }
 
 #' @name st_cast
 #' @param ids integer vector, denoting how geometries should be grouped (default: no grouping)
+#' @param group_or_split logical; if TRUE, group or split geometries; if FALSE, carry out a 1-1 per-geometry conversion.
+#' @param ... ignored
 #' @export
-st_cast.sfc = function(x, to, ..., ids = seq_along(x)) {
+#' @return In case \code{to} is missing, \code{st_cast.sfc} will coerce combinations of "POINT" and "MULTIPOINT", "LINESTRING" and "MULTILINESTRING", "POLYGON" and "MULTIPOLYGON" into their "MULTI..." form, or in case all geometries are "GEOMETRYCOLLECTION" will return a list of all the contents of the "GEOMETRYCOLLECTION" objects, or else do nothing. In case \code{to} is specified, if \code{to} is "GEOMETRY", geometries are not converted, else, \code{st_cast} will try to coerce all elements into \code{to}; \code{ids} may be specified to group e.g. "POINT" objects into a "MULTIPOINT", if not specified no grouping takes place. If e.g. a "sfc_MULTIPOINT" is cast to a "sfc_POINT", the objects are split, so no information gets lost, unless \code{group_or_split} is \code{FALSE}.
+#' 
+#' In case of \code{st_cast.sf}, grouping will call \link[stats]{aggregate} and the aggregation function \code{FUN} needs to be set; in case of splitting, attributes are repeated and a warning is issued when non-constant attributes are assigned to sub-geometries.
+st_cast.sfc = function(x, to, ..., ids = seq_along(x), group_or_split = TRUE) {
 	if (missing(to))
-		return(st_cast_default(x))
+		return(st_cast_sfc_default(x))
 
 	from_cls = substr(class(x)[1], 5, 100)
 	from_col = which_sfc_col(from_cls)
 	to_col = which_sfc_col(to)
 	if (from_cls == to)
 		x # returns x: do nothing
-	else if (from_cls == "GEOMETRY")
-		st_sfc(lapply(x, st_cast, to = to), crs = st_crs(x))
+	else if (to == "GEOMETRY") # we can always do that:
+		structure(x, class = c("sfc_GEOMETRY", "sfc"))
+	else if (from_cls == "GEOMETRY" || !group_or_split)
+		st_sfc(lapply(x, st_cast, to = to), crs = st_crs(x), precision = st_precision(x))
 	else if (from_col == to_col) # "vertical" conversion: only reclass, possibly close polygons
 		reclass(x, to, need_close(to))
 	else if (abs(from_col - to_col) > 1) {
@@ -148,28 +173,52 @@ st_cast.sfc = function(x, to, ..., ids = seq_along(x)) {
 }
 
 #' @name st_cast
-#' @param FUN function passed on to \link[stats]{aggregate}, in case \code{ids} was specified and attributes need to be grouped
 #' @param warn logical; if \code{TRUE}, warn if attributes are assigned to sub-geometries
 #' @export
-st_cast.sf = function(x, to, ..., ids = seq_len(nrow(x)), FUN, warn = TRUE) {
-	geom = st_cast(st_geometry(x), to, ids = ids)
+st_cast.sf = function(x, to, ..., warn = TRUE, group_or_split = TRUE) {
+	geom = st_cast(st_geometry(x), to, group_or_split = group_or_split)
 	crs = st_crs(x)
+	agr = st_agr(x)
+	all_const = all_constant(x)
 	st_geometry(x) = NULL
-	#x = as.data.frame(x)
-	if (!is.null(attr(geom, "ids"))) {
-		if (!missing(ids))
-			warning("argument ids is ignored, and taken from the geometry splitting")
-		if (warn)
-			warning("repeating attributes for all sub-geometries for which they may not be valid")
-		ids = attr(geom, "ids")          # e.g. 3 2 4
+	ids = attr(geom, "ids")          # e.g. 3 2 4
+	if (!is.null(ids)) { # split:
+		if (warn && !all_const)
+			warning("repeating attributes for all sub-geometries for which they may not be constant")
 		reps = rep(seq_len(length(ids)), ids) # 1 1 1 2 2 3 3 3 3 etc
-		st_sf(x[reps, ], geom, crs = crs)
-	} else { 
-		if (length(unique(ids)) < nrow(x)) {
-			if (missing(FUN))
-				stop("aggregation function missing; pls specify argument FUN")
-			x = aggregate(x, list(ids.group = ids), FUN, simplify = FALSE)
-		}
-		st_sf(x, geom, crs = crs)
+		agr[agr == "identity"] = "constant" # since we splitted
+		x = x[reps,]
+		stopifnot(nrow(x) == length(geom))
 	}
+	st_geometry(x) = geom
+	st_agr(x) = agr
+	x
 }
+
+#' test equality between the geometry type and a class or set of classes
+#'
+#' test equality between the geometry type and a class or set of classes
+#' @param x object of class \code{sf}, \code{sfc} or \code{sfg}
+#' @param type character; class, or set of classes, to test against
+#' @examples
+#' st_is(st_point(0:1), "POINT")
+#' sfc = st_sfc(st_point(0:1), st_linestring(matrix(1:6,,2)))
+#' st_is(sfc, "POINT")
+#' st_is(sfc, "POLYGON")
+#' st_is(sfc, "LINESTRING")
+#' st_is(st_sf(a = 1:2, sfc), "LINESTRING")
+#' st_is(sfc, c("POINT", "LINESTRING"))
+#' @export
+st_is = function(x, type) UseMethod("st_is")
+
+#' @export
+st_is.sf = function(x, type)
+	st_is(st_geometry(x), type)
+
+#' @export
+st_is.sfc = function(x, type)
+	vapply(x, inherits, type, FUN.VALUE = logical(1))
+
+#' @export
+st_is.sfg = function(x, type)
+	inherits(x, type)

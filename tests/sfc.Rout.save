@@ -240,6 +240,9 @@ In st_cast.MULTIPOINT(x[[1]], to, ...) : point from first coordinate only
 MULTIPOINT(0 1, 2 2)
 > st_cast(st_geometrycollection(list(p,mp)), "MULTIPOINT")
 MULTIPOINT(0 1)
+Warning message:
+In st_cast.GEOMETRYCOLLECTION(st_geometrycollection(list(p, mp)),  :
+  only first part of geometrycollection is retained
 > 
 > mp = st_multipoint(rbind(c(0,1)))
 > x = st_sfc(p, mp)
@@ -263,7 +266,7 @@ dimension:      XY
 bbox:           xmin: 0 ymin: 1 xmax: 0 ymax: 1
 epsg (SRID):    NA
 proj4string:    NA
-  a       geom
+  a   geometry
 1 3 POINT(0 1)
 2 2 POINT(0 1)
 Warning message:
@@ -351,8 +354,6 @@ epsg (SRID):    NA
 proj4string:    NA
 POLYGON((0 0, 1 1, 0 1, 0 0))
 POLYGON((0 0, 1 1, 0 1, 0 0))
-Warning message:
-In st_cast.MULTIPOLYGON(X[[i]], ...) : polygon from first part only
 > st_sfc(st_polygon(list(pts)), st_multipolygon(list(list(pts)))) %>% st_cast("MULTIPOLYGON")
 Geometry set for 2 features 
 geometry type:  MULTIPOLYGON
@@ -458,9 +459,59 @@ Classes 'sf' and 'data.frame':	100 obs. of  15 variables:
   .. ..$ : num [1:27, 1:2] -81.5 -81.5 -81.6 -81.6 -81.7 ...
   ..- attr(*, "class")= chr  "XY" "MULTIPOLYGON" "sfg"
  - attr(*, "sf_column")= chr "geometry"
- - attr(*, "relation_to_geometry")= Factor w/ 3 levels "field","lattice",..: NA NA NA NA NA NA NA NA NA NA ...
+ - attr(*, "agr")= Factor w/ 3 levels "constant","aggregate",..: NA NA NA NA NA NA NA NA NA NA ...
   ..- attr(*, "names")= chr  "AREA" "PERIMETER" "CNTY_" "CNTY_ID" ...
+> 
+> st_agr("constant")
+[1] constant
+Levels: constant aggregate identity
+> st_agr()
+[1] <NA>
+Levels: constant aggregate identity
+> x <- st_sf(a = 1:2, b = 3:4, geom = x, agr = c("constant", "aggregate"))
+> suppressPackageStartupMessages(library(dplyr))
+> y <- x %>% st_set_agr("constant")
+> y
+Simple feature collection with 2 features and 2 fields
+Attribute-geometry relationship: 2 constant, 0 aggregate, 0 identity
+geometry type:  POINT
+dimension:      XY
+bbox:           xmin: -90 ymin: 35 xmax: -80 ymax: 36
+epsg (SRID):    4267
+proj4string:    +proj=longlat +ellps=clrk66 +nadgrids=@conus,@alaska,@ntv2_0.gsb,@ntv1_can.dat +no_defs
+  a b          geom
+1 1 3 POINT(-90 35)
+2 2 4 POINT(-80 36)
+> 
+> sf1 <- st_sf(a = c("x", "y"), geom = st_sfc(st_point(3:4), st_point(3:4)))
+> sf1[names(sf1)]
+Simple feature collection with 2 features and 1 field
+geometry type:  POINT
+dimension:      XY
+bbox:           xmin: 3 ymin: 4 xmax: 3 ymax: 4
+epsg (SRID):    NA
+proj4string:    NA
+  a       geom
+1 x POINT(3 4)
+2 y POINT(3 4)
+> 
+> st_bbox(sf1)
+xmin ymin xmax ymax 
+   3    4    3    4 
+> bb = st_bbox(nc)
+> bb
+     xmin      ymin      xmax      ymax 
+-84.32385  33.88199 -75.45698  36.58965 
+> st_crs(bb)
+$epsg
+[1] 4267
+
+$proj4string
+[1] "+proj=longlat +datum=NAD27 +no_defs"
+
+attr(,"class")
+[1] "crs"
 > 
 > proc.time()
    user  system elapsed 
-  0.548   0.012   0.557 
+  0.536   0.012   0.547 

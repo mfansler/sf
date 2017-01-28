@@ -68,13 +68,13 @@ Rcpp::List CPL_gdal_segmentize(Rcpp::List sfc, double dfMaxLength = 0.0) {
 // [[Rcpp::export]]
 Rcpp::List CPL_gdal_linestring_sample(Rcpp::List sfc, Rcpp::List distLst) {
 	if (sfc.size() != distLst.size())
-		throw std::invalid_argument("sfc and dist should have equal length");
+		throw std::invalid_argument("sfc and dist should have equal length"); // #nocov
 	std::vector<OGRGeometry *> g = ogr_from_sfc(sfc, NULL);
 	std::vector<OGRGeometry *> out(g.size());
 	for (size_t i = 0; i < g.size(); i++) {
 		OGRGeometryCollection *gc = new OGRGeometryCollection;
 		Rcpp::NumericVector dists = distLst[i];
-		for (size_t j = 0; j < dists.size(); j++) {
+		for (int j = 0; j < dists.size(); j++) {
 			OGRPoint *poPoint  = new OGRPoint;
 			((OGRLineString *) g[i])->Value(dists[j], poPoint);
 			gc->addGeometry(poPoint);

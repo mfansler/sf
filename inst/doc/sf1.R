@@ -67,7 +67,7 @@ str(x)
 str(x)
 (x <- st_point(c(1,2,3,4)))
 str(x)
-st_drop_zm(x)
+st_zm(x, drop = TRUE, what = "ZM")
 
 ## ------------------------------------------------------------------------
 p <- rbind(c(3.2,4), c(3,4.6), c(3.8,4.4), c(3.5,3.8), c(3.4,3.6), c(3.9,4.5))
@@ -147,15 +147,27 @@ st_write(nc, "nc.shp")
 #  download.file(u_kmz, "BikePaths.kmz")
 #  # Read file formats
 #  biketrails_shp <- st_read("biketrails.shp")
-#  biketrails_kmz <- st_read("BikePaths.kmz")
+#  if(Sys.info()[1] == "Linux") # may not work if not Linux
+#    biketrails_kmz <- st_read("BikePaths.kmz")
+#  u_kml = "http://www.northeastraces.com/oxonraces.com/nearme/safe/6.kml"
+#  download.file(u_kml, "bikeraces.kml")
+#  bikraces <- st_read("bikeraces.kml")
 
 ## ---- echo=TRUE, eval=FALSE----------------------------------------------
 #  shp_read_sp <- function() rgdal::readOGR(dsn = ".", layer = "biketrails")
 #  shp_read_sf <- function() st_read("biketrails.shp")
-#  kmz_read_sp <- function() rgdal::readOGR(dsn = "BikePaths.kmz", layer = ogr_layers[1])
-#  kmz_read_sf <- function() st_read("BikePaths.kmz")
+#  if(Sys.info()[1] == "Linux") {
+#    kmz_read_sp <- function() rgdal::readOGR(dsn = "BikePaths.kmz")
+#    kmz_read_sf <- function() st_read("BikePaths.kmz")
+#  } else {
+#      kmz_read_sp <- function() message("NA")
+#      kmz_read_sf <- function() message("NA")
+#  }
+#  kml_read_sp <- function() rgdal::readOGR("bikeraces.kml")
+#  kml_read_sf <- function() st_read("bikeraces.kml")
 #  microbenchmark::microbenchmark(shp_read_sp(), shp_read_sf(),
-#                                 kmz_read_sp(), kmz_read_sf(), times = 1)
+#                                 kmz_read_sp(), kmz_read_sf(),
+#                                 kml_read_sp(), kml_read_sf(), times = 1)
 
 ## ---- echo=FALSE---------------------------------------------------------
 # Tidy up
@@ -213,7 +225,7 @@ b <- st_polygon(list(cbind(c(0,1,2,3,4,5,6,7,7,0),c(1,0,.5,0,0,0.5,-0.5,-0.5,1,1
 plot(a, ylim = c(-1,1))
 title("intersecting two polygons:")
 plot(b, add = TRUE, border = 'red')
-(i <- st_intersection(a,b)[[1]])
+(i <- st_intersection(a,b))
 plot(a, ylim = c(-1,1))
 title("GEOMETRYCOLLECTION")
 plot(b, add = TRUE, border = 'red')
@@ -231,7 +243,7 @@ st_is_valid(st_sfc(x2,x3))
 ## ----echo=FALSE,fig=TRUE,fig.height=3------------------------------------
 opar <- par(mfrow = c(1,3))
 par(mar=c(1,1,4,1))
-plot(st_sfc(x1), type = 'b', axes=F, xlab=NULL,ylab=NULL);
+plot(st_sfc(x1), type = 'b', axes = FALSE, xlab = NULL, ylab = NULL);
 title(st_as_text(x1))
 plot(st_sfc(st_linestring((cbind(c(0,1,1,1,0,0),c(0,0,1,0.6,1,0))))), type='b', axes = FALSE)
 title(st_as_text(x2))
@@ -241,12 +253,12 @@ par(opar)
 
 ## ------------------------------------------------------------------------
 nc <- st_read(system.file("shape/nc.shp", package="sf"),
-    relation_to_geometry = c(AREA = "lattice", PERIMETER = "lattice", CNTY_ = "entity",
-        CNTY_ID = "entity", NAME = "entity", FIPS = "entity", FIPSNO = "entity",
-        CRESS_ID = "entity", BIR74 = "lattice", SID74 = "lattice", NWBIR74 = "lattice",
-        BIR79 = "lattice", SID79 = "lattice", NWBIR79 = "lattice"))
-attr(nc, "relation_to_geometry")
+    agr = c(AREA = "aggregate", PERIMETER = "aggregate", CNTY_ = "identity",
+        CNTY_ID = "identity", NAME = "identity", FIPS = "identity", FIPSNO = "identity",
+        CRESS_ID = "identity", BIR74 = "aggregate", SID74 = "aggregate", NWBIR74 = "aggregate",
+        BIR79 = "aggregate", SID79 = "aggregate", NWBIR79 = "aggregate"))
+st_agr(nc)
 data(meuse, package = "sp")
-meuse_sf <- st_as_sf(meuse, coords = c("x", "y"), crs = 28992, relation_to_geometry = "field")
-attr(meuse_sf, "relation_to_geometry")
+meuse_sf <- st_as_sf(meuse, coords = c("x", "y"), crs = 28992, agr = "constant")
+st_agr(meuse_sf)
 

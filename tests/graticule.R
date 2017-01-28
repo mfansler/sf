@@ -1,13 +1,8 @@
-library(sp)
 library(maps)
-
 m = map('usa', plot = FALSE, fill = TRUE)
-ID0 <- sapply(strsplit(m$names, ":"), function(x) x[1])
-
-library(maptools)
-m <- map2SpatialPolygons(m, IDs=ID0, proj4string = CRS("+init=epsg:4326"))
-
-library(sf)
+suppressPackageStartupMessages(library(sf))
+m0 <- st_as_sfc(m)
+m <- st_as_sf(m)
 
 laea = st_crs("+proj=laea +lat_0=30 +lon_0=-95") # Lambert equal area
 m <- st_transform(st_as_sf(m), laea)
@@ -38,10 +33,13 @@ invisible(lapply(seq_len(nrow(g)), function(i) {
 }))
 
 plot(m, graticule = st_crs(4326))
-library(sf)
-demo(nc)
+nc = st_read(system.file("shape/nc.shp", package="sf"), quiet = TRUE)
 # options(warn=2)
 g = st_graticule(nc, datum = st_crs(nc))
 #g = st_graticule(nc)
 
 plot(nc[1], graticule = st_crs(nc))
+
+plot(nc[1], graticule = st_crs(nc), axes = TRUE)
+
+g = st_graticule()

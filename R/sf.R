@@ -7,7 +7,7 @@ st_as_sf = function(x, ...) UseMethod("st_as_sf")
 
 #' @name st_as_sf
 #'
-#' @param relation_to_geometry character vector; see details section of \link{st_sf}
+#' @param agr character vector; see details section of \link{st_sf}
 #' @param coords in case of point data: names or numbers of the numeric columns holding coordinates
 #' @param wkt name or number of the character column that holds WKT encoded geometries
 #' @param dim passed on to \link{st_point} (only when argument coords is given)
@@ -27,11 +27,11 @@ st_as_sf = function(x, ...) UseMethod("st_as_sf")
 #' d$geom2 = st_sfc(pt1, pt2)
 #' st_as_sf(d) # should warn
 #' data(meuse, package = "sp")
-#' meuse_sf = st_as_sf(meuse, coords = c("x", "y"), crs = 28992, relation_to_geometry = "field")
+#' meuse_sf = st_as_sf(meuse, coords = c("x", "y"), crs = 28992, agr = "constant")
 #' meuse_sf[1:3,]
 #' summary(meuse_sf)
 #' @export
-st_as_sf.data.frame = function(x, ..., relation_to_geometry = NA_character_, coords, wkt, 
+st_as_sf.data.frame = function(x, ..., agr = NA_agr_, coords, wkt, 
 		dim = "XYZ", remove = TRUE) {
 	if (! missing(wkt)) {
 		if (remove) 
@@ -44,10 +44,10 @@ st_as_sf.data.frame = function(x, ..., relation_to_geometry = NA_character_, coo
 		if (remove)
 			x[coords] = NULL
 	}
-	#do.call(st_sf, c(as.list(x), list(...), relation_to_geometry = relation_to_geometry))
-	st_sf(x, ..., relation_to_geometry = relation_to_geometry)
+	st_sf(x, ..., agr = agr)
 }
 
+#' @name st_as_sf
 #' @export
 st_as_sf.sf = function(x, ...) x
 
@@ -90,12 +90,16 @@ st_geometry.sfg = function(obj, ...) st_sfc(obj)
 #' @export
 `st_geometry<-.data.frame` = function(x, value) {
 	stopifnot(inherits(value, "sfc"))
+	stopifnot(nrow(x) == length(value))
 	st_sf(x, geometry = value)
 }
 
 #' @export
 `st_geometry<-.sf` = function(x, value) {
-	stopifnot(is.null(value) || inherits(value, "sfc"))
+	if (! is.null(value)) {
+		stopifnot(inherits(value, "sfc"))
+		stopifnot(nrow(x) == length(value))
+	}
 	x[[attr(x, "sf_column")]] <- value
 	if (is.null(value))
 		data.frame(x)
@@ -109,18 +113,18 @@ st_geometry.sfg = function(obj, ...) st_sfc(obj)
 #' @name sf
 #' @param ... column elements to be binded into an \code{sf} object, one of them being of class \code{sfc}
 #' @param crs coordinate reference system: integer with the epsg code, or character with proj4string
-#' @param relation_to_geometry character vector; see details below.
+#' @param agr character vector; see details below.
 #' @param row.names row.names for the created \code{sf} object
 #' @param stringsAsFactors logical; logical: should character vectors be converted to factors?  The `factory-fresh' default is \code{TRUE}, but this can be changed by setting \code{options(stringsAsFactors = FALSE)}.  
 #' @param precision numeric; see \link{st_as_binary}
-#' @details \code{relation_to_geometry} specified for each non-geometry attribute column how it relates to the geometry, and can have one of following values: "field", "lattice", "entity". "field" is used for attributes that are constant throughout the geometry (e.g. land use), "lattice" where the attribute is an aggregate value over the geometry (e.g. population density or population count), "entity" when the attributes uniquely identifies the geometry of particular "thing", such as a building ID or a city name. The default value, \code{NA_character_}, implies we don't know.  
+#' @details \code{agr}, attribute-geometry-relationship, specifies for each non-geometry attribute column how it relates to the geometry, and can have one of following values: "constant", "aggregate", "identity". "constant" is used for attributes that are constant throughout the geometry (e.g. land use), "aggregate" where the attribute is an aggregate value over the geometry (e.g. population density or population count), "identity" when the attributes uniquely identifies the geometry of particular "thing", such as a building ID or a city name. The default value, \code{NA_agr_}, implies we don't know.  
 #' @examples
 #' g = st_sfc(st_point(1:2))
 #' st_sf(a=3,g)
 #' st_sf(g, a=3)
 #' st_sf(a=3, st_sfc(st_point(1:2))) # better to name it!
 #' @export
-st_sf = function(..., relation_to_geometry = NA_character_, row.names, 
+st_sf = function(..., agr = NA_agr_, row.names, 
 		stringsAsFactors = default.stringsAsFactors(), crs, precision) {
 	x = list(...)
 	if (length(x) == 1 && inherits(x[[1]], "data.frame"))
@@ -161,12 +165,8 @@ st_sf = function(..., relation_to_geometry = NA_character_, row.names,
 
 	# add attributes:
 	attr(df, "sf_column") = sfc_name
-	f = factor(rep(relation_to_geometry, length.out = ncol(df) - 1), 
-		levels = c("field", "lattice", "entity"))
-	names(f) = names(df)[-sf_column]
-	attr(df, "relation_to_geometry") = f
-	# FIXME: check that if one of them is lattice, geom cannot be POINT
 	class(df) = c("sf", class(df))
+	st_agr(df) = agr
 	if (! missing(crs))
 		st_crs(df) = crs
 	df
@@ -177,7 +177,7 @@ st_sf = function(..., relation_to_geometry = NA_character_, row.names,
 #' @param i record selection, see \link{[.data.frame}
 #' @param j variable selection, see \link{[.data.frame}
 #' @param drop whether to drop to simpler (e.g. vector) representation, see \link{[.data.frame}
-#' @param op character; geometrical operation to apply when \code{i} is a simple feature object
+#' @param op function; geometrical binary predicate function to apply when \code{i} is a simple feature object
 #' @details "[.sf" will return a \code{data.frame} if the geometry column (of class \code{sfc}) is dropped, an \code{sfc} object if only the geometry column is selected, otherwise the behavior depending on \code{drop} is identical to that of \link{[.data.frame}.
 #' @examples
 #' g = st_sfc(st_point(1:2), st_point(3:4))
@@ -194,32 +194,74 @@ st_sf = function(..., relation_to_geometry = NA_character_, row.names,
 #' g[h,]
 #' h[g,]
 #' @export
-"[.sf" = function(x, i, j, ..., drop = FALSE, op = "intersects") {
+"[.sf" = function(x, i, j, ..., drop = FALSE, op = st_intersects) {
 	nargs = nargs()
-	rtg = attr(x, "relation_to_geometry")
+	agr = st_agr(x)
 	if (!missing(i) && (inherits(i, "sf") || inherits(i, "sfc")))
-		i = sapply(st_geos_binop(op, x, i, ...), length) != 0
+		i = sapply(st_intersects(x, i), length) != 0
 	sf_column = attr(x, "sf_column")
 	geom = st_geometry(x)
 	if (!missing(i) && nargs > 2) # e.g. a[3:4,] not a[3:4]
 		geom = geom[i]
+
 	x = if (missing(j))
 		NextMethod("[") # specifying drop would trigger a warning
 	else
 		NextMethod("[", drop = drop)
+
+	if (!missing(j))
+		agr = agr[j]
+	else if (!missing(i) && nargs <= 2)
+		agr = agr[i] # e.g., obj["name"]
+
 	if (inherits(x, "sfc")) # drop was TRUE, and we selected geom column only
 		x
 	else if (! drop) {
-		if (!(sf_column %in% names(x))) { # geom was deselected: make it sticky
-			if (inherits(x, "sf"))
-				x[[sf_column]] = geom
-			else
-				st_geometry(x) = geom
+#		st_agr(x) = agr
+#		if (!(sf_column %in% names(x))) { # geom was deselected: make it sticky
+#			if (inherits(x, "sf"))
+#				x[[sf_column]] = geom
+#			else
+#				st_geometry(x) = geom
+#		}
+#		structure(x, "sf_column" = sf_column, 
+#			"agr" = agr[match(setdiff(names(x), sf_column), names(agr))])
+		if (inherits(x, "sf")) {
+			st_agr(x) = agr[!is.na(names(agr))]
+			attr(x, "sf_column") = sf_column
 		}
-		structure(x, "sf_column" = sf_column,
-			"relation_to_geometry" = rtg[names(rtg) %in% names(x)])
+		st_geometry(x) = geom
+		st_agr(x) = agr[match(setdiff(names(x), sf_column), names(agr))]
+		x
 	} else
 		as.data.frame(x)
+}
+
+#' @export
+"$<-.sf" = function(x, i, value) { x[[i]] = value; x }
+
+#' @export
+"[[<-.sf" = function(x, i, value) {
+	agr = st_agr(x)
+	setting_geom = (i == attr(x, "sf_column")) || inherits(value, "sfc")
+	if (! setting_geom) { # need to handle agr:
+		ix = if (is.character(i))
+				which(i == names(x))
+			else
+				i
+		if (is.null(value)) # remove
+			agr = agr[-ix]
+		else {
+			if (length(ix) == 0 || ix > length(names(x))) # add:
+				agr = st_agr(c(as.character(agr), NA_character_))
+			else # replace:
+				agr[ix] = NA
+		}
+	}
+	x = NextMethod()
+	if (! setting_geom)
+		st_agr(x) = agr
+	x
 }
 
 #' @export
@@ -228,6 +270,8 @@ print.sf = function(x, ..., n =
 
 	nf = length(x) - 1
 	app = paste("and", nf, ifelse(nf == 1, "field", "fields"))
+	if (any(!is.na(st_agr(x))))
+		app = paste0(app, "\n", "Attribute-geometry relationship: ", summarize_agr(x))
 	print(st_geometry(x), n = 0, what = "Simple feature collection with", append = app)
 	if (n > 0) {
 		y <- x
@@ -262,9 +306,4 @@ rbind.sf = function(..., deparse.level = 1) {
 cbind.sf = function(..., deparse.level = 1) {
 	st_sf(base::cbind.data.frame(...))
 	# do.call(st_sf, list(...))
-}
-
-all_fields = function(x) {
-	x = attr(x, "relation_to_geometry")
-	!(any(is.na(x)) || any(x != "field"))
 }
