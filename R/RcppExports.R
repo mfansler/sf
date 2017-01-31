@@ -81,8 +81,8 @@ CPL_write_ogr <- function(obj, dsn, layer, driver, dco, lco, geom, dim, quiet = 
     invisible(.Call('sf_CPL_write_ogr', PACKAGE = 'sf', obj, dsn, layer, driver, dco, lco, geom, dim, quiet))
 }
 
-CPL_geos_binop <- function(sfc0, sfc1, op, par = 0.0, sparse = TRUE) {
-    .Call('sf_CPL_geos_binop', PACKAGE = 'sf', sfc0, sfc1, op, par, sparse)
+CPL_geos_binop <- function(sfc0, sfc1, op, par = 0.0, sparse = TRUE, prepared = FALSE) {
+    .Call('sf_CPL_geos_binop', PACKAGE = 'sf', sfc0, sfc1, op, par, sparse, prepared)
 }
 
 CPL_geos_is_valid <- function(sfc) {
@@ -99,6 +99,10 @@ CPL_geos_union <- function(sfc, by_feature = FALSE) {
 
 CPL_geos_op <- function(op, sfc, bufferDist = 0.0, nQuadSegs = 30L, dTolerance = 0.0, preserveTopology = FALSE, bOnlyEdges = 1L, dfMaxLength = 0.0) {
     .Call('sf_CPL_geos_op', PACKAGE = 'sf', op, sfc, bufferDist, nQuadSegs, dTolerance, preserveTopology, bOnlyEdges, dfMaxLength)
+}
+
+CPL_geos_voronoi <- function(sfc, env, dTolerance = 0.0, bOnlyEdges = 1L) {
+    .Call('sf_CPL_geos_voronoi', PACKAGE = 'sf', sfc, env, dTolerance, bOnlyEdges)
 }
 
 CPL_geos_op2 <- function(op, sfcx, sfcy) {

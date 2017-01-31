@@ -18,6 +18,7 @@ Type 'q()' to quit R.
 > suppressPackageStartupMessages(library(sf))
 > # nc = st_read(system.file("gpkg/nc.gpkg", package="sf"))
 > nc = st_read(system.file("shape/nc.shp", package="sf"), quiet = TRUE)
+> ncm = st_transform(nc, 32119)
 > 
 > x = st_transform(nc[1:10,], 32119)
 > st_distance(x)
@@ -57,31 +58,34 @@ Units: m
 > ops = c("intersects", "disjoint", "touches", "crosses", "within", "contains", "overlaps", "equals", 
 + "covers", "covered_by", "equals_exact")
 > for (op in ops) {
-+ 	x = sf:::st_geos_binop(op, nc[1:50,], nc[51:100,], 0, FALSE)
-+ 	x = sf:::st_geos_binop(op, nc[1:50,], nc[51:100,], 0, TRUE)
++ 	x = sf:::st_geos_binop(op, ncm[1:50,], ncm[51:100,], 0, FALSE)
++ 	x = sf:::st_geos_binop(op, ncm[1:50,], ncm[51:100,], 0, TRUE)
 + }
-although coordinates are longitude/latitude, it is assumed that they are planar
-although coordinates are longitude/latitude, it is assumed that they are planar
-although coordinates are longitude/latitude, it is assumed that they are planar
-although coordinates are longitude/latitude, it is assumed that they are planar
-although coordinates are longitude/latitude, it is assumed that they are planar
-although coordinates are longitude/latitude, it is assumed that they are planar
-although coordinates are longitude/latitude, it is assumed that they are planar
-although coordinates are longitude/latitude, it is assumed that they are planar
-although coordinates are longitude/latitude, it is assumed that they are planar
-although coordinates are longitude/latitude, it is assumed that they are planar
-although coordinates are longitude/latitude, it is assumed that they are planar
-although coordinates are longitude/latitude, it is assumed that they are planar
-although coordinates are longitude/latitude, it is assumed that they are planar
-although coordinates are longitude/latitude, it is assumed that they are planar
-although coordinates are longitude/latitude, it is assumed that they are planar
-although coordinates are longitude/latitude, it is assumed that they are planar
-although coordinates are longitude/latitude, it is assumed that they are planar
-although coordinates are longitude/latitude, it is assumed that they are planar
+> 
+> ops = c("intersects", "disjoint", "touches", "crosses", "within", "contains", "overlaps",
++ "covers", "covered_by")
+> df = data.frame(ops = ops)
+> df$equal = NA
+> for (op in ops)
++ 	df[df$ops == op, "equal"] = identical(
++ 		sf:::st_geos_binop(op, ncm[1:50,], ncm[51:100,], 0, TRUE, FALSE),
++ 		sf:::st_geos_binop(op, ncm[1:50,], ncm[51:100,], 0, TRUE,  TRUE)
++ 	)
+> df	
+         ops equal
+1 intersects  TRUE
+2   disjoint  TRUE
+3    touches  TRUE
+4    crosses  TRUE
+5     within  TRUE
+6   contains  TRUE
+7   overlaps  TRUE
+8     covers  TRUE
+9 covered_by  TRUE
 > 
 > try(x <- sf:::st_geos_binop("ErrorOperation", nc[1:50,], nc[51:100,], 0, TRUE))
 although coordinates are longitude/latitude, it is assumed that they are planar
-Error in CPL_geos_binop(st_geometry(x), st_geometry(y), op, par, sparse) : 
+Error in CPL_geos_binop(st_geometry(x), st_geometry(y), op, par, sparse,  : 
   wrong value for op
 > 
 > st_combine(nc)
@@ -140,6 +144,27 @@ In st_interpolate_aw(nc["BIR74"], g, extensive = TRUE) :
 > st_linemerge(mls)
 LINESTRING(0 0, 1 1, 2 0)
 > 
+> # voronoi:
+> set.seed(1)
+> x = st_multipoint(matrix(runif(10),,2))
+> box = st_polygon(list(rbind(c(0,0),c(1,0),c(1,1),c(0,1),c(0,0))))
+> v = st_sfc(st_voronoi(x, st_sfc(box)))
+> plot(v, col = 0, border = 1, axes = TRUE)
+> plot(box, add = TRUE, col = 0, border = 1) # a larger box is returned, as documented
+> plot(x, add = TRUE, col = 'red', cex=2, pch=16)
+> plot(st_intersection(st_cast(v), box)) # clip to smaller box
+> plot(x, add = TRUE, col = 'red', cex=2, pch=16)
+> 
+> v = st_voronoi(x)
+> class(v)
+[1] "XY"                 "GEOMETRYCOLLECTION" "sfg"               
+> v = st_sfc(st_voronoi(st_sfc(x)))
+> class(v)
+[1] "sfc_GEOMETRYCOLLECTION" "sfc"                   
+> v = st_voronoi(st_sf(a = 1, geom = st_sfc(x)))
+> class(v)
+[1] "sf"         "data.frame"
+> 
 > proc.time()
    user  system elapsed 
-  2.008   0.004   2.012 
+  2.112   0.024   2.133 

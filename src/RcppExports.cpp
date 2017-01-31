@@ -244,8 +244,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // CPL_geos_binop
-Rcpp::List CPL_geos_binop(Rcpp::List sfc0, Rcpp::List sfc1, std::string op, double par, bool sparse);
-RcppExport SEXP sf_CPL_geos_binop(SEXP sfc0SEXP, SEXP sfc1SEXP, SEXP opSEXP, SEXP parSEXP, SEXP sparseSEXP) {
+Rcpp::List CPL_geos_binop(Rcpp::List sfc0, Rcpp::List sfc1, std::string op, double par, bool sparse, bool prepared);
+RcppExport SEXP sf_CPL_geos_binop(SEXP sfc0SEXP, SEXP sfc1SEXP, SEXP opSEXP, SEXP parSEXP, SEXP sparseSEXP, SEXP preparedSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -254,7 +254,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< std::string >::type op(opSEXP);
     Rcpp::traits::input_parameter< double >::type par(parSEXP);
     Rcpp::traits::input_parameter< bool >::type sparse(sparseSEXP);
-    rcpp_result_gen = Rcpp::wrap(CPL_geos_binop(sfc0, sfc1, op, par, sparse));
+    Rcpp::traits::input_parameter< bool >::type prepared(preparedSEXP);
+    rcpp_result_gen = Rcpp::wrap(CPL_geos_binop(sfc0, sfc1, op, par, sparse, prepared));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -307,6 +308,20 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type bOnlyEdges(bOnlyEdgesSEXP);
     Rcpp::traits::input_parameter< double >::type dfMaxLength(dfMaxLengthSEXP);
     rcpp_result_gen = Rcpp::wrap(CPL_geos_op(op, sfc, bufferDist, nQuadSegs, dTolerance, preserveTopology, bOnlyEdges, dfMaxLength));
+    return rcpp_result_gen;
+END_RCPP
+}
+// CPL_geos_voronoi
+Rcpp::List CPL_geos_voronoi(Rcpp::List sfc, Rcpp::List env, double dTolerance, int bOnlyEdges);
+RcppExport SEXP sf_CPL_geos_voronoi(SEXP sfcSEXP, SEXP envSEXP, SEXP dToleranceSEXP, SEXP bOnlyEdgesSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::List >::type sfc(sfcSEXP);
+    Rcpp::traits::input_parameter< Rcpp::List >::type env(envSEXP);
+    Rcpp::traits::input_parameter< double >::type dTolerance(dToleranceSEXP);
+    Rcpp::traits::input_parameter< int >::type bOnlyEdges(bOnlyEdgesSEXP);
+    rcpp_result_gen = Rcpp::wrap(CPL_geos_voronoi(sfc, env, dTolerance, bOnlyEdges));
     return rcpp_result_gen;
 END_RCPP
 }

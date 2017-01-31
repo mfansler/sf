@@ -1,5 +1,5 @@
 Package: sf
-Version: 0.3-0
+Version: 0.3-1
 Title: Simple Features for R
 Description: Support for simple features, a standardized way to encode spatial data, with bindings 
     to GDAL, GEOS and Proj.4.
@@ -31,7 +31,7 @@ Collate: RcppExports.R init.R bbox.R read.R db.R sfc.R sfg.R sf.R wkb.R
         tidy.R cast_sfg.R cast_sfc.R graticule.R datasets.R aggregate.R
         agr.R maps.R
 NeedsCompilation: yes
-Packaged: 2017-01-27 19:28:11 UTC; edzer
+Packaged: 2017-01-30 14:23:37 UTC; edzer
 Author: Edzer Pebesma [aut, cre],
   Roger Bivand [ctb],
   Ian Cook [ctb],
@@ -43,4 +43,4 @@ Author: Edzer Pebesma [aut, cre],
   Etienne Racine [ctb]
 Maintainer: Edzer Pebesma <edzer.pebesma@uni-muenster.de>
 Repository: CRAN
-Date/Publication: 2017-01-28 17:31:34
+Date/Publication: 2017-01-31 06:51:17
