@@ -66,13 +66,13 @@ st_contains(x, y, sparse = TRUE, prepared = FALSE)
 
 st_overlaps(x, y, sparse = TRUE, prepared = FALSE)
 
-st_equals(x, y, sparse = TRUE)
+st_equals(x, y, sparse = TRUE, prepared = FALSE)
 
 st_covers(x, y, sparse = TRUE, prepared = FALSE)
 
 st_covered_by(x, y, sparse = TRUE, prepared = FALSE)
 
-st_equals_exact(x, y, par, sparse = TRUE)
+st_equals_exact(x, y, par, sparse = TRUE, prepared = FALSE)
 
 st_buffer(x, dist, nQuadSegs = 30)
 
@@ -121,7 +121,7 @@ st_line_sample(x, n, density, type = "regular")
 
 \item{par}{numeric; parameter used for "equals_exact" (margin) and "is_within_distance"}
 
-\item{dist}{buffer distance}
+\item{dist}{numeric; buffer distance for all, or for each of the elements in \code{x}}
 
 \item{nQuadSegs}{integer; number of segments per quadrant (fourth of a circle)}
 

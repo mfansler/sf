@@ -307,3 +307,27 @@ cbind.sf = function(..., deparse.level = 1) {
 	st_sf(base::cbind.data.frame(...))
 	# do.call(st_sf, list(...))
 }
+
+#' merge method for sf and data.frame object
+#' 
+#' merge method for sf and data.frame object
+#' @param x object of class \code{sf}
+#' @param y object of class \code{data.frame}
+#' @param ... arguments passed on to \code{merge.data.frame}
+#' @export
+#' @examples
+#' a = data.frame(a = 1:3, b = 5:7)
+#' st_geometry(a) = st_sfc(st_point(c(0,0)), st_point(c(1,1)), st_point(c(2,2)))
+#' b = data.frame(x = c("a", "b", "c"), b = c(2,5,6))
+#' merge(a, b)
+#' merge(a, b, all = TRUE)
+merge.sf = function(x, y, ...) {
+	if (inherits(y, "sf"))
+		stop("merge on two sf objects not supported")
+	sf_column = attr(x, "sf_column")
+	ret = NextMethod()
+	g = ret[[sf_column]] # may have NULL values in it
+	ret[[sf_column]] = NULL
+	st_geometry(ret) = fix_NULL_values(g)
+	ret
+}

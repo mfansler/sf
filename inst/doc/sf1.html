@@ -305,7 +305,7 @@ $(document).ready(function () {
 <pre class="r"><code>library(sf)
 ## Linking to GEOS 3.5.0, GDAL 2.1.0, proj.4 4.9.2
 nc &lt;- st_read(system.file(&quot;shape/nc.shp&quot;, package=&quot;sf&quot;))
-## Reading layer `nc' from data source `/tmp/Rtmppew7sB/Rinst195d15a7c929/sf/shape/nc.shp' using driver `ESRI Shapefile'
+## Reading layer `nc' from data source `/tmp/RtmpjTzHwK/Rinst1ad4673ada92/sf/shape/nc.shp' using driver `ESRI Shapefile'
 ## converted into: MULTIPOLYGON
 ## Simple feature collection with 100 features and 14 fields
 ## geometry type:  MULTIPOLYGON
@@ -337,17 +337,18 @@ nc &lt;- st_read(system.file(&quot;shape/nc.shp&quot;, package=&quot;sf&quot;))
 <pre class="r"><code>methods(class = &quot;sf&quot;)
 ##  [1] $&lt;-               [                 [[&lt;-             
 ##  [4] aggregate         cbind             coerce           
-##  [7] initialize        plot              print            
-## [10] rbind             show              slotsFromS3      
-## [13] st_agr            st_agr&lt;-          st_as_sf         
-## [16] st_bbox           st_boundary       st_buffer        
-## [19] st_cast           st_centroid       st_convex_hull   
-## [22] st_crs            st_crs&lt;-          st_difference    
-## [25] st_geometry       st_geometry&lt;-     st_intersection  
-## [28] st_is             st_linemerge      st_polygonize    
-## [31] st_precision      st_segmentize     st_simplify      
-## [34] st_sym_difference st_transform      st_triangulate   
-## [37] st_union          st_voronoi        st_zm            
+##  [7] initialize        merge             plot             
+## [10] print             rbind             show             
+## [13] slotsFromS3       st_agr            st_agr&lt;-         
+## [16] st_as_sf          st_bbox           st_boundary      
+## [19] st_buffer         st_cast           st_centroid      
+## [22] st_convex_hull    st_crs            st_crs&lt;-         
+## [25] st_difference     st_geometry       st_geometry&lt;-    
+## [28] st_intersection   st_is             st_linemerge     
+## [31] st_polygonize     st_precision      st_segmentize    
+## [34] st_simplify       st_sym_difference st_transform     
+## [37] st_triangulate    st_union          st_voronoi       
+## [40] st_zm            
 ## see '?methods' for accessing help and source code</code></pre>
 <p>It is also possible to create <code>data.frame</code> objects with geometry list-columns that are not of class <code>sf</code>, e.g. by</p>
 <pre class="r"><code>nc.no_sf &lt;- as.data.frame(nc)
@@ -567,7 +568,7 @@ st_as_sfc(structure(list(st_as_binary(x)), class = &quot;WKB&quot;))[[1]]
 <p>As we’ve seen above, reading spatial data from an external file can be done by</p>
 <pre class="r"><code>filename &lt;- system.file(&quot;shape/nc.shp&quot;, package=&quot;sf&quot;)
 nc &lt;- st_read(filename)
-## Reading layer `nc' from data source `/tmp/Rtmppew7sB/Rinst195d15a7c929/sf/shape/nc.shp' using driver `ESRI Shapefile'
+## Reading layer `nc' from data source `/tmp/RtmpjTzHwK/Rinst1ad4673ada92/sf/shape/nc.shp' using driver `ESRI Shapefile'
 ## converted into: MULTIPOLYGON
 ## Simple feature collection with 100 features and 14 fields
 ## geometry type:  MULTIPOLYGON
@@ -577,7 +578,7 @@ nc &lt;- st_read(filename)
 ## proj4string:    +proj=longlat +datum=NAD27 +no_defs</code></pre>
 <p>and writing takes place in the same fashion, using <code>st_write</code>:</p>
 <pre class="r"><code>st_write(nc, &quot;nc.shp&quot;)
-## Writing layer `nc.shp' to data source `/tmp/Rtmppew7sB/Rbuild195d251f0d21/sf/vignettes/nc.shp' using driver `ESRI Shapefile'
+## Writing layer `nc.shp' to data source `/tmp/RtmpjTzHwK/Rbuild1ad4755ea6ba/sf/vignettes/nc.shp' using driver `ESRI Shapefile'
 ## features:       100
 ## fields:         14
 ## geometry type:  Multi Polygon</code></pre>
@@ -781,7 +782,7 @@ st_is_valid(st_sfc(x2,x3))
         CNTY_ID = &quot;identity&quot;, NAME = &quot;identity&quot;, FIPS = &quot;identity&quot;, FIPSNO = &quot;identity&quot;,
         CRESS_ID = &quot;identity&quot;, BIR74 = &quot;aggregate&quot;, SID74 = &quot;aggregate&quot;, NWBIR74 = &quot;aggregate&quot;,
         BIR79 = &quot;aggregate&quot;, SID79 = &quot;aggregate&quot;, NWBIR79 = &quot;aggregate&quot;))
-## Reading layer `nc' from data source `/tmp/Rtmppew7sB/Rinst195d15a7c929/sf/shape/nc.shp' using driver `ESRI Shapefile'
+## Reading layer `nc' from data source `/tmp/RtmpjTzHwK/Rinst1ad4673ada92/sf/shape/nc.shp' using driver `ESRI Shapefile'
 ## converted into: MULTIPOLYGON
 ## Simple feature collection with 100 features and 14 fields
 ## Attribute-geometry relationship: 0 constant, 8 aggregate, 6 identity
