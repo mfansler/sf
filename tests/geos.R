@@ -26,6 +26,8 @@ for (op in ops)
 	)
 df	
 
+st_contains_properly(ncm[1:3,], ncm[1:3])
+
 try(x <- sf:::st_geos_binop("ErrorOperation", nc[1:50,], nc[51:100,], 0, TRUE))
 
 st_combine(nc)
@@ -57,7 +59,7 @@ g = st_makegrid(offset = c(0,0), cellsize = c(1,1), n = c(10,10))
 mls = st_multilinestring(list(rbind(c(0,0), c(1,1)), rbind(c(2,0), c(1,1))))
 st_linemerge(mls)
 
-if (sf:::CPL_geos_version() >= "3.5.0") {
+if (sf_extSoftVersion()["GEOS"] >= "3.5.0") {
  # voronoi:
  set.seed(1)
  x = st_multipoint(matrix(runif(10),,2))
@@ -68,11 +70,11 @@ if (sf:::CPL_geos_version() >= "3.5.0") {
  plot(x, add = TRUE, col = 'red', cex=2, pch=16)
  plot(st_intersection(st_cast(v), box)) # clip to smaller box
  plot(x, add = TRUE, col = 'red', cex=2, pch=16)
-}
 
-v = st_voronoi(x)
-class(v)
-v = st_sfc(st_voronoi(st_sfc(x)))
-class(v)
-v = st_voronoi(st_sf(a = 1, geom = st_sfc(x)))
-class(v)
+ v = st_voronoi(x)
+ print(class(v))
+ v = st_sfc(st_voronoi(st_sfc(x)))
+ print(class(v))
+ v = st_voronoi(st_sf(a = 1, geom = st_sfc(x)))
+ print(class(v))
+}

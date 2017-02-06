@@ -47,26 +47,30 @@ void CPL_geos_finish(GEOSContextHandle_t ctxt) {
 
 std::vector<GEOSGeom> geometries_from_sfc(GEOSContextHandle_t hGEOSCtxt, Rcpp::List sfc) {
 	double precision = sfc.attr("precision");
-	Rcpp::List wkblst = CPL_write_wkb(sfc, false, native_endian(), "XY", precision);
+	Rcpp::List wkblst = CPL_write_wkb(sfc, true, native_endian(), get_dim(sfc), precision);
 	std::vector<GEOSGeom> g(sfc.size());
+	GEOSWKBReader *wkb_reader = GEOSWKBReader_create_r(hGEOSCtxt);
 	for (int i = 0; i < sfc.size(); i++) {
 		Rcpp::RawVector r = wkblst[i];
-		g[i] = GEOSGeomFromWKB_buf_r(hGEOSCtxt, &(r[0]), r.size());
+		g[i] = GEOSWKBReader_read_r(hGEOSCtxt, wkb_reader, &(r[0]), r.size());
 	}
+	GEOSWKBReader_destroy_r(hGEOSCtxt, wkb_reader);
 	return g;
 }
 
 Rcpp::List sfc_from_geometry(GEOSContextHandle_t hGEOSCtxt, std::vector<GEOSGeom> geom) {
 	Rcpp::List out(geom.size());
+	GEOSWKBWriter *wkb_writer = GEOSWKBWriter_create_r(hGEOSCtxt);
 	for (size_t i = 0; i < geom.size(); i++) {
 		size_t size;
-		unsigned char *buf = GEOSGeomToWKB_buf_r(hGEOSCtxt, geom[i], &size);
+		unsigned char *buf = GEOSWKBWriter_write_r(hGEOSCtxt, wkb_writer, geom[i], &size);
 		Rcpp::RawVector raw(size);
 		memcpy(&(raw[0]), buf, size);
-		free(buf);
+		GEOSFree_r(hGEOSCtxt, buf);
 		out[i] = raw;
 		GEOSGeom_destroy_r(hGEOSCtxt, geom[i]);
 	}
+	GEOSWKBWriter_destroy_r(hGEOSCtxt, wkb_writer);
 	return CPL_read_wkb(out, false, native_endian());
 }
 
@@ -136,7 +140,7 @@ log_prfn which_prep_geom_fn(const std::string op) {
 		return GEOSPreparedWithin_r;
 	else if (op == "contains")
 		return GEOSPreparedContains_r;
-	else if (op == "contains_poperly") // not interfaced from R
+	else if (op == "contains_properly") // not interfaced from R
 		return GEOSPreparedContainsProperly_r;
 	else if (op == "overlaps")
 		return GEOSPreparedOverlaps_r;
@@ -279,18 +283,10 @@ Rcpp::List CPL_geos_union(Rcpp::List sfc, bool by_feature = false) {
 	std::vector<GEOSGeom> gmv_out(by_feature ? sfc.size() : 1);
 	if (by_feature) {
 		for (int i = 0; i < sfc.size(); i++)
-#if GEOS_VERSION_MAJOR >= 3 && GEOS_VERSION_MINOR >= 3
 			gmv_out[i] = GEOSUnaryUnion_r(hGEOSCtxt, gmv[i]);
-#else
-			gmv_out[i] = GEOSUnionCascaded_r(hGEOSCtxt, gmv[i]);
-#endif
 	} else {
 		GEOSGeom gc = GEOSGeom_createCollection_r(hGEOSCtxt, GEOS_GEOMETRYCOLLECTION, gmv.data(), gmv.size());
-#if GEOS_VERSION_MAJOR >= 3 && GEOS_VERSION_MINOR >= 3
 		gmv_out[0] = GEOSUnaryUnion_r(hGEOSCtxt, gc);
-#else
-		gmv_out[0] = GEOSUnionCascaded_r(hGEOSCtxt, gc);
-#endif
 		GEOSGeom_destroy_r(hGEOSCtxt, gc);
 	}
 	Rcpp::List out(sfc_from_geometry(hGEOSCtxt, gmv_out)); // destroys gmv_out
@@ -421,21 +417,29 @@ Rcpp::List CPL_geos_op2(std::string op, Rcpp::List sfcx, Rcpp::List sfcy) {
 
 	size_t n = 0;
 	if (op == "intersection") {
-		for (size_t i = 0; i < y.size(); i++)
+		for (size_t i = 0; i < y.size(); i++) {
 			for (size_t j = 0; j < x.size(); j++)
 				out[i * x.size() + j] = chkNULLcnt(hGEOSCtxt, GEOSIntersection_r(hGEOSCtxt, x[j], y[i]), &n);
+			R_CheckUserInterrupt();
+		}
 	} else if (op == "union") {
-		for (size_t i = 0; i < y.size(); i++)
+		for (size_t i = 0; i < y.size(); i++) {
 			for (size_t j = 0; j < x.size(); j++)
 				out[i * x.size() + j] = chkNULLcnt(hGEOSCtxt, GEOSUnion_r(hGEOSCtxt, x[j], y[i]), &n);
+			R_CheckUserInterrupt();
+		}
 	} else if (op == "difference") {
-		for (size_t i = 0; i < y.size(); i++)
+		for (size_t i = 0; i < y.size(); i++) {
 			for (size_t j = 0; j < x.size(); j++)
 				out[i * x.size() + j] = chkNULLcnt(hGEOSCtxt, GEOSDifference_r(hGEOSCtxt, x[j], y[i]), &n);
+			R_CheckUserInterrupt();
+		}
 	} else if (op == "sym_difference") {
-		for (size_t i = 0; i < y.size(); i++)
+		for (size_t i = 0; i < y.size(); i++) {
 			for (size_t j = 0; j < x.size(); j++)
 				out[i * x.size() + j] = chkNULLcnt(hGEOSCtxt, GEOSSymDifference_r(hGEOSCtxt, x[j], y[i]), &n);
+			R_CheckUserInterrupt();
+		}
 	} else 
 		throw std::invalid_argument("invalid operation"); // would leak g, g0 and out // #nocov
 	// clean up x and y:
@@ -456,7 +460,7 @@ Rcpp::List CPL_geos_op2(std::string op, Rcpp::List sfcx, Rcpp::List sfcy) {
 				m(k, 1) = i + 1;
 				k++;
 				if (k > n)
-					throw std::range_error("invalid k");
+					throw std::range_error("invalid k"); // #nocov
 			} else // discard:
 				GEOSGeom_destroy_r(hGEOSCtxt, out[l]);
 		}

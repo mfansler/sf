@@ -305,7 +305,7 @@ $(document).ready(function () {
 <pre class="r"><code>library(sf)
 ## Linking to GEOS 3.5.0, GDAL 2.1.0, proj.4 4.9.2
 nc &lt;- st_read(system.file(&quot;shape/nc.shp&quot;, package=&quot;sf&quot;))
-## Reading layer `nc' from data source `/tmp/RtmpjTzHwK/Rinst1ad4673ada92/sf/shape/nc.shp' using driver `ESRI Shapefile'
+## Reading layer `nc' from data source `/tmp/RtmpUULWjI/Rinst309017cd0a96/sf/shape/nc.shp' using driver `ESRI Shapefile'
 ## converted into: MULTIPOLYGON
 ## Simple feature collection with 100 features and 14 fields
 ## geometry type:  MULTIPOLYGON
@@ -568,7 +568,7 @@ st_as_sfc(structure(list(st_as_binary(x)), class = &quot;WKB&quot;))[[1]]
 <p>As we’ve seen above, reading spatial data from an external file can be done by</p>
 <pre class="r"><code>filename &lt;- system.file(&quot;shape/nc.shp&quot;, package=&quot;sf&quot;)
 nc &lt;- st_read(filename)
-## Reading layer `nc' from data source `/tmp/RtmpjTzHwK/Rinst1ad4673ada92/sf/shape/nc.shp' using driver `ESRI Shapefile'
+## Reading layer `nc' from data source `/tmp/RtmpUULWjI/Rinst309017cd0a96/sf/shape/nc.shp' using driver `ESRI Shapefile'
 ## converted into: MULTIPOLYGON
 ## Simple feature collection with 100 features and 14 fields
 ## geometry type:  MULTIPOLYGON
@@ -578,7 +578,7 @@ nc &lt;- st_read(filename)
 ## proj4string:    +proj=longlat +datum=NAD27 +no_defs</code></pre>
 <p>and writing takes place in the same fashion, using <code>st_write</code>:</p>
 <pre class="r"><code>st_write(nc, &quot;nc.shp&quot;)
-## Writing layer `nc.shp' to data source `/tmp/RtmpjTzHwK/Rbuild1ad4755ea6ba/sf/vignettes/nc.shp' using driver `ESRI Shapefile'
+## Writing layer `nc.shp' to data source `/tmp/RtmpUULWjI/Rbuild3090f9ec210/sf/vignettes/nc.shp' using driver `ESRI Shapefile'
 ## features:       100
 ## fields:         14
 ## geometry type:  Multi Polygon</code></pre>
@@ -782,7 +782,7 @@ st_is_valid(st_sfc(x2,x3))
         CNTY_ID = &quot;identity&quot;, NAME = &quot;identity&quot;, FIPS = &quot;identity&quot;, FIPSNO = &quot;identity&quot;,
         CRESS_ID = &quot;identity&quot;, BIR74 = &quot;aggregate&quot;, SID74 = &quot;aggregate&quot;, NWBIR74 = &quot;aggregate&quot;,
         BIR79 = &quot;aggregate&quot;, SID79 = &quot;aggregate&quot;, NWBIR79 = &quot;aggregate&quot;))
-## Reading layer `nc' from data source `/tmp/RtmpjTzHwK/Rinst1ad4673ada92/sf/shape/nc.shp' using driver `ESRI Shapefile'
+## Reading layer `nc' from data source `/tmp/RtmpUULWjI/Rinst309017cd0a96/sf/shape/nc.shp' using driver `ESRI Shapefile'
 ## converted into: MULTIPOLYGON
 ## Simple feature collection with 100 features and 14 fields
 ## Attribute-geometry relationship: 0 constant, 8 aggregate, 6 identity

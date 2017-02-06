@@ -166,40 +166,47 @@ st_relate	= function(x, y) st_geos_binop("relate", x, y, sparse = FALSE)
 #' @param sparse logical; should a sparse matrix be returned (TRUE) or a dense matrix?
 #' @return st_intersects ...	st_equals_exact return a sparse or dense logical matrix with rows and columns corresponding to the number of geometries (or rows) in x and y, respectively
 #' @export
-st_intersects	= function(x, y, sparse = TRUE, prepared = FALSE)
+st_intersects	= function(x, y, sparse = TRUE, prepared = TRUE)
 	st_geos_binop("intersects", x, y, sparse = sparse, prepared = prepared)
 
 #' @name geos
 #' @export
-st_disjoint		= function(x, y, sparse = TRUE, prepared = FALSE)
+st_disjoint		= function(x, y, sparse = TRUE, prepared = TRUE)
 	st_geos_binop("disjoint", x, y, sparse = sparse, prepared = prepared)
 
 #' @name geos
 #' @export
-st_touches		= function(x, y, sparse = TRUE, prepared = FALSE)
+st_touches		= function(x, y, sparse = TRUE, prepared = TRUE)
 	st_geos_binop("touches", x, y, sparse = sparse, prepared = prepared)
 
 #' @name geos
 #' @export
-st_crosses		= function(x, y, sparse = TRUE, prepared = FALSE)
+st_crosses		= function(x, y, sparse = TRUE, prepared = TRUE)
 	st_geos_binop("crosses", x, y, sparse = sparse, prepared = prepared)
 
 #' @name geos
 #' @export
-st_within		= function(x, y, sparse = TRUE, prepared = FALSE)
+st_within		= function(x, y, sparse = TRUE, prepared = TRUE)
 	st_geos_binop("within", x, y, sparse = sparse, prepared = prepared)
 
 #' @name geos
 #' @export
 #' @param prepared logical; prepare geometry for x, before looping over y?
-st_contains		= function(x, y, sparse = TRUE, prepared = FALSE) 
+st_contains		= function(x, y, sparse = TRUE, prepared = TRUE) 
 	st_geos_binop("contains", x, y, sparse = sparse, prepared = prepared)
-
-# todo: contais_properly? (only with prepared)
 
 #' @name geos
 #' @export
-st_overlaps		= function(x, y, sparse = TRUE, prepared = FALSE)
+#' @details `st_contains_properly(A,B)` is true if A intersects B's interior, but not its edges or exterior; A contains A, but A does not properly contain A. 
+st_contains_properly = function(x, y, sparse = TRUE, prepared = TRUE) {
+	if (! prepared)
+		stop("non-prepared geometries not supported for st_contains_properly")
+	st_geos_binop("contains_properly", x, y, sparse = sparse, prepared = TRUE)
+}
+
+#' @name geos
+#' @export
+st_overlaps		= function(x, y, sparse = TRUE, prepared = TRUE)
 	st_geos_binop("overlaps", x, y, sparse = sparse, prepared = prepared)
 
 #' @name geos
@@ -212,12 +219,12 @@ st_equals		= function(x, y, sparse = TRUE, prepared = FALSE) {
 
 #' @name geos
 #' @export
-st_covers		= function(x, y, sparse = TRUE, prepared = FALSE)
+st_covers		= function(x, y, sparse = TRUE, prepared = TRUE)
 	st_geos_binop("covers", x, y, sparse = sparse, prepared = prepared)
 
 #' @name geos
 #' @export
-st_covered_by	= function(x, y, sparse = TRUE, prepared = FALSE)
+st_covered_by	= function(x, y, sparse = TRUE, prepared = TRUE)
 	st_geos_binop("covered_by", x, y, sparse = sparse, prepared = prepared)
 
 #' @name geos
@@ -363,12 +370,14 @@ st_triangulate.sf = function(x, dTolerance = 0.0, bOnlyEdges = FALSE) {
 #' set.seed(1)
 #' x = st_multipoint(matrix(runif(10),,2))
 #' box = st_polygon(list(rbind(c(0,0),c(1,0),c(1,1),c(0,1),c(0,0))))
-#' v = st_sfc(st_voronoi(x, st_sfc(box)))
-#' plot(v, col = 0, border = 1, axes = TRUE)
-#' plot(box, add = TRUE, col = 0, border = 1) # a larger box is returned, as documented
-#' plot(x, add = TRUE, col = 'red', cex=2, pch=16)
-#' plot(st_intersection(st_cast(v), box)) # clip to smaller box
-#' plot(x, add = TRUE, col = 'red', cex=2, pch=16)
+#' if (sf_extSoftVersion()["GEOS"] >= "3.5.0") {
+#'  v = st_sfc(st_voronoi(x, st_sfc(box)))
+#'  plot(v, col = 0, border = 1, axes = TRUE)
+#'  plot(box, add = TRUE, col = 0, border = 1) # a larger box is returned, as documented
+#'  plot(x, add = TRUE, col = 'red', cex=2, pch=16)
+#'  plot(st_intersection(st_cast(v), box)) # clip to smaller box
+#'  plot(x, add = TRUE, col = 'red', cex=2, pch=16)
+#' }
 st_voronoi = function(x, envelope, dTolerance = 0.0, bOnlyEdges = FALSE)
 	UseMethod("st_voronoi")
 
@@ -378,7 +387,7 @@ st_voronoi.sfg = function(x, envelope = list(), dTolerance = 0.0, bOnlyEdges = F
 
 #' @export
 st_voronoi.sfc = function(x, envelope = list(), dTolerance = 0.0, bOnlyEdges = FALSE) {
-	if (CPL_geos_version() >= "3.5.0") {
+	if (sf_extSoftVersion()["GEOS"] >= "3.5.0") {
 		if (isTRUE(st_is_longlat(x)))
 			warning("st_voronoi does not correctly triangulate longitude/latitude data")
 		st_sfc(CPL_geos_voronoi(x, st_sfc(envelope), dTolerance = dTolerance, bOnlyEdges = bOnlyEdges))

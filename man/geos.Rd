@@ -2,40 +2,75 @@
 % Please edit documentation in R/geom.R
 \name{geos}
 \alias{geos}
-\alias{st_area}
-\alias{st_boundary}
-\alias{st_buffer}
-\alias{st_centroid}
-\alias{st_combine}
-\alias{st_contains}
-\alias{st_convex_hull}
-\alias{st_covered_by}
-\alias{st_covers}
-\alias{st_crosses}
-\alias{st_difference}
-\alias{st_dimension}
-\alias{st_disjoint}
-\alias{st_distance}
-\alias{st_equals}
-\alias{st_equals_exact}
-\alias{st_intersection}
-\alias{st_intersects}
-\alias{st_is_simple}
 \alias{st_is_valid}
+\alias{geos}
+\alias{st_dimension}
+\alias{geos}
+\alias{st_area}
+\alias{geos}
 \alias{st_length}
-\alias{st_line_sample}
-\alias{st_linemerge}
-\alias{st_overlaps}
-\alias{st_polygonize}
+\alias{geos}
+\alias{st_is_simple}
+\alias{geos}
+\alias{st_distance}
+\alias{geos}
 \alias{st_relate}
-\alias{st_segmentize}
-\alias{st_simplify}
-\alias{st_sym_difference}
+\alias{geos}
+\alias{st_intersects}
+\alias{geos}
+\alias{st_disjoint}
+\alias{geos}
 \alias{st_touches}
-\alias{st_triangulate}
-\alias{st_union}
-\alias{st_voronoi}
+\alias{geos}
+\alias{st_crosses}
+\alias{geos}
 \alias{st_within}
+\alias{geos}
+\alias{st_contains}
+\alias{geos}
+\alias{st_contains_properly}
+\alias{geos}
+\alias{st_overlaps}
+\alias{geos}
+\alias{st_equals}
+\alias{geos}
+\alias{st_covers}
+\alias{geos}
+\alias{st_covered_by}
+\alias{geos}
+\alias{st_equals_exact}
+\alias{geos}
+\alias{st_buffer}
+\alias{geos}
+\alias{st_boundary}
+\alias{geos}
+\alias{st_convex_hull}
+\alias{geos}
+\alias{st_simplify}
+\alias{geos}
+\alias{st_triangulate}
+\alias{geos}
+\alias{st_voronoi}
+\alias{geos}
+\alias{st_polygonize}
+\alias{geos}
+\alias{st_linemerge}
+\alias{geos}
+\alias{st_centroid}
+\alias{geos}
+\alias{st_segmentize}
+\alias{geos}
+\alias{st_combine}
+\alias{geos}
+\alias{st_intersection}
+\alias{geos}
+\alias{st_difference}
+\alias{geos}
+\alias{st_sym_difference}
+\alias{geos}
+\alias{st_union}
+\alias{geos}
+\alias{st_line_sample}
 \title{Geometric operations on (pairs of) simple feature geometry sets}
 \usage{
 st_is_valid(x)
@@ -52,25 +87,27 @@ st_distance(x, y, dist_fun)
 
 st_relate(x, y)
 
-st_intersects(x, y, sparse = TRUE, prepared = FALSE)
+st_intersects(x, y, sparse = TRUE, prepared = TRUE)
 
-st_disjoint(x, y, sparse = TRUE, prepared = FALSE)
+st_disjoint(x, y, sparse = TRUE, prepared = TRUE)
 
-st_touches(x, y, sparse = TRUE, prepared = FALSE)
+st_touches(x, y, sparse = TRUE, prepared = TRUE)
 
-st_crosses(x, y, sparse = TRUE, prepared = FALSE)
+st_crosses(x, y, sparse = TRUE, prepared = TRUE)
 
-st_within(x, y, sparse = TRUE, prepared = FALSE)
+st_within(x, y, sparse = TRUE, prepared = TRUE)
 
-st_contains(x, y, sparse = TRUE, prepared = FALSE)
+st_contains(x, y, sparse = TRUE, prepared = TRUE)
 
-st_overlaps(x, y, sparse = TRUE, prepared = FALSE)
+st_contains_properly(x, y, sparse = TRUE, prepared = TRUE)
+
+st_overlaps(x, y, sparse = TRUE, prepared = TRUE)
 
 st_equals(x, y, sparse = TRUE, prepared = FALSE)
 
-st_covers(x, y, sparse = TRUE, prepared = FALSE)
+st_covers(x, y, sparse = TRUE, prepared = TRUE)
 
-st_covered_by(x, y, sparse = TRUE, prepared = FALSE)
+st_covered_by(x, y, sparse = TRUE, prepared = TRUE)
 
 st_equals_exact(x, y, par, sparse = TRUE, prepared = FALSE)
 
@@ -176,6 +213,8 @@ Geometric operations on (pairs of) simple feature geometry sets
 \details{
 function \code{dist_fun} should follow the pattern of the distance function \link[geosphere]{distGeo}: the first two arguments must be 2-column point matrices, the third the semi major axis (radius, in m), the third the ellipsoid flattening.
 
+`st_contains_properly(A,B)` is true if A intersects B's interior, but not its edges or exterior; A contains A, but A does not properly contain A.
+
 \code{st_triangulate} requires GEOS version 3.4 or above
 
 \code{st_voronoi} requires GEOS version 3.4 or above
@@ -212,12 +251,14 @@ plot(nc, border = grey(.5))
 set.seed(1)
 x = st_multipoint(matrix(runif(10),,2))
 box = st_polygon(list(rbind(c(0,0),c(1,0),c(1,1),c(0,1),c(0,0))))
-v = st_sfc(st_voronoi(x, st_sfc(box)))
-plot(v, col = 0, border = 1, axes = TRUE)
-plot(box, add = TRUE, col = 0, border = 1) # a larger box is returned, as documented
-plot(x, add = TRUE, col = 'red', cex=2, pch=16)
-plot(st_intersection(st_cast(v), box)) # clip to smaller box
-plot(x, add = TRUE, col = 'red', cex=2, pch=16)
+if (sf_extSoftVersion()["GEOS"] >= "3.5.0") {
+ v = st_sfc(st_voronoi(x, st_sfc(box)))
+ plot(v, col = 0, border = 1, axes = TRUE)
+ plot(box, add = TRUE, col = 0, border = 1) # a larger box is returned, as documented
+ plot(x, add = TRUE, col = 'red', cex=2, pch=16)
+ plot(st_intersection(st_cast(v), box)) # clip to smaller box
+ plot(x, add = TRUE, col = 'red', cex=2, pch=16)
+}
 mls = st_multilinestring(list(matrix(c(0,0,0,1,1,1,0,0),,2,byrow=TRUE)))
 st_polygonize(st_sfc(mls))
 mls = st_multilinestring(list(rbind(c(0,0), c(1,1)), rbind(c(2,0), c(1,1))))
@@ -237,4 +278,3 @@ st_line_sample(st_transform(ls, 3857), n = c(1, 3)) # one and three points
 st_line_sample(st_transform(ls, 3857), density = 1/1000) # one per km
 st_line_sample(st_transform(ls, 3857), density = c(1/1000, 1/10000)) # one per km, one per 10 km
 }
-
