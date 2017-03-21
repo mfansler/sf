@@ -226,8 +226,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // CPL_write_ogr
-void CPL_write_ogr(Rcpp::List obj, Rcpp::CharacterVector dsn, Rcpp::CharacterVector layer, Rcpp::CharacterVector driver, Rcpp::CharacterVector dco, Rcpp::CharacterVector lco, Rcpp::List geom, Rcpp::CharacterVector dim, bool quiet);
-RcppExport SEXP sf_CPL_write_ogr(SEXP objSEXP, SEXP dsnSEXP, SEXP layerSEXP, SEXP driverSEXP, SEXP dcoSEXP, SEXP lcoSEXP, SEXP geomSEXP, SEXP dimSEXP, SEXP quietSEXP) {
+void CPL_write_ogr(Rcpp::List obj, Rcpp::CharacterVector dsn, Rcpp::CharacterVector layer, Rcpp::CharacterVector driver, Rcpp::CharacterVector dco, Rcpp::CharacterVector lco, Rcpp::List geom, Rcpp::CharacterVector dim, bool quiet, bool update);
+RcppExport SEXP sf_CPL_write_ogr(SEXP objSEXP, SEXP dsnSEXP, SEXP layerSEXP, SEXP driverSEXP, SEXP dcoSEXP, SEXP lcoSEXP, SEXP geomSEXP, SEXP dimSEXP, SEXP quietSEXP, SEXP updateSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< Rcpp::List >::type obj(objSEXP);
@@ -239,7 +239,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< Rcpp::List >::type geom(geomSEXP);
     Rcpp::traits::input_parameter< Rcpp::CharacterVector >::type dim(dimSEXP);
     Rcpp::traits::input_parameter< bool >::type quiet(quietSEXP);
-    CPL_write_ogr(obj, dsn, layer, driver, dco, lco, geom, dim, quiet);
+    Rcpp::traits::input_parameter< bool >::type update(updateSEXP);
+    CPL_write_ogr(obj, dsn, layer, driver, dco, lco, geom, dim, quiet, update);
     return R_NilValue;
 END_RCPP
 }
@@ -259,14 +260,26 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// CPL_geos_is_valid
-Rcpp::LogicalVector CPL_geos_is_valid(Rcpp::List sfc);
-RcppExport SEXP sf_CPL_geos_is_valid(SEXP sfcSEXP) {
+// CPL_geos_is_valid_reason
+Rcpp::CharacterVector CPL_geos_is_valid_reason(Rcpp::List sfc);
+RcppExport SEXP sf_CPL_geos_is_valid_reason(SEXP sfcSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< Rcpp::List >::type sfc(sfcSEXP);
-    rcpp_result_gen = Rcpp::wrap(CPL_geos_is_valid(sfc));
+    rcpp_result_gen = Rcpp::wrap(CPL_geos_is_valid_reason(sfc));
+    return rcpp_result_gen;
+END_RCPP
+}
+// CPL_geos_is_valid
+Rcpp::LogicalVector CPL_geos_is_valid(Rcpp::List sfc, bool NA_on_exception);
+RcppExport SEXP sf_CPL_geos_is_valid(SEXP sfcSEXP, SEXP NA_on_exceptionSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::List >::type sfc(sfcSEXP);
+    Rcpp::traits::input_parameter< bool >::type NA_on_exception(NA_on_exceptionSEXP);
+    rcpp_result_gen = Rcpp::wrap(CPL_geos_is_valid(sfc, NA_on_exception));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -373,6 +386,40 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// CPL_invert_sparse_incidence
+Rcpp::List CPL_invert_sparse_incidence(Rcpp::List m, int n);
+RcppExport SEXP sf_CPL_invert_sparse_incidence(SEXP mSEXP, SEXP nSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::List >::type m(mSEXP);
+    Rcpp::traits::input_parameter< int >::type n(nSEXP);
+    rcpp_result_gen = Rcpp::wrap(CPL_invert_sparse_incidence(m, n));
+    return rcpp_result_gen;
+END_RCPP
+}
+// CPL_lwgeom_version
+Rcpp::CharacterVector CPL_lwgeom_version(bool b);
+RcppExport SEXP sf_CPL_lwgeom_version(SEXP bSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< bool >::type b(bSEXP);
+    rcpp_result_gen = Rcpp::wrap(CPL_lwgeom_version(b));
+    return rcpp_result_gen;
+END_RCPP
+}
+// CPL_make_valid
+Rcpp::List CPL_make_valid(Rcpp::List sfc);
+RcppExport SEXP sf_CPL_make_valid(SEXP sfcSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::List >::type sfc(sfcSEXP);
+    rcpp_result_gen = Rcpp::wrap(CPL_make_valid(sfc));
+    return rcpp_result_gen;
+END_RCPP
+}
 // CPL_proj_version
 std::string CPL_proj_version(bool b);
 RcppExport SEXP sf_CPL_proj_version(SEXP bSEXP) {
@@ -392,6 +439,17 @@ BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< std::string >::type proj4string(proj4stringSEXP);
     rcpp_result_gen = Rcpp::wrap(CPL_proj_is_valid(proj4string));
+    return rcpp_result_gen;
+END_RCPP
+}
+// CPL_proj_info
+Rcpp::List CPL_proj_info(int type);
+RcppExport SEXP sf_CPL_proj_info(SEXP typeSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< int >::type type(typeSEXP);
+    rcpp_result_gen = Rcpp::wrap(CPL_proj_info(type));
     return rcpp_result_gen;
 END_RCPP
 }

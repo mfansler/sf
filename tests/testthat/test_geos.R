@@ -16,8 +16,12 @@ test_that("CPL_geos_is_valid works", {
   	st_sfc(st_polygon(list(cbind(c(0,1,1,0,0), c(0,0,1, 1,0)))))))
   expect_warning(
     expect_false(sf:::CPL_geos_is_valid(
-  	st_sfc(st_polygon(list(cbind(c(0,1,1,.5,0),c(0,0,1,-1,0)))))))
+  	st_sfc(st_polygon(list(cbind(c(0,1,1,.5,0),c(0,0,1,-1,0))))), FALSE))
     )
+  expect_false(st_is_valid(st_sfc(st_polygon(list(cbind(c(0,1,1,.5,0),c(0,0,1,-1,0)))))))
+  p1 = st_as_sfc("POLYGON((0 0, 0 10, 10 0, 10 10, 0 0))")
+  expect_false(st_is_valid(p1))
+  expect_equal(st_is_valid(p1, reason = TRUE), "Self-intersection[5 5]")
 })
 
 test_that("geos ops give warnings and errors on longlat", {
@@ -42,7 +46,7 @@ test_that("geos ops give warnings and errors on longlat", {
 	expect_warning(st_buffer(x, .1))
 	expect_warning(st_simplify(x, .1))
 	expect_warning(st_centroid(x))
-	expect_warning(st_segmentize(l, 0.1))
+	expect_silent(st_segmentize(l, 1e5))
 
 	if (CPL_geos_version() >= "3.4.0")
 		expect_warning(st_triangulate(x))
@@ -103,9 +107,9 @@ test_that("geom operations work on sfg or sfc or sf", {
   expect_silent(st_polygonize(glnc)) 
   expect_silent(st_polygonize(glnc[[1]])) 
   
-  expect_that(st_linemerge(lnc), is_a("sf"))
-  expect_that(st_linemerge(glnc), is_a("sfc"))
-  expect_that(st_linemerge(glnc[[4]]), is_a("sfg"))
+  expect_that(st_line_merge(lnc), is_a("sf"))
+  expect_that(st_line_merge(glnc), is_a("sfc"))
+  expect_that(st_line_merge(glnc[[4]]), is_a("sfg"))
   
   expect_silent(st_centroid(lnc))
   expect_that(st_centroid(glnc),  is_a("sfc_POINT"))

@@ -8,7 +8,8 @@
 \usage{
 st_write(obj, dsn, layer = basename(dsn),
   driver = guess_driver_can_write(dsn), ..., dataset_options = NULL,
-  layer_options = NULL, quiet = FALSE, factorsAsCharacter = TRUE)
+  layer_options = NULL, quiet = FALSE, factorsAsCharacter = TRUE,
+  update = FALSE)
 
 st_write_db(conn = NULL, obj, table = substitute(obj),
   geom_name = "wkb_geometry", ..., overwrite = FALSE, append = FALSE,
@@ -17,11 +18,15 @@ st_write_db(conn = NULL, obj, table = substitute(obj),
 \arguments{
 \item{obj}{object of class \code{sf} or \code{sfc}}
 
-\item{dsn}{data source name (interpretation varies by driver - for some drivers, dsn is a file name, but may also be a folder or contain a database name)}
+\item{dsn}{data source name (interpretation varies by driver - for some drivers, dsn is a file name, but may also be a
+folder or contain a database name)}
 
-\item{layer}{layer name (varies by driver, may be a file name without extension); if layer is missing, the \link{basename} of \code{dsn} is taken.}
+\item{layer}{layer name (varies by driver, may be a file name without extension); if layer is missing, the
+\link{basename} of \code{dsn} is taken.}
 
-\item{driver}{character; driver name to be used, if missing, a driver name is guessed from \code{dsn}; \code{st_drivers()} returns the drivers that are available with their properties; links to full driver documentation are found at \url{http://www.gdal.org/ogr_formats.html}.}
+\item{driver}{character; driver name to be used, if missing, a driver name is guessed from \code{dsn};
+\code{st_drivers()} returns the drivers that are available with their properties; links to full driver documentation
+are found at \url{http://www.gdal.org/ogr_formats.html}.}
 
 \item{...}{ignored for \code{st_write}, for \code{st_write_db} arguments passed on to \code{dbWriteTable}}
 
@@ -31,11 +36,15 @@ st_write_db(conn = NULL, obj, table = substitute(obj),
 
 \item{quiet}{logical; suppress info on name, driver, size and spatial reference}
 
-\item{factorsAsCharacter}{logical; convert \code{factor} objects into character strings (default), else into numbers by \code{as.numeric}.}
+\item{factorsAsCharacter}{logical; convert \code{factor} objects into character strings (default), else into numbers by
+\code{as.numeric}.}
+
+\item{update}{logical; if \code{TRUE}, try to update (append to) existing data source;this is only supported by some drivers
+(e.g. GPKG), for other drivers the layer may simply be overwritten}
 
 \item{conn}{open database connection}
 
-\item{table}{name for the table in the database}
+\item{table}{character; name for the table in the database, possibly of length 2, \code{c("schema", "name")}; default schema is \code{public}}
 
 \item{geom_name}{name of the geometry column in the database}
 

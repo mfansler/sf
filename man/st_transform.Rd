@@ -8,15 +8,19 @@
 \alias{st_transform.sf}
 \alias{st_transform}
 \alias{st_transform.sfg}
+\alias{st_transform}
+\alias{st_proj_info}
 \title{Transform or convert coordinates of simple feature}
 \usage{
-st_transform(x, crs)
+st_transform(x, crs, ...)
 
-\method{st_transform}{sfc}(x, crs, ...)
+\method{st_transform}{sfc}(x, crs, ..., partial = TRUE, check = FALSE)
 
 \method{st_transform}{sf}(x, crs, ...)
 
 \method{st_transform}{sfg}(x, crs, ...)
+
+st_proj_info(type = "proj")
 }
 \arguments{
 \item{x}{object of class sf, sfc or sfg}
@@ -24,14 +28,22 @@ st_transform(x, crs)
 \item{crs}{coordinate reference system: integer with the epsg code, or character with proj4string}
 
 \item{...}{ignored}
+
+\item{partial}{logical; allow for partial projection, if not all points of a geometry can be projected (corresponds to setting environment variable \code{OGR_ENABLE_PARTIAL_REPROJECTION} to \code{TRUE})}
+
+\item{check}{logical; perform a sanity check on resulting polygons?}
+
+\item{type}{character; one of \code{proj}, \code{ellps}, \code{datum} or \code{units}}
 }
 \description{
 Transform or convert coordinates of simple feature
 }
 \details{
-transforms coordinates of object to new projection
+transforms coordinates of object to new projection. Features that cannot be tranformed are returned as empty geometries.
 
 the st_transform method for sfg objects assumes that the crs of the object is available as an attribute of that name.
+
+\code{st_proj_info} lists the available projections, ellipses, datums or units supported by the Proj.4 library
 }
 \examples{
 p1 = st_point(c(7,52))
@@ -47,4 +59,5 @@ st_area(st_transform(nc[1,], 2264)) # NC state plane, US foot
 library(units)
 as.units(st_area(st_transform(nc[1,], 2264)), make_unit("m")^2)
 st_transform(structure(p1, proj4string = "+init=epsg:4326"), "+init=epsg:3857")
+st_proj_info("datum")
 }

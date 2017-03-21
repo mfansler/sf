@@ -3,7 +3,8 @@
 #' @param x object of class sf
 #' @param y ignored
 #' @param ... further specifications, see \link{plot_sf} and \link{plot}
-#' @param ncol integer; default number of colors to be used.
+#' @param ncol integer; default number of colors to be used
+#' @param max.plot integer; lower boundary to maximium number of attributes to plot
 #' @param pch plotting symbol
 #' @param cex symbol size
 #' @param bg symbol background color
@@ -15,8 +16,9 @@
 #' @param type plot type: 'p' for points, 'l' for lines, 'b' for both
 #' @method plot sf
 #' @name plot
-#' @details \code{plot.sf} plots maps with colors following from attribute columns, 
-#' one map per attribute. It uses \code{sf.colors} for default colors.
+#' @details \code{plot.sf} maximally plots \code{max.plot} maps with colors following from attribute columns, 
+#' one map per attribute. It uses \code{sf.colors} for default colors. For more control over individual maps,
+#' set parameter \code{mfrow} with \code{par} prior to plotting,  and plot single maps one by one.
 #' 
 #' \code{plot.sfc} plots the geometry, additional parameters can be passed on
 #' to control color, lines or symbols.
@@ -78,15 +80,31 @@
 #' gc = st_sf(a=2:3, b = st_sfc(gc1,gc2))
 #' plot(gc, cex = gc$a, col = gc$a, border = rev(gc$a) + 2, lwd = 2)
 #' @export
-plot.sf <- function(x, y, ..., ncol = 10, col = NULL) {
+plot.sf <- function(x, y, ..., ncol = 10, col = NULL, max.plot = 9) {
 	stopifnot(missing(y))
 	dots = list(...)
 
-	if (ncol(x) > 2) {
-		cols = names(x)[names(x) != attr(x, "sf_column")]
-		opar = par(mfrow = get_mfrow(st_bbox(x), length(cols), par("din")), mar = c(0,0,1,0))
-		lapply(cols, function(cname) plot(x[, cname], main = cname, col = col, ...))
-		par(opar)
+	if (ncol(x) > 2 && !isTRUE(dots$add)) {
+		max_plot_missing = missing(max.plot)
+		cols = setdiff(names(x), attr(x, "sf_column"))
+		mfrow = get_mfrow(st_bbox(x), min(max.plot, length(cols)), par("din"))
+		opar = if (isTRUE(dots$axes))
+				par(mfrow = mfrow, mar = c(2.1, 2.1, 1.2, 0))
+			else
+				par(mfrow = mfrow, mar = c(0,0,1.2,0))
+		on.exit(par(opar))
+
+		if (max_plot_missing)
+			max.plot = prod(mfrow)
+
+		if (isTRUE(is.finite(max.plot)) && ncol(x) - 1 > max.plot) {
+			warning(paste("plotting the first", max.plot, "out of", ncol(x)-1, "attributes; use max.plot =",
+				ncol(x) - 1, "to plot all"), call. = FALSE)
+			x = x[, 1:max.plot]
+		}
+		# col selection may have changed; set cols again:
+		cols = setdiff(names(x), attr(x, "sf_column"))
+		invisible(lapply(cols, function(cname) plot(x[, cname], main = cname, col = col, ...)))
 	} else {
 		if (is.null(col) && ncol(x) == 2)
 			col = sf.colors(ncol, x[[setdiff(names(x), attr(x, "sf_column"))]])
@@ -112,7 +130,9 @@ plot.sfc_POINT = function(x, y, ..., pch = 1, cex = 1, col = 1, bg = 0, lwd = 1,
 	col = rep(col, length.out = npts)
 	bg = rep(bg, length.out = npts)
 	cex = rep(cex, length.out = npts)
-	points(do.call(rbind, x), pch = pch, col = col, bg = bg, cex = cex, lwd = lwd, lty = lty,
+	mat = do.call(rbind, x)
+	ne = apply(mat, 1, function(x) all(is.finite(x))) # ne: not empty
+	points(mat[ne,, drop = FALSE], pch = pch[ne], col = col[ne], bg = bg[ne], cex = cex[ne], lwd = lwd, lty = lty,
 		type = type)
 }
 
@@ -131,8 +151,11 @@ plot.sfc_MULTIPOINT = function(x, y, ..., pch = 1, cex = 1, col = 1, bg = 0, lwd
 	cex = rep(cex, length.out = n)
 	lwd = rep(lwd, length.out = n)
 	lty = rep(lty, length.out = n)
-	lapply(seq_along(x), function(i) points(x[[i]], pch = pch[i], col = col[i], bg = bg[i], 
-		cex = cex[i], lwd = lwd[i], lty = lty[i], type = type))
+	non_empty = !is.na(st_dimension(x))
+	lapply(seq_along(x), function(i) 
+	  if (non_empty[i])
+		points(x[[i]], pch = pch[i], col = col[i], bg = bg[i], 
+			cex = cex[i], lwd = lwd[i], lty = lty[i], type = type))
 	invisible(NULL)
 }
 
@@ -149,7 +172,9 @@ plot.sfc_LINESTRING = function(x, y, ..., lty = 1, lwd = 1, col = 1, pch = 1, ty
 	lwd = rep(lwd, length.out = length(x))
 	col = rep(col, length.out = length(x))
 	pch  = rep(pch, length.out = length(x))
+	non_empty = !is.na(st_dimension(x))
 	lapply(seq_along(x), function(i)
+	  if (non_empty[i])
 		lines(x[[i]], lty = lty[i], lwd = lwd[i], col = col[i], pch = pch[i], type = type))
 	invisible(NULL)
 }
@@ -167,7 +192,9 @@ plot.sfc_MULTILINESTRING = function(x, y, ..., lty = 1, lwd = 1, col = 1, pch = 
 	lwd = rep(lwd, length.out = length(x))
 	col = rep(col, length.out = length(x))
 	pch  = rep(pch, length.out = length(x))
+	non_empty = !is.na(st_dimension(x))
 	lapply(seq_along(x), function(i)
+	  if (non_empty[i])
 		lapply(x[[i]], function(L)
 			lines(L, lty = lty[i], lwd = lwd[i], col = col[i], pch = pch[i], type = type)))
 	invisible(NULL)
@@ -198,7 +225,9 @@ plot.sfc_POLYGON = function(x, y, ..., lty = 1, lwd = 1, col = NA, border = 1, a
 	lwd = rep(lwd, length.out = length(x))
 	col = rep(col, length.out = length(x))
 	border = rep(border, length.out = length(x))
+	non_empty = !is.na(st_dimension(x))
 	lapply(seq_along(x), function(i)
+	  if (non_empty[i])
 		polypath(p_bind(x[[i]]), border = border[i], lty = lty[i], lwd = lwd[i], col = col[i], rule = rule))
 	invisible(NULL)
 }
@@ -215,7 +244,9 @@ plot.sfc_MULTIPOLYGON = function(x, y, ..., lty = 1, lwd = 1, col = NA, border =
 	lwd = rep(lwd, length.out = length(x))
 	col = rep(col, length.out = length(x))
 	border = rep(border, length.out = length(x))
+	non_empty = !is.na(st_dimension(x))
 	lapply(seq_along(x), function(i)
+	  if (non_empty[i])
 		lapply(x[[i]], function(L)
 			polypath(p_bind(L), border = border[i], lty = lty[i], lwd = lwd[i], col = col[i], rule = rule)))
 	invisible(NULL)
@@ -224,7 +255,7 @@ plot.sfc_MULTIPOLYGON = function(x, y, ..., lty = 1, lwd = 1, col = NA, border =
 # plot single geometrycollection:
 plot_gc = function(x, pch, cex, bg, border = 1, lty, lwd, col) {
 	lapply(x, function(subx) {
-		args = list(list(subx), pch = pch, cex = cex, bg = bg, border = border, 
+		args = list(st_sfc(subx), pch = pch, cex = cex, bg = bg, border = border, 
 			lty = lty, lwd = lwd, col = col, add = TRUE)
 		fn = switch(class(subx)[2],
 			POINT = plot.sfc_POINT,
@@ -303,7 +334,7 @@ plot.sfg = function(x, ...) {
 #' @param bgMap object of class \code{ggmap}, or returned by function \code{RgoogleMaps::GetMap}
 #' @param expandBB numeric; fractional values to expand the bounding box with, 
 #' in each direction (bottom, left, top, right)
-#' @param graticule object of class \code{crs} (e.g., \code{st_crs(4326)} for a WGS84 graticule), 
+#' @param graticule logical, or object of class \code{crs} (e.g., \code{st_crs(4326)} for a WGS84 graticule), or object created by \link{st_graticule}; \code{TRUE} will give the WGS84 graticule 
 #' or object returned by \link{st_graticule}
 #' @param col_graticule color to used for the graticule (if present)
 #' @export
@@ -351,7 +382,9 @@ plot_sf = function(x, xlim = NULL, ylim = NULL, asp = NA, axes = FALSE, bgc = pa
 		ytop = pl_reg[4], col = bgc, border = FALSE)
 	linAxis = function(side, ..., lon, lat, ndiscr) axis(side = side, ...)
 	if (! missing(graticule)) {
-		g = if (inherits(graticule, "crs") && !is.na(graticule))
+		g = if (isTRUE(graticule))
+				st_graticule(pl_reg[c(1,3,2,4)], st_crs(x), st_crs(4326), ...)
+			else if (inherits(graticule, "crs") && !is.na(graticule))
 				st_graticule(pl_reg[c(1,3,2,4)], st_crs(x), graticule, ...)
 			else
 				graticule
@@ -427,6 +460,10 @@ sf.colors = function (n = 10, xc, cutoff.tails = c(0.35, 0.2), alpha = 1, catego
     		rgb(r, g, b, alpha)
 		}
 	} else {
+
+		if (inherits(xc, "POSIXt"))
+			xc <- as.numeric(xc)
+
 		if (is.character(xc))
 			xc <- as.factor(xc)
 
@@ -456,7 +493,7 @@ get_mfrow = function(bb, n, total_size = c(1,1)) {
 		}
 		xsize * ysize
 	}
-	sz = sapply(1:n, function(x) size(x, n, asp))
+	sz = vapply(1:n, function(x) size(x, n, asp), 0.0)
 	nrow = which.max(sz)
 	ncol = ceiling(n / nrow)
 	structure(c(nrow, ncol), names = c("nrow", "ncol"))
@@ -467,7 +504,7 @@ bb2merc = function(x, cls = "ggmap") { # return bbox in the appropriate "web mer
 	wgs84 = st_crs(4326)
 	merc =  st_crs(3857) # http://wiki.openstreetmap.org/wiki/EPSG:3857
 	pts = if (cls == "ggmap") {
-		b = sapply(attr(x, "bb"), c)
+		b = vapply(attr(x, "bb"), c, 0.0)
 		st_sfc(st_point(c(b[2:1])), st_point(c(b[4:3])), crs = wgs84)
 	} else if (cls == "RgoogleMaps")
 		st_sfc(st_point(rev(x$BBOX$ll)), st_point(rev(x$BBOX$ur)), crs = wgs84)

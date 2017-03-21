@@ -24,7 +24,7 @@ st_read_db = function(conn = NULL, table = NULL, query = NULL,
     
     if (!is.null(table)) {
         table <- schema_table(table)
-        if (!DBI::dbExistsTable(conn, table)) {
+        if (!db_exists(conn, table)) {
             stop("`", paste0(table, collapse = "."), "` does not exist.", call. = FALSE)
         }
         if (!is.null(query)) warning("Ignoring query argument, only using table")
@@ -47,7 +47,7 @@ st_read_db = function(conn = NULL, table = NULL, query = NULL,
     
     if (is.null(geom_column)) { # try find the geometry column:
         geom_column = if (class(gc) == "try-error" | is.null(table))
-            tail(which(sapply(tbl, is.character)), 1) # guess it's the last character column
+            tail(which(vapply(tbl, is.character, TRUE)), 1) # guess it's the last character column
         else {
             gc[gc$f_table_schema == table[1] & gc$f_table_name == table[2], "f_geometry_column"]
         }
@@ -74,7 +74,7 @@ st_read_db = function(conn = NULL, table = NULL, query = NULL,
 #' 
 #' Write simple feature table to a spatial database
 #' @param conn open database connection
-#' @param table name for the table in the database
+#' @param table character; name for the table in the database, possibly of length 2, \code{c("schema", "name")}; default schema is \code{public}
 #' @param geom_name name of the geometry column in the database
 #' @param ... ignored for \code{st_write}, for \code{st_write_db} arguments passed on to \code{dbWriteTable}
 #' @param overwrite logical; should \code{table} be dropped first?
@@ -99,7 +99,7 @@ st_write_db = function(conn = NULL, obj, table = substitute(obj), geom_name = "w
         stop("No connection provided")
     table <- schema_table(table)
     
-    if (DBI::dbExistsTable(conn, table)) {
+    if (db_exists(conn, table)) {
         if (overwrite) {
             DBI::dbGetQuery(conn, DEBUG(paste("drop table", paste(table, collapse = "."), ";")))
         } else {
@@ -148,16 +148,47 @@ st_write_db = function(conn = NULL, obj, table = substitute(obj), geom_name = "w
 
 
 schema_table <- function(table, public = "public") {
-    if (!is.character(table)) {
+    if (!is.character(table))
         stop("table must be a character vector", call. = FALSE)
-    }
-    if (length(table) == 1) {
-        table = c(public, table[1])
-    } else if (length(table) > 2){
+
+    if (length(table) == 1L)
+        table = c(public, table)
+    else if (length(table) > 2)
         stop("table cannot be longer than 2 (schema, table)", call. = FALSE)
-    }
-    if (any(is.na(table))) {
+
+    if (any(is.na(table)))
         stop("table and schema cannot be NA", call. = FALSE)
-    }
+
     return(table)
+}
+
+db_list_tables_schema <- function(con) {
+    q <- paste("SELECT schemaname AS table_schema, tablename AS table_name", 
+               "FROM pg_tables", 
+               "WHERE schemaname !='information_schema'", 
+               "AND schemaname !='pg_catalog';")
+    DBI::dbGetQuery(con, q)
+}
+
+db_list_views_schema <- function(con) {
+    q <- paste("SELECT table_schema, table_name",
+               "FROM information_schema.views",
+               "WHERE table_schema !='information_schema'",
+               "AND table_schema !='pg_catalog';")
+    DBI::dbGetQuery(con, q)
+}
+
+db_list_mviews_schema <- function(con) {
+    q <- paste("SELECT nspname as table_schema, relname as table_name",
+               "FROM pg_catalog.pg_class c", 
+               "JOIN pg_namespace n ON n.oid = c.relnamespace", 
+               "WHERE c.relkind = 'm'")
+    DBI::dbGetQuery(con, q)
+}
+
+db_exists <- function(conn, name, ...) {
+    lst <- rbind(db_list_views_schema(conn),
+                 db_list_tables_schema(conn),
+                 db_list_mviews_schema(conn))
+    return(paste0(name, collapse = ".") %in% with(lst, paste0(table_schema, ".", table_name)))
 }

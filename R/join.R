@@ -4,7 +4,7 @@ check_join = function(x, y) {
 }
 
 sf_join = function(g, sf_column) {
-	g[[ sf_column ]] = fix_NULL_values(g[[ sf_column ]])
+	g[[ sf_column ]] = st_sfc(fix_NULL_values(g[[ sf_column ]]))
 	st_sf(g)
 }
 
@@ -83,7 +83,7 @@ anti_join.sf = function(x, y, by = NULL, copy = FALSE, ...) {
 #' st_join(a, b, FUN = mean, left = FALSE)
 #' @export
 st_join = function(x, y, join = st_intersects, FUN, suffix = c(".x", ".y"), 
-        prepared = FALSE, left = TRUE) {
+        prepared = TRUE, left = TRUE) {
     stopifnot(inherits(x, "sf") && inherits(y, "sf"))
     i = join(x, y, prepared = prepared)
     st_geometry(y) = NULL
@@ -93,13 +93,13 @@ st_join = function(x, y, join = st_intersects, FUN, suffix = c(".x", ".y"),
 		names(x)[which.x] = paste0(names(x)[which.x], suffix[1])
 	if (length(which.y))
 		names(y)[which.y] = paste0(names(y)[which.y], suffix[2])
-    ix = rep(seq_len(nrow(x)), sapply(i, length))
+    ix = rep(seq_len(nrow(x)), lengths(i))
 	xNAs = seq_len(nrow(x))
 	xNAs[sapply(i, function(x) length(x)==0)] = NA_integer_
 	if (missing(FUN)) {
 		if (left) {
 			i = lapply(i, function(x) { if (length(x) == 0) NA_integer_ else x })
-    		ix = rep(seq_len(nrow(x)), sapply(i, length))
+    		ix = rep(seq_len(nrow(x)), lengths(i))
 		}
 		st_sf(cbind(as.data.frame(x)[ix,], y[unlist(i),,drop=FALSE]))
 	} else { # aggregate y:

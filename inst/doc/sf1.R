@@ -1,5 +1,7 @@
 ## ----echo=FALSE----------------------------------------------------------
 knitr::opts_chunk$set(collapse = TRUE)
+if (file.exists("nc.shp"))
+	file.remove("nc.shp", "nc.dbf", "nc.shx")
 
 ## ------------------------------------------------------------------------
 library(sf)

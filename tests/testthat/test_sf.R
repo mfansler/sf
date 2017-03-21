@@ -12,7 +12,12 @@ test_that("we can subset sf objects", {
 
   a = c("x", "y")
   g = st_sfc(pt1, pt2)
-  expect_warning(st_sf(a,g,g), "more than one geometry column: ignoring all but first")
+  expect_warning(st_sf(a, g, g), 
+  "more than one geometry column: taking `g'; use `sf_column_name=' to specify a different column.")
+  expect_silent(st_sf(a, geom1 = g, geom2 = g, sf_column_name = "geom2"))
+  x = st_sf(a, geom1 = g, geom2 = g, sf_column_name = "geom2")
+  expect_silent(st_geometry(x) <- "geom2")
+  expect_silent(st_geometry(x) <- "geom1")
 })
 
 test_that("we can create points sf from data.frame", {
@@ -50,6 +55,24 @@ test_that("rbind/cbind work", {
   # cbind/rbind:
   x = st_sf(a = 1:2, geom = st_sfc(list(st_point(0:1), st_point(0:1)), crs = 4326))
   # don't warn when replacing crs with identical value:
-  expect_warning(cbind(x, x, x))
-  rbind(x, x, x)
+  if (version$major == "3") {
+  	if (version$minor >= "3.0") {
+      expect_warning(cbind(x, x, x))
+      rbind(x, x, x)
+	}
+  }
+})
+
+test_that("st_as_sf bulk points work", {
+  data(meuse, package = "sp") # load data.frame from sp
+  x <- meuse
+  meuse_sf = st_as_sf(x, coords = c("x", "y"), crs = 28992)
+  xyz_sf = st_as_sf(x, coords = c("y", "x", "dist"))
+  xym_sf = st_as_sf(x, coords = c("y", "x", "dist"), dim = "XYM")
+  xyzm_sf = st_as_sf(x, coords = c("x", "y", "dist", "zinc"), dim = "XYM")
+  expect_identical(class(meuse_sf), c("sf", "data.frame"))
+  expect_identical(class(xyz_sf), c("sf", "data.frame"))
+  expect_identical(class(xym_sf), c("sf", "data.frame"))
+  expect_identical(class(xyzm_sf), c("sf", "data.frame"))
+  
 })

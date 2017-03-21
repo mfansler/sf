@@ -43,6 +43,7 @@ distinct_.sf <- function(.data, ..., .dots, .keep_all = FALSE) {
 #' nc$area_cl = cut(nc$AREA, c(0, .1, .12, .15, .25))
 #' nc %>% group_by(area_cl) %>% class()
 group_by_.sf <- function(.data, ..., .dots, add = FALSE) {
+	class(.data) <- setdiff(class(.data), "sf")
 	st_as_sf(NextMethod())
 }
 
@@ -74,9 +75,10 @@ transmute_.sf <- function(.data, ..., .dots) {
 #' nc %>% select(SID74, SID79, geometry) %>% names()
 #' nc %>% select(SID74, SID79) %>% class()
 #' nc %>% select(SID74, SID79, geometry) %>% class()
-select_.sf <- function(.data, ..., .dots=NULL) {
+select_.sf <- function(.data, ..., .dots = NULL) {
   .dots <- c(.dots, attr(.data, "sf_column")) 
-  NextMethod()
+  ret = NextMethod()
+  structure(ret, agr = st_agr(ret))
 }
 
 #' @name dplyr
@@ -151,13 +153,32 @@ gather_.sf <- function(data, key_col, value_col, gather_cols, na.rm = FALSE,
 #'		spread(VAR, SID) %>% head()
 spread_.sf <- function(data, key_col, value_col, fill = NA, 
 		convert = FALSE, drop = TRUE, sep = NULL) {
-	g = st_geometry(data)
-	st_geometry(data) = NULL # drop geometry
-	row = setdiff(names(data), c(key_col, value_col))
-	ret = NextMethod()
-	if (length(row))
-		st_geometry(ret) = g[ match(ret[[1]], data[[ row[1] ]]) ]
-	ret
+#	g = st_geometry(data)
+#	st_geometry(data) = NULL # drop geometry
+#	row = setdiff(names(data), c(key_col, value_col))
+#	ret = NextMethod()
+#	if (length(row))
+#		st_geometry(ret) = g[ match(ret[[1]], data[[ row[1] ]]) ]
+#	ret
+	data <- as.data.frame(data)
+	st_as_sf(NextMethod())
+}
+
+#' @name dplyr
+#' @param tbl see original function docs
+#' @param size see original function docs
+#' @param replace see original function docs
+#' @param weight see original function docs
+#' @param .env see original function docs
+#' @export
+sample_n.sf <- function(tbl, size, replace = FALSE, weight = NULL, .env = parent.frame()) {
+	st_sf(NextMethod())
+}
+	      
+#' @name dplyr
+#' @export
+sample_frac.sf <- function(tbl, size = 1, replace = FALSE, weight = NULL, .env = parent.frame()) {
+	st_sf(NextMethod())
 }
 
 ## tibble methods:
@@ -179,5 +200,5 @@ type_sum.sfc <- function(x, ...) {
 #' @name tibble
 #' @export
 obj_sum.sfc <- function(x) {
-	sapply(x, function(sfg) format(sfg, digits = 15L))
+	vapply(x, function(sfg) format(sfg, digits = 15L), "")
 }

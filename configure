@@ -682,6 +682,7 @@ with_proj_data
 with_proj_include
 with_proj_lib
 with_proj_share
+with_lwgeom
 '
       ac_precious_vars='build_alias
 host_alias
@@ -1319,6 +1320,7 @@ Optional Packages:
                           the location of proj libraries
   --with-proj-share=SHARE_PATH
                           the location of proj metadata files
+  --without-lwgeom        disable support for lwgeom
 
 Some influential environment variables:
   CC          C compiler command
@@ -2065,8 +2067,7 @@ $as_echo "$as_me: CC: ${CC}" >&6;}
 { $as_echo "$as_me:${as_lineno-$LINENO}: CXX: ${CXX}" >&5
 $as_echo "$as_me: CXX: ${CXX}" >&6;}
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: ${PACKAGE_NAME}: ${PACKAGE_VERSION}" >&5
-$as_echo "$as_me: ${PACKAGE_NAME}: ${PACKAGE_VERSION}" >&6;}
+# AC_MSG_NOTICE([${PACKAGE_NAME}: ${PACKAGE_VERSION}])
 
 #GDAL
 GDAL_CONFIG="gdal-config"
@@ -3974,6 +3975,92 @@ rm -f geos_test errors.txt geos_test.cpp
 if test "${geosok}" = no; then
    as_fn_error $? "libgeos_c not found in given locations." "$LINENO" 5
 fi
+
+#
+# liblwgeom
+#
+
+# Check whether --with-lwgeom was given.
+if test "${with_lwgeom+set}" = set; then :
+  withval=$with_lwgeom;
+else
+  with_lwgeom=yes
+fi
+
+
+if test "x$with_lwgeom" != xno; then
+ for ac_header in liblwgeom.h
+do :
+  ac_fn_c_check_header_mongrel "$LINENO" "liblwgeom.h" "ac_cv_header_liblwgeom_h" "$ac_includes_default"
+if test "x$ac_cv_header_liblwgeom_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBLWGEOM_H 1
+_ACEOF
+
+else
+  with_lwgeom=no
+fi
+
+done
+
+ if test "${with_lwgeom}" = no; then
+   { $as_echo "$as_me:${as_lineno-$LINENO}: liblwgeom.h not found." >&5
+$as_echo "$as_me: liblwgeom.h not found." >&6;}
+ else
+  LIBLWGEOM=
+  if test "x$with_lwgeom" != xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for lwgeom_version in -llwgeom" >&5
+$as_echo_n "checking for lwgeom_version in -llwgeom... " >&6; }
+if ${ac_cv_lib_lwgeom_lwgeom_version+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-llwgeom  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char lwgeom_version ();
+int
+main ()
+{
+return lwgeom_version ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_lwgeom_lwgeom_version=yes
+else
+  ac_cv_lib_lwgeom_lwgeom_version=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_lwgeom_lwgeom_version" >&5
+$as_echo "$ac_cv_lib_lwgeom_lwgeom_version" >&6; }
+if test "x$ac_cv_lib_lwgeom_lwgeom_version" = xyes; then :
+  PKG_LIBS="${PKG_LIBS} -llwgeom"
+
+      PKG_CPPFLAGS="${PKG_CPPFLAGS} -DHAVE_LWGEOM"
+
+
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: lwgeom (only needed for st_make_valid) was not found; on ubuntu, liblwgeom-dev provides this" >&5
+$as_echo "$as_me: lwgeom (only needed for st_make_valid) was not found; on ubuntu, liblwgeom-dev provides this" >&6;}
+fi
+
+fi
+ fi
+fi
+
+
 
 #
 # concluding substitution

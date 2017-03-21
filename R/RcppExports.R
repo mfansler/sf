@@ -77,16 +77,20 @@ CPL_read_ogr <- function(datasource, layer, options, quiet = FALSE, iGeomField =
     .Call('sf_CPL_read_ogr', PACKAGE = 'sf', datasource, layer, options, quiet, iGeomField, toTypeUser, promote_to_multi, int64_as_string)
 }
 
-CPL_write_ogr <- function(obj, dsn, layer, driver, dco, lco, geom, dim, quiet = FALSE) {
-    invisible(.Call('sf_CPL_write_ogr', PACKAGE = 'sf', obj, dsn, layer, driver, dco, lco, geom, dim, quiet))
+CPL_write_ogr <- function(obj, dsn, layer, driver, dco, lco, geom, dim, quiet = FALSE, update = FALSE) {
+    invisible(.Call('sf_CPL_write_ogr', PACKAGE = 'sf', obj, dsn, layer, driver, dco, lco, geom, dim, quiet, update))
 }
 
 CPL_geos_binop <- function(sfc0, sfc1, op, par = 0.0, sparse = TRUE, prepared = FALSE) {
     .Call('sf_CPL_geos_binop', PACKAGE = 'sf', sfc0, sfc1, op, par, sparse, prepared)
 }
 
-CPL_geos_is_valid <- function(sfc) {
-    .Call('sf_CPL_geos_is_valid', PACKAGE = 'sf', sfc)
+CPL_geos_is_valid_reason <- function(sfc) {
+    .Call('sf_CPL_geos_is_valid_reason', PACKAGE = 'sf', sfc)
+}
+
+CPL_geos_is_valid <- function(sfc, NA_on_exception = TRUE) {
+    .Call('sf_CPL_geos_is_valid', PACKAGE = 'sf', sfc, NA_on_exception)
 }
 
 CPL_geos_is_simple <- function(sfc) {
@@ -121,12 +125,28 @@ CPL_geos_relate <- function(sfc0, sfc1) {
     .Call('sf_CPL_geos_relate', PACKAGE = 'sf', sfc0, sfc1)
 }
 
+CPL_invert_sparse_incidence <- function(m, n) {
+    .Call('sf_CPL_invert_sparse_incidence', PACKAGE = 'sf', m, n)
+}
+
+CPL_lwgeom_version <- function(b = FALSE) {
+    .Call('sf_CPL_lwgeom_version', PACKAGE = 'sf', b)
+}
+
+CPL_make_valid <- function(sfc) {
+    .Call('sf_CPL_make_valid', PACKAGE = 'sf', sfc)
+}
+
 CPL_proj_version <- function(b = FALSE) {
     .Call('sf_CPL_proj_version', PACKAGE = 'sf', b)
 }
 
 CPL_proj_is_valid <- function(proj4string) {
     .Call('sf_CPL_proj_is_valid', PACKAGE = 'sf', proj4string)
+}
+
+CPL_proj_info <- function(type) {
+    .Call('sf_CPL_proj_info', PACKAGE = 'sf', type)
 }
 
 CPL_hex_to_raw <- function(cx) {

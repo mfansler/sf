@@ -27,4 +27,3 @@ clean:
 	rm -f $(OBJECTS) $(SHLIB)
 
 .PHONY: all winlibs clean
-

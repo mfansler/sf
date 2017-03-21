@@ -92,8 +92,14 @@ The following objects are masked from 'package:base':
 > # color ramp
 > nc = st_read(system.file("shape/nc.shp", package="sf"), quiet = TRUE)
 > plot(nc)
+Warning message:
+plotting the first 10 out of 14 attributes; use max.plot = 14 to plot all 
 > plot(nc, axes = TRUE)
+Warning message:
+plotting the first 10 out of 14 attributes; use max.plot = 14 to plot all 
 > plot(nc, col="lightgrey") 
+Warning message:
+plotting the first 10 out of 14 attributes; use max.plot = 14 to plot all 
 > nc %>% 
 +   select(geometry) %>% 
 +   plot()
@@ -114,7 +120,15 @@ The following objects are masked from 'package:base':
 > #g = GetMap(center=center, zoom=6) # google
 > par(mar = c(0,0,1,0))
 > plot(st_transform(nc, merc), bgMap = g)
+Warning message:
+plotting the first 10 out of 14 attributes; use max.plot = 14 to plot all 
+> 
+> m = st_make_grid()
+> m = st_segmentize(m, 2e5)
+> plot(m, axes = TRUE)
+> g = st_transform(m, st_crs("+proj=ortho +lat_0=30 +lon_0=45"), check = TRUE)
+> plot(g, axes = TRUE)
 > 
 > proc.time()
    user  system elapsed 
-  4.624   0.064   4.688 
+  5.980   0.036   6.014 

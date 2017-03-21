@@ -1,5 +1,7 @@
 ## ----echo=FALSE----------------------------------------------------------
 knitr::opts_chunk$set(collapse = TRUE)
+if (file.exists("nc1.shp"))
+	file.remove("nc1.shp", "nc1.dbf", "nc1.shx")
 
 ## ------------------------------------------------------------------------
 library(sf)
@@ -45,11 +47,11 @@ nc <- st_read(fname)
 options(stringsAsFactors = FALSE)
 st_read(fname)
 
-## ------------------------------------------------------------------------
-st_write(nc, "nc.shp")
+## ----eval=FALSE----------------------------------------------------------
+#  st_write(nc, "nc1.shp")
 
 ## ------------------------------------------------------------------------
-st_write(nc, dsn = "nc.shp", layer = "nc.shp", driver = "ESRI Shapefile")
+st_write(nc, dsn = "nc1.shp", layer = "nc.shp", driver = "ESRI Shapefile")
 
 ## ----eval=FALSE----------------------------------------------------------
 #  st_write(st_as_sf(meuse), "PG:dbname=postgis", "meuse",

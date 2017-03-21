@@ -5,10 +5,8 @@
 
 #include <iostream>
 #include <iomanip>
-#include <cstdint>
 #include <sstream>
 #include <string>
-#include <climits>
 
 #include <math.h> // round()
 #include <string.h> // memcpy()
@@ -30,7 +28,6 @@ void write_data(std::ostringstream& os, Rcpp::List sfc, int i, bool EWKB,
 // https://stackoverflow.com/questions/105252/how-do-i-convert-between-big-endian-and-little-endian-values-in-c
 template <typename T>
 T swap_endian(T u) {
-    static_assert (CHAR_BIT == 8, "CHAR_BIT != 8");
     union {
         T u;
         unsigned char u8[sizeof(T)];
@@ -588,11 +585,14 @@ Rcpp::List CPL_write_wkb(Rcpp::List sfc, bool EWKB = false, int endian = 0,
 	// http://stackoverflow.com/questions/24744802/rcpp-how-to-check-if-any-attribute-is-null
 	Rcpp::CharacterVector classes;
 	bool have_classes = false;
-	if (! Rf_isNull(sfc.attr("classes"))) {         // only sfc_GEOMETRY, the mixed bag, sets this
-		classes = sfc.attr("classes");
-		if (classes.size() != sfc.size())
-			throw std::range_error("attr classes has wrong size: please file an issue");
-		have_classes = true;
+	if (sfc.size() > 0 && strcmp(cls, "sfc_GEOMETRY") == 0) {
+		if (! Rf_isNull(sfc.attr("classes"))) { // only sfc_GEOMETRY, the mixed bag, sets the classes attr
+			classes = sfc.attr("classes");
+			if (classes.size() != sfc.size())
+				throw std::range_error("attr classes has wrong size: please file an issue");
+			have_classes = true;
+		} else
+			throw std::range_error("sfc_GEOMETRY should have attr classes; please file an issue");
 	}
 
 	Rcpp::List crs = sfc.attr("crs"); 
@@ -617,10 +617,13 @@ Rcpp::List CPL_write_wkb(Rcpp::List sfc, bool EWKB = false, int endian = 0,
 }
 
 // get dim, "XY", "XYZ", "XYZM" or "XYM" from an sfc object
-Rcpp::CharacterVector get_dim(Rcpp::List sfc) {
+Rcpp::CharacterVector get_dim_sfc(Rcpp::List sfc, int *dim = NULL) {
 
-	if (sfc.length() == 0)
+	if (sfc.length() == 0) {
+		if (dim != NULL)
+			*dim = 2;
 		return "XY";
+	}
 
 	// we have data:
 	Rcpp::CharacterVector cls = sfc.attr("class");
@@ -631,7 +634,7 @@ Rcpp::CharacterVector get_dim(Rcpp::List sfc) {
 	}
 	switch (tp) {
 		case SF_Unknown: { // further check:
-			throw std::range_error("impossible classs in get_dim()"); // #nocov
+			throw std::range_error("impossible classs in get_dim_sfc()"); // #nocov
 		} break;
 		case SF_Point: { // numeric:
 			Rcpp::NumericVector v = sfc[0];
@@ -659,6 +662,12 @@ Rcpp::CharacterVector get_dim(Rcpp::List sfc) {
 			Rcpp::List l = sfc[0];
 			cls = l.attr("class");
 		} break;
+	}
+	if (dim != NULL) {
+		if (strstr(cls[0], "Z") != NULL)
+			*dim = 3;
+		else
+			*dim = 2;
 	}
 	return cls;
 }

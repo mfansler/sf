@@ -1,3 +1,4 @@
+Sys.setenv(TZ="UTC")
 suppressPackageStartupMessages(library(sf))
 if ("GPKG" %in% st_drivers()$name) {
 	tst = st_read(system.file("gpkg/nc.gpkg", package="sf"), "nc.gpkg", crs = 4267, quiet = TRUE)
@@ -40,7 +41,8 @@ st_read(system.file("shape/nc.shp", package="sf"),  quiet = TRUE,
 if ("GPKG" %in% st_drivers()$name) { # shapefiles can't write point+multipoint mix:
   x <- st_sf(a = 1:2, geom = st_sfc(st_point(0:1), st_multipoint(matrix(1:4,2,2))))
   st_write(x, "x.gpkg")
-  write_sf(x, "x.gpkg")
+  write_sf(x, "x.gpkg", layer = "foo", update = TRUE)
+  print(st_layers("x.gpkg"))
   x <- st_read("x.gpkg", quiet = TRUE)
   print(x)
 }
@@ -53,7 +55,7 @@ x <- read_sf("x.shp", quiet = TRUE)
 
 try(st_layers("foo")) # cannot open datasource
 try(st_read("foo")) # cannot open datasource
-try(st_read("x.gpkg", "foo")) # cannot open layer
+try(st_read("x.gpkg", "xyz")) # cannot open layer
 try(st_write(c("foo", "bar")))
 try(st_write(x, c("foo", "bar")))
 try(st_write(x, "foo", driver = "foo"))

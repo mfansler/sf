@@ -54,7 +54,7 @@
 \alias{geos}
 \alias{st_polygonize}
 \alias{geos}
-\alias{st_linemerge}
+\alias{st_line_merge}
 \alias{geos}
 \alias{st_centroid}
 \alias{geos}
@@ -73,7 +73,7 @@
 \alias{st_line_sample}
 \title{Geometric operations on (pairs of) simple feature geometry sets}
 \usage{
-st_is_valid(x)
+st_is_valid(x, NA_on_exception = TRUE, reason = FALSE)
 
 st_dimension(x, NA_if_empty = TRUE)
 
@@ -125,11 +125,11 @@ st_voronoi(x, envelope, dTolerance = 0, bOnlyEdges = FALSE)
 
 st_polygonize(x)
 
-st_linemerge(x)
+st_line_merge(x)
 
 st_centroid(x)
 
-st_segmentize(x, dfMaxLength, ..., warn = TRUE)
+st_segmentize(x, dfMaxLength, ...)
 
 st_combine(x)
 
@@ -145,6 +145,10 @@ st_line_sample(x, n, density, type = "regular")
 }
 \arguments{
 \item{x}{object of class \code{sf}, \code{sfc} or \code{sfg}}
+
+\item{NA_on_exception}{logical; if TRUE, for polygons that would otherwise raise an GEOS error (e.g. for a polygon having more than zero but less than 4 points) return an \code{NA} rather than raise an error, and suppress warning messages (e.g. about self-intersection); if FALSE, regular GEOS errors and warnings will be emitted.}
+
+\item{reason}{logical; if \code{TRUE}, return a character with, for each geometry, the reason for invalidity, or \code{"Valid Geometry"} otherwise; if set to \code{TRUE}, \code{NA_on_exception} is automatically \code{FALSE} (errors are emitted in case of one or more corrupt geometries).}
 
 \item{NA_if_empty}{logical; if TRUE, return NA for empty geometries}
 
@@ -170,11 +174,9 @@ st_line_sample(x, n, density, type = "regular")
 
 \item{envelope}{object of class \code{sfc} or \code{sfg} with the envelope for a voronoi diagram}
 
-\item{dfMaxLength}{numeric; max length of a line segment}
+\item{dfMaxLength}{numeric; max length of a line segment. If \code{x} has geographical coordinates (long/lat), \code{dfMaxLength} is a length with unit metre, and segmentation takes place along the great circle, using \link[geosphere]{gcIntermediate}.}
 
 \item{...}{ignored}
-
-\item{warn}{logical; generate a warning in case of long/lat data}
 
 \item{by_feature}{logical; if TRUE, union each feature, if FALSE return a single feature with the union the set of features}
 
@@ -187,7 +189,7 @@ st_line_sample(x, n, density, type = "regular")
 \value{
 matrix (sparse or dense); if dense: of type \code{character} for \code{relate}, \code{numeric} for \code{distance}, and \code{logical} for all others; matrix has dimension \code{x} by \code{y}; if sparse (only possible for those who return logical in case of dense): return list of length length(x) with indices of the TRUE values for matching \code{y}.
 
-st_dimension returns 0 for points, 1 for lines, 2 for surfaces and by default NA for empty geometries.
+st_dimension returns 0 for points, 1 for lines, 2 for surfaces; if \code{NA_if_empty} is \code{TRUE} return \code{NA} for empty geometries.
 
 st_area returns the area of a geometry, in the coordinate reference system used; in case \code{x} is in degrees longitude/latitude, \link[geosphere]{areaPolygon} is used for area calculation.
 
@@ -199,9 +201,12 @@ st_distance returns a dense numeric matrix of dimension length(x) by length(y)
 
 st_relate returns a dense \code{character} matrix; element [i,j] has nine characters, refering to the DE9-IM relationship between x[i] and y[j], encoded as IxIy,IxBy,IxEy,BxIy,BxBy,BxEy,ExIy,ExBy,ExEy where I refers to interior, B to boundary, and E to exterior, and e.g. BxIy the dimensionality of the intersection of the the boundary of x[i] and the interior of y[j], which is one of {0,1,2,F}, digits denoting dimensionality, F denoting not intersecting.
 
-st_intersects ...	st_equals_exact return a sparse or dense logical matrix with rows and columns corresponding to the number of geometries (or rows) in x and y, respectively
+functions \code{st_intersects} up to \code{st_equals_exact} return a sparse or dense logical matrix with rows and columns corresponding to the number of geometries (or rows) in x and y, respectively
 
-st_buffer ... st_segmentize return an \link{sfc} or an \link{sf} object with the same number of geometries as in \code{x}
+\code{st_buffer}, \code{st_boundary}, \code{st_convex_hull}, \code{st_simplify},
+\code{st_triangulate}, \code{st_voronoi}, \code{st_polygonize}, \code{st_line_merge},
+\code{st_centroid} and \code{st_segmentize} return an \link{sfc} or an \link{sf} 
+object with the same number of geometries as in \code{x}
 
 All functions (or methods) returning a geometry return an object of the same class as that of the first argument (\code{x}).  \code{st_intersection}, \code{st_union}, \code{st_difference} and \code{st_sym_difference} return the non-empty geometries resulting from applying the operation to all geometry pairs in \code{x} and \code{y}, and return an object of class \code{sfg}, \code{sfc} or \code{sf}, where in the latter case the matching attributes of the original object(s) are added. The \code{sfc} geometry list-column returned carries an attribute \code{idx}, which is an \code{n x 2} matrix with every row the index of the corresponding entries of \code{x} and \code{y}, respectively. \code{st_union} has in addition the ability to work on a single argument \code{x} (\code{y} missing): in this case, if \code{by_feature} is \code{FALSE} all geometries are unioned together and an \code{sfg} or single-geometry \code{sfc} object is returned, if \code{by_feature} is \code{TRUE} each feature geometry is unioned; this can for instance be used to resolve internal boundaries after polygons were combined using \code{st_combine}.
 
@@ -221,11 +226,14 @@ function \code{dist_fun} should follow the pattern of the distance function \lin
 
 in case of \code{st_polygonize}, \code{x} must be an object of class \code{LINESTRING} or \code{MULTILINESTRING}, or an \code{sfc} geometry list-column object containing these
 
-in case of \code{st_linemerge}, \code{x} must be an object of class \code{MULTILINESTRING}, or an \code{sfc} geometry list-column object containing these
+in case of \code{st_line_merge}, \code{x} must be an object of class \code{MULTILINESTRING}, or an \code{sfc} geometry list-column object containing these
 
-\code{st_combine} combines geometries without resolving borders.
+\code{st_combine} combines geometries without resolving borders, using \link{c.sfg}; see \link{st_union} for resolving boundaries.
 }
 \examples{
+p1 = st_as_sfc("POLYGON((0 0, 0 10, 10 0, 10 10, 0 0))")
+st_is_valid(p1)
+st_is_valid(st_sfc(st_point(0:1), p1[[1]]), reason = TRUE)
 x = st_sfc(
 	st_point(0:1), 
 	st_linestring(rbind(c(0,0),c(1,1))), 
@@ -262,7 +270,7 @@ if (sf_extSoftVersion()["GEOS"] >= "3.5.0") {
 mls = st_multilinestring(list(matrix(c(0,0,0,1,1,1,0,0),,2,byrow=TRUE)))
 st_polygonize(st_sfc(mls))
 mls = st_multilinestring(list(rbind(c(0,0), c(1,1)), rbind(c(2,0), c(1,1))))
-st_linemerge(st_sfc(mls))
+st_line_merge(st_sfc(mls))
 plot(nc, axes = TRUE)
 plot(st_centroid(nc), add = TRUE, pch = 3)
 st_combine(nc)

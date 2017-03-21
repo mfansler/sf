@@ -196,12 +196,12 @@ plot(ls)
 points(pts)
 ls.seg = st_segmentize(ls, 0.3)
 plot(ls.seg)
-pts = ls.seg[[1]] # matrix
+pts = ls.seg
 points(pts)
 pol = st_polygon(list(rbind(c(0,0),c(1,0),c(1,1),c(0,1),c(0,0))))
 pol.seg = st_segmentize(pol, 0.3)
 plot(pol.seg, col = 'grey')
-points(pol.seg[[1]][[1]])
+points(pol.seg[[1]])
 
 ## ----fig=TRUE------------------------------------------------------------
 par(mfrow=c(1,2),mar=c(0,0,1,0))

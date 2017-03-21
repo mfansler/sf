@@ -4,13 +4,38 @@
 #' 
 #' Geometric operations on (pairs of) simple feature geometry sets
 #' @name geos
+#' @param NA_on_exception logical; if TRUE, for polygons that would otherwise raise an GEOS error (e.g. for a polygon having more than zero but less than 4 points) return an \code{NA} rather than raise an error, and suppress warning messages (e.g. about self-intersection); if FALSE, regular GEOS errors and warnings will be emitted.
+#' @param reason logical; if \code{TRUE}, return a character with, for each geometry, the reason for invalidity, or \code{"Valid Geometry"} otherwise; if set to \code{TRUE}, \code{NA_on_exception} is automatically \code{FALSE} (errors are emitted in case of one or more corrupt geometries).
 #' @export
 #' @return matrix (sparse or dense); if dense: of type \code{character} for \code{relate}, \code{numeric} for \code{distance}, and \code{logical} for all others; matrix has dimension \code{x} by \code{y}; if sparse (only possible for those who return logical in case of dense): return list of length length(x) with indices of the TRUE values for matching \code{y}.
-st_is_valid = function(x) CPL_geos_is_valid(st_geometry(x))
+#' @examples
+#' p1 = st_as_sfc("POLYGON((0 0, 0 10, 10 0, 10 10, 0 0))")
+#' st_is_valid(p1)
+#' st_is_valid(st_sfc(st_point(0:1), p1[[1]]), reason = TRUE)
+st_is_valid = function(x, NA_on_exception = TRUE, reason = FALSE) {
+	if (reason) {
+		if (NA_on_exception) {
+			g = st_geometry(x)
+			ret = rep(NA_character_, length(g))
+			not_na = !is.na(st_is_valid(g))
+			ret[not_na] = st_is_valid(g[not_na], FALSE, TRUE)
+			ret
+		} else 
+			CPL_geos_is_valid_reason(st_geometry(x))
+	} else if (! NA_on_exception) 
+		CPL_geos_is_valid(st_geometry(x), as.logical(NA_on_exception))
+	else {
+		x = st_geometry(x)
+		ret = vector("logical", length(x))
+		for (i in seq_along(x))
+			ret[i] = CPL_geos_is_valid(x[i], as.logical(NA_on_exception))
+		ret
+	}
+}
 
 #' @name geos
 #' @param NA_if_empty logical; if TRUE, return NA for empty geometries
-#' @return st_dimension returns 0 for points, 1 for lines, 2 for surfaces and by default NA for empty geometries.
+#' @return st_dimension returns 0 for points, 1 for lines, 2 for surfaces; if \code{NA_if_empty} is \code{TRUE} return \code{NA} for empty geometries.
 #' @export
 #' @examples
 #' x = st_sfc(
@@ -50,7 +75,7 @@ st_area = function(x) {
 
 ll_length = function(x, fn, p) {
 	if (is.list(x)) # sfc_MULTILINESTRING
-		sum(sapply(x, ll_length, fn = fn, p = p))
+		sum(vapply(x, ll_length, 0.0, fn = fn, p = p))
 	else {
 		pts = unclass(x) # matrix
 		sum(fn(head(pts, -1), tail(pts, -1), as.numeric(p$SemiMajor), 1./p$InvFlattening))
@@ -76,7 +101,7 @@ st_length = function(x, dist_fun = geosphere::distGeo) {
 				stop("package geosphere required, please install it first")
 			dist_fun = geosphere::distGeo
 		}
-		ret = sapply(x, ll_length, fn = dist_fun, p = p)
+		ret = vapply(x, ll_length, 0.0, fn = dist_fun, p = p)
 		units(ret) = units(p$SemiMajor)
 		ret
 	} else {
@@ -101,7 +126,7 @@ st_is_simple = function(x) CPL_geos_is_simple(st_geometry(x))
 st_geos_binop = function(op = "intersects", x, y, par = 0.0, sparse = TRUE, prepared = FALSE) {
 	if (missing(y))
 		y = x
-	else 
+	else if (!inherits(x, "sfg") && !inherits(y, "sfg"))
 		stopifnot(st_crs(x) == st_crs(y))
 	if (isTRUE(st_is_longlat(x)) && !(op %in% c("equals", "equals_exact", "polygonize"))) 
 		message("although coordinates are longitude/latitude, it is assumed that they are planar")
@@ -164,7 +189,7 @@ st_relate	= function(x, y) st_geos_binop("relate", x, y, sparse = FALSE)
 
 #' @name geos
 #' @param sparse logical; should a sparse matrix be returned (TRUE) or a dense matrix?
-#' @return st_intersects ...	st_equals_exact return a sparse or dense logical matrix with rows and columns corresponding to the number of geometries (or rows) in x and y, respectively
+#' @return functions \code{st_intersects} up to \code{st_equals_exact} return a sparse or dense logical matrix with rows and columns corresponding to the number of geometries (or rows) in x and y, respectively
 #' @export
 st_intersects	= function(x, y, sparse = TRUE, prepared = TRUE)
 	st_geos_binop("intersects", x, y, sparse = sparse, prepared = prepared)
@@ -247,7 +272,10 @@ st_equals_exact = function(x, y, par, sparse = TRUE, prepared = FALSE) {
 #' @export
 #' @param dist numeric; buffer distance for all, or for each of the elements in \code{x}
 #' @param nQuadSegs integer; number of segments per quadrant (fourth of a circle)
-#' @return st_buffer ... st_segmentize return an \link{sfc} or an \link{sf} object with the same number of geometries as in \code{x}
+#' @return \code{st_buffer}, \code{st_boundary}, \code{st_convex_hull}, \code{st_simplify},
+#' \code{st_triangulate}, \code{st_voronoi}, \code{st_polygonize}, \code{st_line_merge},
+#' \code{st_centroid} and \code{st_segmentize} return an \link{sfc} or an \link{sf} 
+#' object with the same number of geometries as in \code{x}
 st_buffer = function(x, dist, nQuadSegs = 30)
 	UseMethod("st_buffer")
 
@@ -428,26 +456,26 @@ st_polygonize.sf = function(x) {
 
 #' @name geos
 #' @export
-#' @details in case of \code{st_linemerge}, \code{x} must be an object of class \code{MULTILINESTRING}, or an \code{sfc} geometry list-column object containing these
+#' @details in case of \code{st_line_merge}, \code{x} must be an object of class \code{MULTILINESTRING}, or an \code{sfc} geometry list-column object containing these
 #' @examples 
 #' mls = st_multilinestring(list(rbind(c(0,0), c(1,1)), rbind(c(2,0), c(1,1))))
-#' st_linemerge(st_sfc(mls))
-st_linemerge = function(x)
-	UseMethod("st_linemerge")
+#' st_line_merge(st_sfc(mls))
+st_line_merge = function(x)
+	UseMethod("st_line_merge")
 
 #' @export
-st_linemerge.sfg = function(x)
-	get_first_sfg(st_linemerge(st_sfc(x)))
+st_line_merge.sfg = function(x)
+	get_first_sfg(st_line_merge(st_sfc(x)))
 
 #' @export
-st_linemerge.sfc = function(x) {
+st_line_merge.sfc = function(x) {
 	stopifnot(inherits(x, "sfc_MULTILINESTRING"))
 	st_sfc(CPL_geos_op("linemerge", x, numeric(0)))
 }
 
 #' @export
-st_linemerge.sf = function(x) {
-	st_geometry(x) <- st_linemerge(st_geometry(x))
+st_line_merge.sf = function(x) {
+	st_geometry(x) <- st_line_merge(st_geometry(x))
 	x
 }
 
@@ -478,32 +506,32 @@ st_centroid.sf = function(x) {
 
 #' @name geos
 #' @export
-#' @param dfMaxLength numeric; max length of a line segment
+#' @param dfMaxLength numeric; max length of a line segment. If \code{x} has geographical coordinates (long/lat), \code{dfMaxLength} is a length with unit metre, and segmentation takes place along the great circle, using \link[geosphere]{gcIntermediate}.
 #' @param ... ignored
-#' @param warn logical; generate a warning in case of long/lat data
-st_segmentize	= function(x, dfMaxLength, ..., warn = TRUE)
+st_segmentize	= function(x, dfMaxLength, ...)
 	UseMethod("st_segmentize")
 
 #' @export 
-st_segmentize.sfg = function(x, dfMaxLength, ..., warn = TRUE)
-	get_first_sfg(st_segmentize(st_sfc(x), dfMaxLength, ..., warn = warn))
+st_segmentize.sfg = function(x, dfMaxLength, ...)
+	get_first_sfg(st_segmentize(st_sfc(x), dfMaxLength, ...))
 
 #' @export 
-st_segmentize.sfc	= function(x, dfMaxLength, ..., warn = TRUE) {
-	if (warn && isTRUE(st_is_longlat(x)))
-		warning("st_segmentize does not correctly segmentize longitude/latitude data")
-	st_sfc(CPL_gdal_segmentize(x, dfMaxLength), crs = st_crs(x))
+st_segmentize.sfc	= function(x, dfMaxLength, ...) {
+	if (isTRUE(st_is_longlat(x)))
+		st_sfc(lapply(x, ll_segmentize, dfMaxLength = dfMaxLength, crs = st_crs(x)), crs = st_crs(x))
+	else
+		st_sfc(CPL_gdal_segmentize(x, dfMaxLength), crs = st_crs(x))
 }
 
 #' @export
-st_segmentize.sf = function(x, dfMaxLength, ..., warn = TRUE) {
-	st_geometry(x) <- st_segmentize(st_geometry(x), dfMaxLength, ..., warn = warn)
+st_segmentize.sf = function(x, dfMaxLength, ...) {
+	st_geometry(x) <- st_segmentize(st_geometry(x), dfMaxLength, ...)
 	x
 }
 
 #' @name geos
 #' @export
-#' @details \code{st_combine} combines geometries without resolving borders. 
+#' @details \code{st_combine} combines geometries without resolving borders, using \link{c.sfg}; see \link{st_union} for resolving boundaries.
 #' @examples
 #' st_combine(nc)
 st_combine = function(x)
@@ -665,7 +693,9 @@ st_line_sample = function(x, n, density, type = "regular") {
 		random = random,
 		stop("unknown type"))
 	distList = lapply(seq_along(n), function(i) fn(n[i]) * l[i])
-	st_sfc(CPL_gdal_linestring_sample(st_geometry(x), distList))
+	x = st_geometry(x)
+	stopifnot(inherits(x, "sfc_LINESTRING"))
+	st_sfc(CPL_gdal_linestring_sample(x, distList), crs = st_crs(x))
 }
 
 #' Make a rectangular grid of polygons over the bounding box of a sf or sfc object
@@ -675,14 +705,22 @@ st_line_sample = function(x, n, density, type = "regular") {
 #' @param cellsize target cellsize
 #' @param offset numeric of lengt 2; lower left corner coordinates (x, y) of the grid
 #' @param n integer of length 1 or 2, number of grid cells in x and y direction (columns, rows)
+#' @param crs object of class \code{crs}
 #' @export
-st_makegrid = function(x, cellsize = c(diff(st_bbox(x)[c(1,3)]), diff(st_bbox(x)[c(2,4)]))/n, 
-		offset = st_bbox(x)[1:2], n = c(10, 10)) {
+st_make_grid = function(x, 
+		cellsize = c(diff(st_bbox(x)[c(1,3)]), diff(st_bbox(x)[c(2,4)]))/n, 
+		offset = st_bbox(x)[1:2], n = c(10, 10),
+		crs = if(missing(x)) NA_crs_ else st_crs(x)) {
+
+	if (nargs() == 0) # create global 10 x 10 degree grid
+		return(st_make_grid(cellsize = c(10,10), offset = c(-180,-90), n = c(36,18),
+			crs = st_crs(4326)))
 
 	bb = if (!missing(n) && !missing(offset) && !missing(cellsize)) {
 		cellsize = rep(cellsize, length.out = 2)
 		n = rep(n, length.out = 2)
-		structure(c(offset, offset + n * cellsize), names = c("xmin", "ymin", "xmax", "ymax"))
+		structure(c(offset, offset + n * cellsize), 
+			names = c("xmin", "ymin", "xmax", "ymax"))
 	} else
 		st_bbox(x)
 	
@@ -712,7 +750,34 @@ st_makegrid = function(x, cellsize = c(diff(st_bbox(x)[c(1,3)]), diff(st_bbox(x)
 			ret[[(j - 1) * nx + i]] = square(xc[i], yc[j], xc[i+1], yc[j+1])
 	
 	if (missing(x))
-		st_sfc(ret)
+		st_sfc(ret, crs = crs)
 	else
 		st_sfc(ret, crs = st_crs(x))
+}
+
+ll_segmentize = function(x, dfMaxLength, crs = st_crs(4326)) {
+	# x is a single sfg: LINESTRING or MULTILINESTRING
+	if (is.list(x)) # MULTILINESTRING:
+		structure(lapply(x, ll_segmentize, dfMaxLength = dfMaxLength, crs = crs), 
+			class = attr(x, "class"))
+	else { # matrix
+		if (!requireNamespace("geosphere", quietly = TRUE))
+			stop("package geosphere required, please install it first")
+		p = crs_parameters(crs)
+		pts = unclass(x) # matrix
+		p1 = head(pts, -1)
+		p2 = tail(pts, -1)
+		ll = geosphere::distGeo(p1, p2, as.numeric(p$SemiMajor), 1./p$InvFlattening)
+		n = ceiling(ll / as.numeric(dfMaxLength)) - 1
+		ret = geosphere::gcIntermediate(p1, p2, n, addStartEnd = TRUE)
+		if (length(n) == 1) # would be a matrix otherwise
+			ret = list(ret)
+		for (i in seq_along(n)) {
+			if (n[i] < 1) # 0 or -1, because of the -1, for 0 distance
+				ret[[i]] = ret[[i]][-2,] # take out interpolated middle point
+			if (i > 1)
+				ret[[i]] = tail(ret[[i]], -1) # take out duplicate starting point
+		}
+		structure(do.call(rbind, ret), class = attr(x, "class"))
+	}
 }

@@ -85,23 +85,28 @@ st_graticule = function(x = c(-180,-90,180,90), crs = st_crs(x),
 		c(bb[1],bb[4]), c(bb[1],bb[2])))
 	ls2 = st_linestring(rbind(c(bb[1],bb[2]), c(bb[3],bb[4]), c(bb[1],bb[4]), 
 		c(bb[3],bb[2]), c(bb[1],bb[2])))
-	box = st_sfc(ls1, ls2, crs = crs)
+	box = st_sfc(ls1, ls2)
 
-	box = st_segmentize(box, st_length(ls1) / 400, warn = FALSE)
+	# without crs, we segmentize in planar coordinates --
+	# segmentizing along great circles doesn't give parallels:
+	box = st_segmentize(box, st_length(box)[1] / ndiscr) 
 
-	# Now we're moving to long/lat:
+	# and only now set the crs:
+	st_crs(box) = crs
+
+	# Now, in case we're not already in longlat, we convert to longlat:
 	if (!is.na(crs))
-		box = st_transform(box, datum)
+		box_ll <- st_transform(box, datum, partial = TRUE)
 	
 	# as in https://github.com/edzer/sfr/issues/198 : 
-	# recreate, and ignore bbox:
-	if (any(!is.finite(st_bbox(box)))) {
+	# recreate, and ignore bbox_ll:
+	if (any(!is.finite(st_bbox(box_ll)))) {
 		x = st_transform(st_graticule(datum = datum), crs)
 		x$degree_label = NA_character_
 		return(x)
 	}
 
-	bb = st_bbox(box)
+	bb = st_bbox(box_ll)
 	if (is.null(lon)) {
 		lon = if (bb[1] < -170 && bb[3] > 170) # "global"
 				seq(-180, 180, by = 60)
@@ -115,7 +120,7 @@ st_graticule = function(x = c(-180,-90,180,90), crs = st_crs(x),
 	lon = lon[lon >= -180 & lon <= 180]
 	lat = lat[lat > -90 & lat < 90]
 
-	# widen bb if pretty() created values outside the box:
+	# widen bb if pretty() created values outside the box_ll:
 	bb = c(min(bb[1], min(lon)), min(bb[2],min(lat)), max(bb[3], max(lon)), max(bb[4], max(lat)))
 
 	long_list <- vector(mode="list", length=length(lon))
@@ -140,8 +145,8 @@ st_graticule = function(x = c(-180,-90,180,90), crs = st_crs(x),
 	st_agr(df) = "constant"
 
 	if (!missing(x)) { # cut out box:
-		if (! is.na(crs))
-			box = st_transform(box, crs)
+		#if (! is.na(crs))
+		#	box = st_transform(box, crs)
 		df = st_intersection(df, st_polygonize(box[1]))
 	}
 	graticule_attributes(st_cast(df, "MULTILINESTRING"))

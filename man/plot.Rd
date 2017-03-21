@@ -27,7 +27,7 @@
 \alias{sf.colors}
 \title{Plot sf object}
 \usage{
-\method{plot}{sf}(x, y, ..., ncol = 10, col = NULL)
+\method{plot}{sf}(x, y, ..., ncol = 10, col = NULL, max.plot = 9)
 
 \method{plot}{sfc_POINT}(x, y, ..., pch = 1, cex = 1, col = 1, bg = 0,
   lwd = 1, lty = 1, type = "p", add = FALSE)
@@ -70,9 +70,11 @@ sf.colors(n = 10, xc, cutoff.tails = c(0.35, 0.2), alpha = 1,
 
 \item{...}{further specifications, see \link{plot_sf} and \link{plot}}
 
-\item{ncol}{integer; default number of colors to be used.}
+\item{ncol}{integer; default number of colors to be used}
 
 \item{col}{color}
+
+\item{max.plot}{integer; lower boundary to maximium number of attributes to plot}
 
 \item{pch}{plotting symbol}
 
@@ -115,7 +117,7 @@ sf.colors(n = 10, xc, cutoff.tails = c(0.35, 0.2), alpha = 1,
 \item{expandBB}{numeric; fractional values to expand the bounding box with, 
 in each direction (bottom, left, top, right)}
 
-\item{graticule}{object of class \code{crs} (e.g., \code{st_crs(4326)} for a WGS84 graticule), 
+\item{graticule}{logical, or object of class \code{crs} (e.g., \code{st_crs(4326)} for a WGS84 graticule), or object created by \link{st_graticule}; \code{TRUE} will give the WGS84 graticule 
 or object returned by \link{st_graticule}}
 
 \item{col_graticule}{color to used for the graticule (if present)}
@@ -136,8 +138,9 @@ Plot sf object
 blue-pink-yellow color scale
 }
 \details{
-\code{plot.sf} plots maps with colors following from attribute columns, 
-one map per attribute. It uses \code{sf.colors} for default colors.
+\code{plot.sf} maximally plots \code{max.plot} maps with colors following from attribute columns, 
+one map per attribute. It uses \code{sf.colors} for default colors. For more control over individual maps,
+set parameter \code{mfrow} with \code{par} prior to plotting,  and plot single maps one by one.
 
 \code{plot.sfc} plots the geometry, additional parameters can be passed on
 to control color, lines or symbols.
