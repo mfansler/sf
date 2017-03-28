@@ -156,10 +156,10 @@ $(document).ready(function () {
 <pre class="r"><code>library(sf)
 fname &lt;- system.file(&quot;shape/nc.shp&quot;, package=&quot;sf&quot;)
 fname
-## [1] &quot;/tmp/RtmpA4b7mz/Rinst3ee8517bd190/sf/shape/nc.shp&quot;
+## [1] &quot;/tmp/RtmpaaWcHJ/Rinst7c9138a02f68/sf/shape/nc.shp&quot;
 nc &lt;- st_read(fname)
-## Reading layer `nc' from data source `/tmp/RtmpA4b7mz/Rinst3ee8517bd190/sf/shape/nc.shp' using driver `ESRI Shapefile'
-## converted into: MULTIPOLYGON
+## Reading layer `nc' from data source `/tmp/RtmpaaWcHJ/Rinst7c9138a02f68/sf/shape/nc.shp' using driver `ESRI Shapefile'
+## converted into: POLYGON
 ## Simple feature collection with 100 features and 14 fields
 ## geometry type:  MULTIPOLYGON
 ## dimension:      XY
@@ -203,8 +203,8 @@ Available layers:
 <p>Alternatively, a user can set the global option <code>stringsAsFactors</code>, and this will have the same effect:</p>
 <pre class="r"><code>options(stringsAsFactors = FALSE)
 st_read(fname)
-## Reading layer `nc' from data source `/tmp/RtmpA4b7mz/Rinst3ee8517bd190/sf/shape/nc.shp' using driver `ESRI Shapefile'
-## converted into: MULTIPOLYGON
+## Reading layer `nc' from data source `/tmp/RtmpaaWcHJ/Rinst7c9138a02f68/sf/shape/nc.shp' using driver `ESRI Shapefile'
+## converted into: POLYGON
 ## Simple feature collection with 100 features and 14 fields
 ## geometry type:  MULTIPOLYGON
 ## dimension:      XY

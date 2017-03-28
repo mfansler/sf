@@ -1,3 +1,6 @@
+
+library(sf)
+library(testthat)
 context("sf: postgis")
 
 can_con <- function(x) inherits(x, "PostgreSQLConnection")
@@ -8,7 +11,7 @@ db_drop_table_schema <- function(con, schema, table = NULL) {
     } else {
         table <- paste(c(schema, table), collapse = ".")
     }
-    DBI::dbSendQuery(pg, paste("DROP TABLE", table))
+    DBI::dbSendQuery(pg, paste("DROP TABLE ", table, " CASCADE;"))
 }
 require("sp")
 data(meuse)
@@ -33,6 +36,18 @@ test_that("can write to db", {
     expect_silent(st_write_db(pg, pts, "sf_meuse2__", binary = FALSE))
     expect_warning(z <- st_set_crs(pts, epsg_31370))
     expect_warning(st_write_db(pg, z, "sf_meuse3__",  binary = TRUE), "proj4")
+})
+
+test_that("sf can write units to database (#264)", {
+    skip_if_not(can_con(pg), "could not connect to postgis database")
+    ptsu <- pts
+    ptsu[["length"]] <- ptsu[["cadmium"]]
+    units(ptsu[["length"]]) <- units::make_unit("km")
+    expect_silent(st_write_db(pg, ptsu, "sf_units__", overwrite = TRUE))
+    r <- st_read_db(pg, "sf_units__")
+    expect_is(r$length, "numeric")
+    expect_equal(sort(r[["length"]]), sort(as.numeric(ptsu[["length"]])))
+    try(db_drop_table_schema(pg, "sf_units__"), silent = TRUE)
 })
 
 test_that("can write to other schema", {
@@ -116,7 +131,7 @@ test_that("round trips", {
     skip_if_not(can_con(pg), "could not connect to postgis database")
     round_trip = function(conn, wkt) {
         query = paste0("SELECT '", wkt, "'::geometry;")
-        returnstr = suppressWarnings(dbGetQuery(conn, query)$geometry)
+        returnstr = suppressWarnings(DBI::dbGetQuery(conn, query)$geometry)
         wkb = structure(returnstr, class = "WKB")
         ret = st_as_sfc(wkb, EWKB = TRUE)
         message(paste("IN:  ", wkt, "\n"))
@@ -124,7 +139,7 @@ test_that("round trips", {
         message(paste("OUT: ", txt <- st_as_text(ret, EWKT=TRUE)[[1]], "\n"))
         if (length(grep("SRID", txt)) == 0) {
             query = paste0("SELECT ST_AsText('",sf:::CPL_raw_to_hex(st_as_binary(ret[[1]])),"');")
-            received = suppressWarnings(dbGetQuery(conn, query)$st_astext)
+            received = suppressWarnings(DBI::dbGetQuery(conn, query)$st_astext)
             # PG: contains the PostGIS WKT, after reading the WKB created by sf from R native
             message(paste("PG:  ", received, "\n"))
         }
@@ -188,8 +203,33 @@ test_that("can read using driver", {
     expect_error(st_read("PG:dbname=empty", quiet = TRUE), "No layers")
 })
 
+test_that("multi geom columns work", {
+    skip_if_not(can_con(pg), "could not connect to postgis database")
+	cmd = "CREATE TABLE meuse_multi (id int4 PRIMARY KEY, zinc real);
+SELECT AddGeometryColumn('', 'meuse_multi','geom_1',28992,'GEOMETRY', 2);
+SELECT AddGeometryColumn('', 'meuse_multi','geom_2',28992,'GEOMETRY', 2);
+INSERT INTO meuse_multi VALUES ( 1 , 1022 , ST_GeomFromText('POINT( 181072 333611 )', 28992),
+ST_GeomFromText('MULTIPOINT( 181390 333260, 0 0)', 28992));
+INSERT INTO meuse_multi VALUES ( 2 , 1141 , ST_GeomFromText('POINT( 181025 333558 )', 28992),
+ST_GeomFromText('POINT( 181165 333370 )', 28992));
+INSERT INTO meuse_multi VALUES ( 3 , 640 , ST_GeomFromText('POINT( 181165 333537 )', 28992),
+ST_GeomFromText('POINT( 181027 333363 )', 28992));
+INSERT INTO meuse_multi VALUES ( 4 , 257 , ST_GeomFromText('POINT( 181298 333484 )', 28992),
+ST_GeomFromText('POINT( 181060 333231 )', 28992));
+INSERT INTO meuse_multi VALUES ( 5 , 269 , ST_GeomFromText('POINT( 181307 333330 )', 28992),
+ST_GeomFromText('POINT( 181232 333168 )', 28992));"
+    try(DBI::dbExecute(pg, cmd), silent = TRUE)
+	expect_silent(x <- st_read("PG:dbname=postgis", "meuse_multi", quiet = TRUE))
+	expect_silent(x <- st_read("PG:dbname=postgis", "meuse_multi", quiet = TRUE, type = c(1,4)))
+	expect_silent(x <- st_read("PG:dbname=postgis", "meuse_multi", quiet = TRUE, type = c(4,4)))
+	expect_silent(x <- st_read("PG:dbname=postgis", "meuse_multi", quiet = TRUE, promote_to_multi = FALSE))
+	expect_silent(x <- st_read("PG:dbname=postgis", "meuse_multi", quiet = TRUE, geometry_column = "geom_2"))
+	x <- st_layers("PG:dbname=postgis")
+})
+
 if (can_con(pg)) {
     # cleanup
+    try(db_drop_table_schema(pg, "meuse_multi"), silent = TRUE)
     try(db_drop_table_schema(pg, "sf_meuse__"), silent = TRUE)
     try(db_drop_table_schema(pg, "sf_meuse2__"), silent = TRUE)
     try(db_drop_table_schema(pg, "sf_meuse3__"), silent = TRUE)
@@ -203,10 +243,11 @@ if (can_con(pg)) {
 }
 
 test_that("schema_table", {
-    expect_error(schema_table(NA), "character vector")
-    expect_error(schema_table(NA_character_), "cannot be NA")
-    expect_error(schema_table("a", NA), "cannot be NA")
-    expect_error(schema_table(letters), "longer than 2")
-    expect_equal(schema_table("a", "b"), c("b", "a"))
-    expect_equal(schema_table("a"), c("public", "a"))
+    expect_error(sf:::schema_table(NA), "character vector")
+    expect_error(sf:::schema_table(NA_character_), "cannot be NA")
+    expect_error(sf:::schema_table("a", NA), "cannot be NA")
+    expect_error(sf:::schema_table(letters), "longer than 2")
+    expect_equal(sf:::schema_table("a", "b"), c("b", "a"))
+    expect_equal(sf:::schema_table("a"), c("public", "a"))
 })
+

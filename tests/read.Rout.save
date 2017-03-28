@@ -209,12 +209,12 @@ Error in CPL_get_layers(dsn, options, do_count) : Open failed.
 
 > try(st_read("foo")) # cannot open datasource
 Cannot open data source foo
-Error in CPL_read_ogr(dsn, layer, as.character(options), quiet, iGeomField -  : 
+Error in CPL_read_ogr(dsn, layer, as.character(options), quiet, type,  : 
   Open failed.
 
 > try(st_read("x.gpkg", "xyz")) # cannot open layer
 Cannot open layer xyz
-Error in CPL_read_ogr(dsn, layer, as.character(options), quiet, iGeomField -  : 
+Error in CPL_read_ogr(dsn, layer, as.character(options), quiet, type,  : 
   Opening layer failed.
 
 > try(st_write(c("foo", "bar")))
@@ -265,11 +265,9 @@ proj4string:    NA
 5  Inf      1970-01-02 1970-01-01 00:00:01 POINT(5 5)
 > 
 > try(st_write(x, "x.shp", driver = character(0))) # err
-driver, dsn or layer unspecified
 Error in CPL_write_ogr(obj, dsn, layer, driver, as.character(dataset_options),  : 
-  Driver unspecified.
-
+  expecting a single value
 > 
 > proc.time()
    user  system elapsed 
-  0.552   0.048   0.705 
+  0.600   0.024   0.754 

@@ -9,19 +9,21 @@
 #' @param ... parameter(s) passed on to \link{st_as_sf}
 #' @param options character; driver dependent dataset open options, multiple options supported.
 #' @param quiet logical; suppress info on name, driver, size and spatial reference, or signaling no or multiple layers
-#' @param iGeomField integer; in case of multiple geometry fields, which one to take?
-#' @param type integer; ISO number of desired simple feature type; see details. If left zero, in case of mixed feature geometry
-#' types, conversion to the highest numeric type value found will be attempted.
+#' @param geometry_column integer or character; in case of multiple geometry fields, which one to take?
+#' @param type integer; ISO number of desired simple feature type; see details. If left zero, and \code{promote_to_multi} 
+#' is \code{TRUE}, in case of mixed feature geometry
+#' types, conversion to the highest numeric type value found will be attempted. Different values for each geometry column
+#' can be given.
 #' @param promote_to_multi logical; in case of a mix of Point and MultiPoint, or of LineString and MultiLineString, or of
 #' Polygon and MultiPolygon, convert all to the Multi variety; defaults to \code{TRUE}
 #' @param stringsAsFactors logical; logical: should character vectors be converted to factors?  The `factory-fresh' default
 #' is \code{TRUE}, but this can be changed by setting \code{options(stringsAsFactors = FALSE)}.
 #' @param int64_as_string logical; if TRUE, Int64 attributes are returned as string; if FALSE, they are returned as double
 #' and a warning is given when precision is lost (i.e., values are larger than 2^53).
-#' @details for iGeomField, see also \url{https://trac.osgeo.org/gdal/wiki/rfc41_multiple_geometry_fields}; for \code{type}
+#' @details for \code{geometry_column}, see also \url{https://trac.osgeo.org/gdal/wiki/rfc41_multiple_geometry_fields}; for \code{type}
 #' values see \url{https://en.wikipedia.org/wiki/Well-known_text#Well-known_binary}, but note that not every target value
 #' may lead to succesful conversion. The typical conversion from POLYGON (3) to MULTIPOLYGON (6) should work; the other
-#' way around (type=3), secondary rings from MULTIPOLYGONS may be dropped without warnings.
+#' way around (type=3), secondary rings from MULTIPOLYGONS may be dropped without warnings. \code{promote_to_multi} is handled on a per-geometry column basis; \code{type} may be specfied for each geometry columns.
 #' @return object of class \link{sf} when a layer was succesfully read; in case argument \code{layer} is missing and
 #' data source \code{dsn} does not contain a single layer, an object of class \code{sf_layers} is returned with the
 #' layer names, each with their geometry type(s). Note that the number of layers may also be zero.
@@ -43,7 +45,7 @@
 #' to the current working directory (see \link{getwd}). "Shapefiles" consist of several files with the same basename
 #' that reside in the same directory, only one of them having extension \code{.shp}.
 #' @export
-st_read = function(dsn, layer, ..., options = NULL, quiet = FALSE, iGeomField = 1L, type = 0,
+st_read = function(dsn, layer, ..., options = NULL, quiet = FALSE, geometry_column = 1L, type = 0,
 		promote_to_multi = TRUE, stringsAsFactors = default.stringsAsFactors(),
 		int64_as_string = FALSE) {
 
@@ -56,18 +58,25 @@ st_read = function(dsn, layer, ..., options = NULL, quiet = FALSE, iGeomField = 
 	if (file.exists(dsn))
 		dsn = normalizePath(dsn)
 
-	x = CPL_read_ogr(dsn, layer, as.character(options), quiet, iGeomField - 1L, type,
-		promote_to_multi, int64_as_string)
+	if (length(promote_to_multi) > 1)
+		stop("`promote_to_multi' should have length one, and applies to all geometry columns")
+
+	x = CPL_read_ogr(dsn, layer, as.character(options), quiet, type, promote_to_multi, int64_as_string)
+
+	# TODO: take care of multiple geometry colums:
 	which.geom = which(vapply(x, function(f) inherits(f, "sfc"), TRUE))
 	nm = names(x)[which.geom]
-	geom = x[[which.geom]]
-	x[[which.geom]] = NULL
-	if (length(x) == 0)
-		x = data.frame(row.names = seq_along(geom))
+	geom = x[which.geom]
+
+	x = if (length(x) == length(geom)) # ONLY geometry column(s)
+		data.frame(row.names = seq_along(geom[[1]]))
 	else
-		x = as.data.frame(x, stringsAsFactors = stringsAsFactors)
-	x[[nm]] = st_sfc(geom, crs = attr(geom, "crs")) # computes bbox
-	x = st_as_sf(x, ...)
+		as.data.frame(x[-which.geom], stringsAsFactors = stringsAsFactors)
+
+	for (i in seq_along(geom))
+		x[[ nm[i] ]] = st_sfc(geom[[i]], crs = attr(geom[[i]], "crs")) # computes bbox
+	x = st_as_sf(x, ..., 
+		sf_column_name = if (is.character(geometry_column)) geometry_column else nm[geometry_column])
 	if (! quiet)
 		print(x, n = 0)
 	else
@@ -81,9 +90,32 @@ st_read = function(dsn, layer, ..., options = NULL, quiet = FALSE, iGeomField = 
 read_sf <- function(..., quiet = TRUE, stringsAsFactors = FALSE)
 	st_read(..., quiet = quiet, stringsAsFactors = stringsAsFactors)
 
-#' @name st_read
-#' @export
-write_sf <- function(..., quiet = TRUE) st_write(..., quiet = quiet)
+clean_columns = function(obj, factorsAsCharacter) {
+	for (i in seq_along(obj)) {
+		if (is.factor(obj[[i]])) {
+			obj[[i]] = if (factorsAsCharacter)
+					as.character(obj[[i]])
+				else
+					as.numeric(obj[[i]])
+		}
+		if (!(class(obj[[i]])[1] %in% c("character", "integer", "numeric", "Date", "POSIXct"))) {
+			if (inherits(obj[[i]], "POSIXlt"))
+				obj[[i]] = as.POSIXct(obj[[i]])
+			else if (is.numeric(obj[[i]]))
+				obj[[i]] = as.numeric(obj[[i]]) # strips class
+		}
+	}
+	ccls = vapply(obj, function(x) class(x)[1], "")
+	ccls.ok = ccls %in% c("character", "integer", "numeric", "Date", "POSIXct")
+	if (any(!ccls.ok)) {
+		# nocov start
+		cat("ignoring columns with unsupported type:\n")
+		print(cbind(names(obj)[!ccls.ok], ccls[!ccls.ok]))
+		obj[ccls.ok]
+		# nocov end
+	} else
+		obj
+}
 
 #' Write simple features object to file or database
 #'
@@ -116,10 +148,11 @@ write_sf <- function(..., quiet = TRUE) st_write(..., quiet = quiet)
 #'     layer_options = c("OVERWRITE=yes", "LAUNDER=true"))
 #' demo(nc, ask = FALSE)
 #' st_write(nc, "PG:dbname=postgis", "sids", layer_options = "OVERWRITE=true")}
+#' @name st_write
 #' @export
 st_write = function(obj, dsn, layer = basename(dsn), driver = guess_driver_can_write(dsn), ...,
 		dataset_options = NULL, layer_options = NULL, quiet = FALSE, factorsAsCharacter = TRUE,
-		update = FALSE) {
+		update = driver %in% db_drivers) {
 
 	if (length(list(...)))
 		stop(paste("unrecognized argument(s)", unlist(list(...)), "\n"))
@@ -136,25 +169,22 @@ st_write = function(obj, dsn, layer = basename(dsn), driver = guess_driver_can_w
 
 	geom = st_geometry(obj)
 	obj[[attr(obj, "sf_column")]] = NULL
-	if (factorsAsCharacter)
-		obj = lapply(obj, function(x) if (is.factor(x)) as.character(x) else x)
-	else
-		obj = lapply(obj, function(x) if (is.factor(x)) as.numeric(x) else x)
-	ccls = vapply(obj, function(x) class(x)[1], "")
-	ccls.ok = ccls %in% c("character", "integer", "numeric", "Date", "POSIXct")
-	if (any(!ccls.ok)) {
-		# nocov start
-		cat("ignoring columns with unsupported type:\n")
-		print(cbind(names(obj)[!ccls.ok], ccls[!ccls.ok]))
-		obj = obj[ccls.ok]
-		# nocov end
-	}
+
+	obj = clean_columns(obj, factorsAsCharacter)
+
 	attr(obj, "colclasses") = vapply(obj, function(x) class(x)[1], "")
-	dim = class(geom[[1]])[1]
+	dim = if (length(geom) == 0)
+			"XY"
+		else
+			class(geom[[1]])[1]
 	CPL_write_ogr(obj, dsn, layer, driver,
 		as.character(dataset_options), as.character(layer_options),
 		geom, dim, quiet, update)
 }
+
+#' @name st_write
+#' @export
+write_sf <- function(..., quiet = TRUE) st_write(..., quiet = quiet)
 
 #' Get GDAL drivers
 #'
@@ -181,6 +211,7 @@ st_drivers = function(what = "vector") {
 
 #' @export
 print.sf_layers = function(x, ...) {
+	n_gt = max(sapply(x$geomtype, length))
 	x$geomtype = vapply(x$geomtype, function(x) paste(x, collapse = ", "), "")
 	cat(paste("Driver:", x$driver, "\n"))
 	x$driver = NULL
@@ -191,7 +222,11 @@ print.sf_layers = function(x, ...) {
 		invisible(x)
 	} else {
 		df = data.frame(unclass(x))
-		names(df) = c("layer_name", "geometry_type", "features", "fields")
+		gt = if (n_gt > 1)
+				"geometry_types"
+			else
+				"geometry_type"
+		names(df) = c("layer_name", gt, "features", "fields")
 		print(df)
 		invisible(df)
 	}
@@ -220,9 +255,9 @@ guess_driver = function(dsn) {
 
 	# find match: try extension first
 	drv = extension_map[tolower(tools::file_ext(dsn))]
-	if (any(grep(":", gsub(":[/\\]", "/", dsn)))) {
-			drv = prefix_map[tolower(strsplit(dsn, ":")[[1]][1])]
-	}
+	if (any(grep(":", gsub(":[/\\]", "/", dsn))))
+		drv = prefix_map[tolower(strsplit(dsn, ":")[[1]][1])]
+
 	drv <- unlist(drv)
 
 	if (is.null(drv)) {
@@ -316,3 +351,7 @@ prefix_map <- list(
         "odbc" = "ODBC",
         "pg" = "PostgreSQL",
         "sde" = "SDE")
+
+#' Drivers for which update should be \code{TRUE} by default
+#' @docType data
+db_drivers <- c(unlist(prefix_map), "GPKG", "SQLite")
