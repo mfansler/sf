@@ -1,4 +1,4 @@
-## ----echo=FALSE----------------------------------------------------------
+## ----echo=FALSE, include=FALSE-------------------------------------------
 knitr::opts_chunk$set(collapse = TRUE)
 if (file.exists("nc1.shp"))
 	file.remove("nc1.shp", "nc1.dbf", "nc1.shx")

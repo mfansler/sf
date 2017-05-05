@@ -33,8 +33,12 @@ CPL_roundtrip <- function(sfc) {
     .Call('sf_CPL_roundtrip', PACKAGE = 'sf', sfc)
 }
 
-CPL_transform <- function(sfc, proj4, epsg) {
-    .Call('sf_CPL_transform', PACKAGE = 'sf', sfc, proj4, epsg)
+CPL_transform <- function(sfc, proj4) {
+    .Call('sf_CPL_transform', PACKAGE = 'sf', sfc, proj4)
+}
+
+CPL_wrap_dateline <- function(sfc, opt, quiet = TRUE) {
+    .Call('sf_CPL_wrap_dateline', PACKAGE = 'sf', sfc, opt, quiet)
 }
 
 CPL_crs_from_proj4string <- function(p4s) {
@@ -77,12 +81,12 @@ CPL_read_ogr <- function(datasource, layer, options, quiet, toTypeUser, promote_
     .Call('sf_CPL_read_ogr', PACKAGE = 'sf', datasource, layer, options, quiet, toTypeUser, promote_to_multi, int64_as_string)
 }
 
-CPL_write_ogr <- function(obj, dsn, layer, driver, dco, lco, geom, dim, quiet = FALSE, update = FALSE) {
-    invisible(.Call('sf_CPL_write_ogr', PACKAGE = 'sf', obj, dsn, layer, driver, dco, lco, geom, dim, quiet, update))
+CPL_write_ogr <- function(obj, dsn, layer, driver, dco, lco, geom, dim, quiet = FALSE, update = FALSE, delete_dsn = FALSE, delete_layer = FALSE) {
+    invisible(.Call('sf_CPL_write_ogr', PACKAGE = 'sf', obj, dsn, layer, driver, dco, lco, geom, dim, quiet, update, delete_dsn, delete_layer))
 }
 
-CPL_geos_binop <- function(sfc0, sfc1, op, par = 0.0, sparse = TRUE, prepared = FALSE) {
-    .Call('sf_CPL_geos_binop', PACKAGE = 'sf', sfc0, sfc1, op, par, sparse, prepared)
+CPL_geos_binop <- function(sfc0, sfc1, op, par = 0.0, pattern = "", sparse = TRUE, prepared = FALSE) {
+    .Call('sf_CPL_geos_binop', PACKAGE = 'sf', sfc0, sfc1, op, par, pattern, sparse, prepared)
 }
 
 CPL_geos_is_valid_reason <- function(sfc) {
@@ -157,8 +161,8 @@ CPL_raw_to_hex <- function(raw) {
     .Call('sf_CPL_raw_to_hex', PACKAGE = 'sf', raw)
 }
 
-CPL_read_wkb <- function(wkb_list, EWKB = FALSE, endian = 0L) {
-    .Call('sf_CPL_read_wkb', PACKAGE = 'sf', wkb_list, EWKB, endian)
+CPL_read_wkb <- function(wkb_list, EWKB = FALSE, spatialite = FALSE, endian = 0L) {
+    .Call('sf_CPL_read_wkb', PACKAGE = 'sf', wkb_list, EWKB, spatialite, endian)
 }
 
 CPL_write_wkb <- function(sfc, EWKB = FALSE, endian = 0L, dim = "XY", precision = 0.0) {

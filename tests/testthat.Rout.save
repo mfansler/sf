@@ -1,0 +1,55 @@
+
+R version 3.4.0 (2017-04-21) -- "You Stupid Darkness"
+Copyright (C) 2017 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> library(testthat)
+> suppressPackageStartupMessages(library(sf))
+> 
+> test_check("sf")
+Reading layer `nc.gpkg' from data source `/home/edzer/git/sf.Rcheck/sf/gpkg/nc.gpkg' using driver `GPKG'
+converted into: MULTIPOLYGON
+Simple feature collection with 100 features and 14 fields
+Attribute-geometry relationship: 0 constant, 8 aggregate, 6 identity
+geometry type:  MULTIPOLYGON
+dimension:      XY
+bbox:           xmin: -84.32385 ymin: 33.88199 xmax: -75.45698 ymax: 36.58965
+epsg (SRID):    4267
+proj4string:    +proj=longlat +datum=NAD27 +no_defs
+Cannot open layer foo
+OGR: Unsupported geometry type
+bna 
+csv 
+geojson 
+gml 
+gpkg 
+gxt 
+jml 
+shp 
+sqlite 
+vdv 
+xlsx 
+.nc 
+driver `foo' not available.
+Dataset /home/edzer/git/sf.Rcheck/tests/testthat/x.gpkg already exists: remove first, use update=TRUE to append,
+delete_layer=TRUE to delete layer, or delete_dsn=TRUE to remove the entire data source before writing.
+Creating layer . failed.
+Failed to create feature 1 in x
+testthat results ================================================================
+OK: 528 SKIPPED: 0 FAILED: 0
+> 
+> proc.time()
+   user  system elapsed 
+  6.304   0.392  10.214 

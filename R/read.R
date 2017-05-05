@@ -10,9 +10,9 @@
 #' @param options character; driver dependent dataset open options, multiple options supported.
 #' @param quiet logical; suppress info on name, driver, size and spatial reference, or signaling no or multiple layers
 #' @param geometry_column integer or character; in case of multiple geometry fields, which one to take?
-#' @param type integer; ISO number of desired simple feature type; see details. If left zero, and \code{promote_to_multi} 
+#' @param type integer; ISO number of desired simple feature type; see details. If left zero, and \code{promote_to_multi}
 #' is \code{TRUE}, in case of mixed feature geometry
-#' types, conversion to the highest numeric type value found will be attempted. Different values for each geometry column
+#' types, conversion to the highest numeric type value found will be attempted. A vector with different values for each geometry column
 #' can be given.
 #' @param promote_to_multi logical; in case of a mix of Point and MultiPoint, or of LineString and MultiLineString, or of
 #' Polygon and MultiPolygon, convert all to the Multi variety; defaults to \code{TRUE}
@@ -24,6 +24,8 @@
 #' values see \url{https://en.wikipedia.org/wiki/Well-known_text#Well-known_binary}, but note that not every target value
 #' may lead to succesful conversion. The typical conversion from POLYGON (3) to MULTIPOLYGON (6) should work; the other
 #' way around (type=3), secondary rings from MULTIPOLYGONS may be dropped without warnings. \code{promote_to_multi} is handled on a per-geometry column basis; \code{type} may be specfied for each geometry columns.
+#' 
+#' In case of problems reading shapefiles from USB drives on OSX, please see \url{https://github.com/edzer/sfr/issues/252}.
 #' @return object of class \link{sf} when a layer was succesfully read; in case argument \code{layer} is missing and
 #' data source \code{dsn} does not contain a single layer, an object of class \code{sf_layers} is returned with the
 #' layer names, each with their geometry type(s). Note that the number of layers may also be zero.
@@ -75,7 +77,7 @@ st_read = function(dsn, layer, ..., options = NULL, quiet = FALSE, geometry_colu
 
 	for (i in seq_along(geom))
 		x[[ nm[i] ]] = st_sfc(geom[[i]], crs = attr(geom[[i]], "crs")) # computes bbox
-	x = st_as_sf(x, ..., 
+	x = st_as_sf(x, ...,
 		sf_column_name = if (is.character(geometry_column)) geometry_column else nm[geometry_column])
 	if (! quiet)
 		print(x, n = 0)
@@ -91,6 +93,7 @@ read_sf <- function(..., quiet = TRUE, stringsAsFactors = FALSE)
 	st_read(..., quiet = quiet, stringsAsFactors = stringsAsFactors)
 
 clean_columns = function(obj, factorsAsCharacter) {
+	permitted = c("character", "integer", "numeric", "Date", "POSIXct")
 	for (i in seq_along(obj)) {
 		if (is.factor(obj[[i]])) {
 			obj[[i]] = if (factorsAsCharacter)
@@ -98,23 +101,23 @@ clean_columns = function(obj, factorsAsCharacter) {
 				else
 					as.numeric(obj[[i]])
 		}
-		if (!(class(obj[[i]])[1] %in% c("character", "integer", "numeric", "Date", "POSIXct"))) {
+		if (! inherits(obj[[i]], permitted)) {
 			if (inherits(obj[[i]], "POSIXlt"))
 				obj[[i]] = as.POSIXct(obj[[i]])
 			else if (is.numeric(obj[[i]]))
 				obj[[i]] = as.numeric(obj[[i]]) # strips class
 		}
 	}
-	ccls = vapply(obj, function(x) class(x)[1], "")
-	ccls.ok = ccls %in% c("character", "integer", "numeric", "Date", "POSIXct")
+	ccls.ok = vapply(obj, function(x) inherits(x, permitted), TRUE)
 	if (any(!ccls.ok)) {
 		# nocov start
 		cat("ignoring columns with unsupported type:\n")
-		print(cbind(names(obj)[!ccls.ok], ccls[!ccls.ok]))
-		obj[ccls.ok]
+		print(paste(names(obj)[!ccls.ok], collapse = " "))
+		obj = obj[ccls.ok]
 		# nocov end
-	} else
-		obj
+	}
+	colclasses = vapply(obj, function(x) permitted[ which(inherits(x, permitted, which = TRUE) > 0)[1] ] , "")
+	structure(obj, colclasses = colclasses)
 }
 
 #' Write simple features object to file or database
@@ -133,14 +136,24 @@ clean_columns = function(obj, factorsAsCharacter) {
 #' @param quiet logical; suppress info on name, driver, size and spatial reference
 #' @param factorsAsCharacter logical; convert \code{factor} objects into character strings (default), else into numbers by
 #' \code{as.numeric}.
-#' @param update logical; if \code{TRUE}, try to update (append to) existing data source;this is only supported by some drivers
-#' (e.g. GPKG), for other drivers the layer may simply be overwritten
-#' @details columns (variables) of a class not supported are dropped with a warning.
+#' @param update logical; \code{FALSE} by default for single-layer drivers but \code{TRUE} by default for database drivers
+#' as defined by \code{db_drivers}. 
+#' For database-type drivers (e.g. GPKG) \code{TRUE} values will make \code{GDAL} try 
+#' to update (append to) the existing data source, e.g. adding a table to an existing database.
+#' @param delete_dsn logical; delete data source \code{dsn} before attempting to write?
+#' @param delete_layer logical; delete layer \code{layer} before attempting to write? (not yet implemented)
+#' @details columns (variables) of a class not supported are dropped with a warning. When deleting layers or 
+#' data sources is not successful, no error is emitted. \code{delete_dsn} and \code{delete_layers} should be 
+#' handled with care; the former may erase complete directories or databases.
 #' @seealso \link{st_drivers}
 #' @examples
 #' nc = st_read(system.file("shape/nc.shp", package="sf"))
 #' st_write(nc, "nc.shp")
-#'
+#' st_write(nc, "nc.shp", delete_layer = TRUE) # overwrites
+#' data(meuse, package = "sp") # loads data.frame from sp
+#' meuse_sf = st_as_sf(meuse, coords = c("x", "y"), crs = 28992)
+#' st_write(meuse_sf, "meuse.csv", layer_options = "GEOMETRY=AS_XY") # writes X and Y as columns
+#' st_write(meuse_sf, "meuse.csv", layer_options = "GEOMETRY=AS_WKT", delete_dsn=TRUE) # overwrites
 #' \dontrun{
 #' library(sp)
 #' example(meuse, ask = FALSE, echo = FALSE)
@@ -152,7 +165,7 @@ clean_columns = function(obj, factorsAsCharacter) {
 #' @export
 st_write = function(obj, dsn, layer = basename(dsn), driver = guess_driver_can_write(dsn), ...,
 		dataset_options = NULL, layer_options = NULL, quiet = FALSE, factorsAsCharacter = TRUE,
-		update = driver %in% db_drivers) {
+		update = driver %in% db_drivers, delete_dsn = FALSE, delete_layer = FALSE) {
 
 	if (length(list(...)))
 		stop(paste("unrecognized argument(s)", unlist(list(...)), "\n"))
@@ -170,21 +183,27 @@ st_write = function(obj, dsn, layer = basename(dsn), driver = guess_driver_can_w
 	geom = st_geometry(obj)
 	obj[[attr(obj, "sf_column")]] = NULL
 
-	obj = clean_columns(obj, factorsAsCharacter)
+	obj = clean_columns(as.data.frame(obj), factorsAsCharacter)
+	# this attaches attr colclasses
 
-	attr(obj, "colclasses") = vapply(obj, function(x) class(x)[1], "")
+	if (driver == "ESRI Shapefile") # remove trailing .shp from layer name
+		layer = sub(".shp$", "", layer)
+
 	dim = if (length(geom) == 0)
 			"XY"
 		else
 			class(geom[[1]])[1]
+
 	CPL_write_ogr(obj, dsn, layer, driver,
 		as.character(dataset_options), as.character(layer_options),
-		geom, dim, quiet, update)
+		geom, dim, quiet, update, delete_dsn, delete_layer)
 }
 
 #' @name st_write
 #' @export
-write_sf <- function(..., quiet = TRUE) st_write(..., quiet = quiet)
+write_sf <- function(..., quiet = TRUE, delete_layer = TRUE) {
+	st_write(..., quiet = quiet, delete_layer = delete_layer)
+}
 
 #' Get GDAL drivers
 #'

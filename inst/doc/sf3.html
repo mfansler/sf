@@ -382,8 +382,8 @@ plot(y, border = 'green', add = TRUE)</code></pre>
 <pre class="r"><code>b0 = st_polygon(list(rbind(c(-1,-1), c(1,-1), c(1,1), c(-1,1), c(-1,-1))))
 b1 = st_polygon(list(rbind(c(-1,-1), c(1,-1), c(1,1), c(0,-1), c(-1,-1))))
 st_is_valid(st_sfc(b0,b1))
-## Warning in eval(substitute(expr), envir, enclos): Self-intersection at or
-## near point -1 -1
+## Warning in evalq((function (..., call. = TRUE, immediate. = FALSE,
+## noBreaks. = FALSE, : Self-intersection at or near point -1 -1
 ## [1]  TRUE FALSE</code></pre>
 <p>and <code>st_is_simple</code> whether line geometries are simple:</p>
 <pre class="r"><code>s = st_sfc(st_linestring(rbind(c(0,0), c(1,1))), 
@@ -593,7 +593,7 @@ $(document).ready(function () {
   (function () {
     var script = document.createElement("script");
     script.type = "text/javascript";
-    script.src  = "https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
     document.getElementsByTagName("head")[0].appendChild(script);
   })();
 </script>

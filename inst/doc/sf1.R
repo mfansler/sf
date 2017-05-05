@@ -1,4 +1,4 @@
-## ----echo=FALSE----------------------------------------------------------
+## ---- echo=FALSE, include=FALSE------------------------------------------
 knitr::opts_chunk$set(collapse = TRUE)
 if (file.exists("nc.shp"))
 	file.remove("nc.shp", "nc.dbf", "nc.shx")
@@ -24,10 +24,10 @@ nc.no_sf <- as.data.frame(nc)
 class(nc.no_sf)
 
 ## ------------------------------------------------------------------------
-(nc.geom <- st_geometry(nc))
+(nc_geom <- st_geometry(nc))
 
 ## ------------------------------------------------------------------------
-nc.geom[[1]]
+nc_geom[[1]]
 
 ## ----fig.height=3--------------------------------------------------------
 par(mar = c(0,0,1,0))
@@ -36,20 +36,20 @@ plot(nc[1,1], col = 'grey', add = TRUE)
 
 ## ----fig.height=3.5------------------------------------------------------
 par(mar = c(0,0,1,0))
-(w <- which(sapply(nc.geom, length) > 1))
+(w <- which(sapply(nc_geom, length) > 1))
 plot(nc[w,1], col = 2:7)
 
 ## ------------------------------------------------------------------------
-nc.geom[[4]][[2]][[1]][1:3,]
+nc_geom[[4]][[2]][[1]][1:3,]
 
 ## ------------------------------------------------------------------------
-class(nc.geom)
+class(nc_geom)
 
 ## ------------------------------------------------------------------------
 methods(class = 'sfc')
 
 ## ------------------------------------------------------------------------
-attributes(nc.geom)
+attributes(nc_geom)
 
 ## ------------------------------------------------------------------------
 (mix <- st_sfc(st_geometrycollection(list(st_point(1:2))), 
@@ -135,10 +135,26 @@ filename <- system.file("shape/nc.shp", package="sf")
 nc <- st_read(filename)
 
 ## ------------------------------------------------------------------------
+nc <- read_sf(filename)
+
+## ------------------------------------------------------------------------
 st_write(nc, "nc.shp")
+
+## ------------------------------------------------------------------------
+st_write(nc, "nc.shp", delete_layer = TRUE)
+
+## ------------------------------------------------------------------------
+write_sf(nc, "nc.shp") # silently overwrites
 
 ## ----eval=FALSE----------------------------------------------------------
 #  meuse <- st_read("PG:dbname=postgis", "meuse")
+
+## ------------------------------------------------------------------------
+st_layers(system.file("osm/overpass.osm", package="sf"))
+
+## ------------------------------------------------------------------------
+Sys.setenv(OSM_USE_CUSTOM_INDEXING="NO")
+st_layers(system.file("osm/overpass.osm", package="sf"), do_count = TRUE)
 
 ## ---- eval=FALSE---------------------------------------------------------
 #  # Download .shp data
@@ -169,7 +185,7 @@ st_write(nc, "nc.shp")
 #  kml_read_sf <- function() st_read("bikeraces.kml")
 #  microbenchmark::microbenchmark(shp_read_sp(), shp_read_sf(),
 #                                 kmz_read_sp(), kmz_read_sf(),
-#                                 kml_read_sp(), kml_read_sf(), times = 1)
+#                                 kml_read_sp(), kml_read_sf(), times = 10)
 
 ## ---- echo=FALSE---------------------------------------------------------
 # Tidy up

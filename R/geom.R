@@ -4,38 +4,9 @@
 #' 
 #' Geometric operations on (pairs of) simple feature geometry sets
 #' @name geos
-#' @param NA_on_exception logical; if TRUE, for polygons that would otherwise raise an GEOS error (e.g. for a polygon having more than zero but less than 4 points) return an \code{NA} rather than raise an error, and suppress warning messages (e.g. about self-intersection); if FALSE, regular GEOS errors and warnings will be emitted.
-#' @param reason logical; if \code{TRUE}, return a character with, for each geometry, the reason for invalidity, or \code{"Valid Geometry"} otherwise; if set to \code{TRUE}, \code{NA_on_exception} is automatically \code{FALSE} (errors are emitted in case of one or more corrupt geometries).
-#' @export
-#' @return matrix (sparse or dense); if dense: of type \code{character} for \code{relate}, \code{numeric} for \code{distance}, and \code{logical} for all others; matrix has dimension \code{x} by \code{y}; if sparse (only possible for those who return logical in case of dense): return list of length length(x) with indices of the TRUE values for matching \code{y}.
-#' @examples
-#' p1 = st_as_sfc("POLYGON((0 0, 0 10, 10 0, 10 10, 0 0))")
-#' st_is_valid(p1)
-#' st_is_valid(st_sfc(st_point(0:1), p1[[1]]), reason = TRUE)
-st_is_valid = function(x, NA_on_exception = TRUE, reason = FALSE) {
-	if (reason) {
-		if (NA_on_exception) {
-			g = st_geometry(x)
-			ret = rep(NA_character_, length(g))
-			not_na = !is.na(st_is_valid(g))
-			ret[not_na] = st_is_valid(g[not_na], FALSE, TRUE)
-			ret
-		} else 
-			CPL_geos_is_valid_reason(st_geometry(x))
-	} else if (! NA_on_exception) 
-		CPL_geos_is_valid(st_geometry(x), as.logical(NA_on_exception))
-	else {
-		x = st_geometry(x)
-		ret = vector("logical", length(x))
-		for (i in seq_along(x))
-			ret[i] = CPL_geos_is_valid(x[i], as.logical(NA_on_exception))
-		ret
-	}
-}
-
-#' @name geos
 #' @param NA_if_empty logical; if TRUE, return NA for empty geometries
-#' @return st_dimension returns 0 for points, 1 for lines, 2 for surfaces; if \code{NA_if_empty} is \code{TRUE} return \code{NA} for empty geometries.
+#' @return vector, matrix, or if \code{sparse=TRUE} a list representing a sparse logical matrix; if dense: matrix of type \code{character} for \code{st_relate}, of type \code{numeric} for \code{st_distance}, and \code{logical} for all others; matrix has dimension \code{NROW(x)} by \code{NROW(y)}; if sparse (only for logical predicates): a list of length \code{NROW(x)}, with entry \code{i} an integer vector with the \code{TRUE} indices for that row (if \code{m} is the dense matrix, list entry \code{l[[i]]} is identical to \code{which(m[i,])}).
+#' @return st_dimension returns a numeric vector with 0 for points, 1 for lines, 2 for surfaces, and, if \code{NA_if_empty} is \code{TRUE}, \code{NA} for empty geometries.
 #' @export
 #' @examples
 #' x = st_sfc(
@@ -47,7 +18,8 @@ st_is_valid = function(x, NA_on_exception = TRUE, reason = FALSE) {
 #' 	st_geometrycollection())
 #' st_dimension(x)
 #' st_dimension(x, FALSE)
-st_dimension = function(x, NA_if_empty = TRUE) CPL_gdal_dimension(st_geometry(x), NA_if_empty)
+st_dimension = function(x, NA_if_empty = TRUE) 
+	CPL_gdal_dimension(st_geometry(x), NA_if_empty)
 
 #' @name geos
 #' @export
@@ -61,15 +33,13 @@ st_area = function(x) {
 			stop("package geosphere required, please install it first")
 		a = geosphere::areaPolygon(as(st_geometry(x), "Spatial"), 
 				as.numeric(p$SemiMajor), 1./p$InvFlattening)
-		u = 1
-		units(u) = units(p$SemiMajor)
-		a * u^2
+		units(a) = units(p$SemiMajor^2)
+		a
 	} else {
-		a = CPL_area(st_geometry(x))
+		a = CPL_area(st_geometry(x)) # ignores units: units of coordinates
 		if (!is.na(st_crs(x)))
-			a * crs_parameters(st_crs(x))$ud_unit^2
-		else
-			a
+			units(a) = crs_parameters(st_crs(x))$ud_unit^2 # coord units
+		a
 	}
 }
 
@@ -108,32 +78,32 @@ st_length = function(x, dist_fun = geosphere::distGeo) {
 		units(ret) = units(p$SemiMajor)
 		ret
 	} else {
-		ret = CPL_length(x)
+		ret = CPL_length(x) # units of coordinates
 		ret[is.nan(ret)] = NA
 		if (!is.na(st_crs(x)))
-			ret * crs_parameters(st_crs(x))$ud_unit
-		else
-			ret
+			units(ret) = crs_parameters(st_crs(x))$ud_unit
+		ret
 	}
 }
 
 #' @name geos
 #' @export
-#' @return st_is_simple and st_is_valid return a logical vector
+#' @return st_is_simple returns a logical vector
 st_is_simple = function(x) CPL_geos_is_simple(st_geometry(x))
 
 # binary, interfaced through GEOS:
 
 # returning matrix, distance or relation string -- the work horse is:
 
-st_geos_binop = function(op = "intersects", x, y, par = 0.0, sparse = TRUE, prepared = FALSE) {
+st_geos_binop = function(op = "intersects", x, y, par = 0.0, pattern = NA_character_, 
+		sparse = TRUE, prepared = FALSE) {
 	if (missing(y))
 		y = x
 	else if (!inherits(x, "sfg") && !inherits(y, "sfg"))
 		stopifnot(st_crs(x) == st_crs(y))
 	if (isTRUE(st_is_longlat(x)) && !(op %in% c("equals", "equals_exact", "polygonize"))) 
 		message("although coordinates are longitude/latitude, it is assumed that they are planar")
-	ret = CPL_geos_binop(st_geometry(x), st_geometry(y), op, par, sparse, prepared)
+	ret = CPL_geos_binop(st_geometry(x), st_geometry(y), op, par, pattern, sparse, prepared)
 	if (sparse)
 		ret
 	else
@@ -172,14 +142,14 @@ st_distance = function(x, y, dist_fun) {
 	} else {
 		d = CPL_geos_dist(x, y)
 		if (! is.na(st_crs(x)))
-			d * p$ud_unit
-		else
-			d
+			units(d) = p$ud_unit
+		d
 	}
 }
 
 #' @name geos
-#' @return st_relate returns a dense \code{character} matrix; element [i,j] has nine characters, refering to the DE9-IM relationship between x[i] and y[j], encoded as IxIy,IxBy,IxEy,BxIy,BxBy,BxEy,ExIy,ExBy,ExEy where I refers to interior, B to boundary, and E to exterior, and e.g. BxIy the dimensionality of the intersection of the the boundary of x[i] and the interior of y[j], which is one of {0,1,2,F}, digits denoting dimensionality, F denoting not intersecting.
+#' @param pattern character; define the pattern to match to, see details.
+#' @return in case \code{pattern} is not given, st_relate returns a dense \code{character} matrix; element [i,j] has nine characters, refering to the DE9-IM relationship between x[i] and y[j], encoded as IxIy,IxBy,IxEy,BxIy,BxBy,BxEy,ExIy,ExBy,ExEy where I refers to interior, B to boundary, and E to exterior, and e.g. BxIy the dimensionality of the intersection of the the boundary of x[i] and the interior of y[j], which is one of {0,1,2,F}, digits denoting dimensionality, F denoting not intersecting. When \code{pattern} is given, returns a dense logical or sparse index list with matches to the given pattern; see also \url{https://en.wikipedia.org/wiki/DE-9IM}.
 #' @export
 #' @examples
 #' p1 = st_point(c(0,0))
@@ -188,11 +158,24 @@ st_distance = function(x, y, dist_fun) {
 #' pol2 = pol1 + 1
 #' pol3 = pol1 + 2
 #' st_relate(st_sfc(p1, p2), st_sfc(pol1, pol2, pol3))
-st_relate	= function(x, y) st_geos_binop("relate", x, y, sparse = FALSE)
+#' sfc = st_sfc(st_point(c(0,0)), st_point(c(3,3)))
+#' grd = st_make_grid(sfc, n = c(3,3))
+#' st_intersects(grd)
+#' st_relate(grd, pattern = "****1****") # sides, not corners, internals
+#' st_relate(grd, pattern = "****0****") # only corners touch
+#' st_rook = function(a, b = a) st_relate(a, b, pattern = "F***1****")
+#' st_rook(grd)
+st_relate	= function(x, y, pattern = NA_character_, sparse = !is.na(pattern)) {
+	if (!is.na(pattern)) {
+		stopifnot(is.character(pattern) && length(pattern) == 1 && nchar(pattern) == 9)
+		st_geos_binop("relate_pattern", x, y, pattern = pattern, sparse = sparse)
+	} else
+		st_geos_binop("relate", x, y, sparse = FALSE)
+}
 
 #' @name geos
 #' @param sparse logical; should a sparse matrix be returned (TRUE) or a dense matrix?
-#' @return functions \code{st_intersects} up to \code{st_equals_exact} return a sparse or dense logical matrix with rows and columns corresponding to the number of geometries (or rows) in x and y, respectively
+#' @return the binary logical functions (\code{st_intersects} up to \code{st_equals_exact}) return a sparse or dense logical matrix with rows and columns corresponding to the number of geometries (or rows) in x and y, respectively
 #' @export
 st_intersects	= function(x, y, sparse = TRUE, prepared = TRUE)
 	st_geos_binop("intersects", x, y, sparse = sparse, prepared = prepared)
@@ -509,8 +492,12 @@ st_centroid.sf = function(x) {
 
 #' @name geos
 #' @export
-#' @param dfMaxLength numeric; max length of a line segment. If \code{x} has geographical coordinates (long/lat), \code{dfMaxLength} is a length with unit metre, and segmentation takes place along the great circle, using \link[geosphere]{gcIntermediate}.
+#' @param dfMaxLength maximum length of a line segment. If \code{x} has geographical coordinates (long/lat), \code{dfMaxLength} is a numeric with length with unit metre, or an object of class \code{units} with length units; in this case, segmentation takes place along the great circle, using \link[geosphere]{gcIntermediate}.
 #' @param ... ignored
+#' @examples
+#' sf = st_sf(a=1, geom=st_sfc(st_linestring(rbind(c(0,0),c(1,1)))), crs = 4326)
+#' seg = st_segmentize(sf, units::set_units(100, km))
+#' nrow(seg$geom[[1]])
 st_segmentize	= function(x, dfMaxLength, ...)
 	UseMethod("st_segmentize")
 
@@ -522,8 +509,11 @@ st_segmentize.sfg = function(x, dfMaxLength, ...)
 st_segmentize.sfc	= function(x, dfMaxLength, ...) {
 	if (isTRUE(st_is_longlat(x)))
 		st_sfc(lapply(x, ll_segmentize, dfMaxLength = dfMaxLength, crs = st_crs(x)), crs = st_crs(x))
-	else
+	else {
+		if (!is.na(st_crs(x)) && inherits(dfMaxLength, "units"))
+			units(dfMaxLength) = units(crs_parameters(st_crs(x))$SemiMajor) # might convert
 		st_sfc(CPL_gdal_segmentize(x, dfMaxLength), crs = st_crs(x))
+	}
 }
 
 #' @export
@@ -559,7 +549,8 @@ geos_op2_df = function(x, y, geoms) {
 	if (! (all_constant_x && all_constant_y))
 		warning("attribute variables are assumed to be spatially constant throughout all geometries", 
 			call. = FALSE)
-	st_sf(df, geoms)
+	df[[ attr(x, "sf_column") ]] = geoms
+	st_sf(df, sf_column_name = attr(x, "sf_column"))
 }
 
 # after checking identical crs,
@@ -656,10 +647,9 @@ st_union.sfc = function(x, y, ..., by_feature = FALSE) {
 st_union.sf = function(x, y, ..., by_feature = FALSE) {
 	if (missing(y)) { # unary union, possibly by_feature:
 		geom = st_sfc(CPL_geos_union(st_geometry(x), by_feature))
-		if (by_feature) {
-			st_geometry(x) = geom
-			x
-		} else
+		if (by_feature)
+			st_set_geometry(x, geom)
+		else
 			geom
 	} else
 		geos_op2_df(x, y, geos_op2_geom("union", x, y))
@@ -667,57 +657,75 @@ st_union.sf = function(x, y, ..., by_feature = FALSE) {
 
 #' @name geos
 #' @param n integer; number of points to choose per geometry; if missing, n will be computed as \code{round(density * st_length(geom))}.
-#' @param density numeric; density (points per distance unit) of the sampling, possibly a vector of length equal to the number of features (otherwise recycled).
+#' @param density numeric; density (points per distance unit) of the sampling, possibly a vector of length equal to the number of features (otherwise recycled); \code{density} may be of class \code{units}.
 #' @param type character; indicate the sampling type, either "regular" or "random"
+#' @param sample numeric; a vector of numbers between 0 and 1 indicating the points to sample - if defined sample overrules n, density and type.
 #' @export
 #' @examples
 #' ls = st_sfc(st_linestring(rbind(c(0,0),c(0,1))),
 #' 	st_linestring(rbind(c(0,0),c(10,0))))
 #' st_line_sample(ls, density = 1)
 #' ls = st_sfc(st_linestring(rbind(c(0,0),c(0,1))),
-#'	 st_linestring(rbind(c(0,0),c(.1,0))), crs = 4326) 
+#'	 st_linestring(rbind(c(0,0),c(.1,0))), crs = 4326)
 #' try(st_line_sample(ls, density = 1/1000)) # error
 #' st_line_sample(st_transform(ls, 3857), n = 5) # five points for each line
 #' st_line_sample(st_transform(ls, 3857), n = c(1, 3)) # one and three points
 #' st_line_sample(st_transform(ls, 3857), density = 1/1000) # one per km
 #' st_line_sample(st_transform(ls, 3857), density = c(1/1000, 1/10000)) # one per km, one per 10 km
-st_line_sample = function(x, n, density, type = "regular") {
+#' st_line_sample(st_transform(ls, 3857), density = units::set_units(1, 1/km)) # one per km
+#' # five equidistant points including start and end:
+#' st_line_sample(st_transform(ls, 3857), sample = c(0, 0.25, 0.5, 0.75, 1)) 
+st_line_sample = function(x, n, density, type = "regular", sample = NULL) {
 	if (isTRUE(st_is_longlat(x)))
-		stop("st_line_sample for longitude/latitude not supported")
+		stop("st_line_sample for longitude/latitude not supported; use st_segmentize?")
 	l = st_length(x)
-	if (missing(n))
-		n = round(rep(density, length.out = length(l)) * l)
-	else
-		n = rep(n, length.out = length(l))
-	regular = function(n) { (1:n - 0.5)/n }
-	random = function(n) { sort(runif(n)) }
-	fn = switch(type,
-		regular = regular,
-		random = random,
-		stop("unknown type"))
-	distList = lapply(seq_along(n), function(i) fn(n[i]) * l[i])
+	distList = if (is.null(sample)) {
+		n = if (missing(n)) {
+			if (!is.na(st_crs(x)) && inherits(density, "units"))
+				units(density) = 1/crs_parameters(st_crs(x))$ud_unit # coordinate units
+			round(rep(density, length.out = length(l)) * l)
+		} else
+			rep(n, length.out = length(l))
+		regular = function(n) { (1:n - 0.5)/n }
+		random = function(n) { sort(runif(n)) }
+		fn = switch(type,
+					regular = regular,
+					random = random,
+					stop("unknown type"))
+		lapply(seq_along(n), function(i) fn(n[i]) * l[i])
+	} else
+		lapply(seq_along(l), function(i) sample * l[i])
+	
 	x = st_geometry(x)
 	stopifnot(inherits(x, "sfc_LINESTRING"))
 	st_sfc(CPL_gdal_linestring_sample(x, distList), crs = st_crs(x))
 }
 
-#' Make a rectangular grid of polygons over the bounding box of a sf or sfc object
+#' Make a rectangular grid over the bounding box of a sf or sfc object
 #' 
-#' Make a rectangular grid of polygons over the bounding box of a sf or sfc object
+#' Make a rectangular grid over the bounding box of a sf or sfc object
 #' @param x object of class \link{sf} or \link{sfc}
 #' @param cellsize target cellsize
 #' @param offset numeric of lengt 2; lower left corner coordinates (x, y) of the grid
 #' @param n integer of length 1 or 2, number of grid cells in x and y direction (columns, rows)
 #' @param crs object of class \code{crs}
+#' @param what character; one of: \code{"polygons"}, \code{"corners"}, or \code{"centers"}
+#' @return object of class \code{sfc} (simple feature geometry list column) with, depending on \code{what},
+#' rectangular polygons, corner points of these polygons, or center points of these polygons.
+#' @examples
+#' plot(st_make_grid(what = "centers"), axes = TRUE)
+#' plot(st_make_grid(what = "corners"), add = TRUE, col = 'green', pch=3)
 #' @export
 st_make_grid = function(x, 
 		cellsize = c(diff(st_bbox(x)[c(1,3)]), diff(st_bbox(x)[c(2,4)]))/n, 
 		offset = st_bbox(x)[1:2], n = c(10, 10),
-		crs = if(missing(x)) NA_crs_ else st_crs(x)) {
+		crs = if (missing(x)) NA_crs_ else st_crs(x),
+		what = "polygons") {
 
-	if (nargs() == 0) # create global 10 x 10 degree grid
+	if (missing(x) && missing(cellsize) && missing(offset) 
+			&& missing(n) && missing(crs)) # create global 10 x 10 degree grid
 		return(st_make_grid(cellsize = c(10,10), offset = c(-180,-90), n = c(36,18),
-			crs = st_crs(4326)))
+			crs = st_crs(4326), what = what))
 
 	bb = if (!missing(n) && !missing(offset) && !missing(cellsize)) {
 		cellsize = rep(cellsize, length.out = 2)
@@ -743,16 +751,29 @@ st_make_grid = function(x,
 	xc = seq(offset[1], bb[3], length.out = nx + 1)
 	yc = seq(offset[2], bb[4], length.out = ny + 1)
 	
-	ret = vector("list", nx * ny)
-	square = function(x1, y1, x2, y2)	{
-		st_polygon(list(rbind(c(x1, y1), c(x2, y1), c(x2, y2), c(x1, y2), c(x1, y1))))
-	}
+	if (what == "polygons") {
+		ret = vector("list", nx * ny)
+		square = function(x1, y1, x2, y2)
+			st_polygon(list(matrix(c(x1, x2, x2, x1, x1, y1, y1, y2, y2, y1), 5)))
+		for (i in 1:nx)
+			for (j in 1:ny)
+				ret[[(j - 1) * nx + i]] = square(xc[i], yc[j], xc[i+1], yc[j+1])
+	} else if (what == "centers") {
+		ret = vector("list", nx * ny)
+		cent = function(x1, y1, x2, y2)
+			st_point(c( (x1+x2)/2, (y1+y2)/2 ))
+		for (i in 1:nx)
+			for (j in 1:ny)
+				ret[[(j - 1) * nx + i]] = cent(xc[i], yc[j], xc[i+1], yc[j+1])
+	} else if (what == "corners") {
+		ret = vector("list", (nx + 1) * (ny + 1))
+		for (i in 1:(nx + 1))
+			for (j in 1:(ny + 1))
+				ret[[(j - 1) * (nx + 1) + i]] = st_point(c(xc[i], yc[j]))
+	} else
+		stop("unknown value of `what'")
 	
-	for (i in 1:nx)
-		for (j in 1:ny)
-			ret[[(j - 1) * nx + i]] = square(xc[i], yc[j], xc[i+1], yc[j+1])
-	
-	if (missing(x))
+	if (missing(x)) 
 		st_sfc(ret, crs = crs)
 	else
 		st_sfc(ret, crs = st_crs(x))
@@ -771,7 +792,9 @@ ll_segmentize = function(x, dfMaxLength, crs = st_crs(4326)) {
 		p1 = head(pts, -1)
 		p2 = tail(pts, -1)
 		ll = geosphere::distGeo(p1, p2, as.numeric(p$SemiMajor), 1./p$InvFlattening)
-		n = ceiling(ll / as.numeric(dfMaxLength)) - 1
+		if (inherits(dfMaxLength, "units"))
+			units(ll) = units(p$SemiMajor)
+		n = as.numeric(ceiling(ll / dfMaxLength)) - 1
 		ret = geosphere::gcIntermediate(p1, p2, n, addStartEnd = TRUE)
 		if (length(n) == 1) # would be a matrix otherwise
 			ret = list(ret)

@@ -2,8 +2,6 @@
 % Please edit documentation in R/geom.R
 \name{geos}
 \alias{geos}
-\alias{st_is_valid}
-\alias{geos}
 \alias{st_dimension}
 \alias{geos}
 \alias{st_area}
@@ -73,8 +71,6 @@
 \alias{st_line_sample}
 \title{Geometric operations on (pairs of) simple feature geometry sets}
 \usage{
-st_is_valid(x, NA_on_exception = TRUE, reason = FALSE)
-
 st_dimension(x, NA_if_empty = TRUE)
 
 st_area(x)
@@ -85,7 +81,7 @@ st_is_simple(x)
 
 st_distance(x, y, dist_fun)
 
-st_relate(x, y)
+st_relate(x, y, pattern = NA_character_, sparse = !is.na(pattern))
 
 st_intersects(x, y, sparse = TRUE, prepared = TRUE)
 
@@ -141,20 +137,18 @@ st_sym_difference(x, y)
 
 st_union(x, y, ..., by_feature = FALSE)
 
-st_line_sample(x, n, density, type = "regular")
+st_line_sample(x, n, density, type = "regular", sample = NULL)
 }
 \arguments{
 \item{x}{object of class \code{sf}, \code{sfc} or \code{sfg}}
-
-\item{NA_on_exception}{logical; if TRUE, for polygons that would otherwise raise an GEOS error (e.g. for a polygon having more than zero but less than 4 points) return an \code{NA} rather than raise an error, and suppress warning messages (e.g. about self-intersection); if FALSE, regular GEOS errors and warnings will be emitted.}
-
-\item{reason}{logical; if \code{TRUE}, return a character with, for each geometry, the reason for invalidity, or \code{"Valid Geometry"} otherwise; if set to \code{TRUE}, \code{NA_on_exception} is automatically \code{FALSE} (errors are emitted in case of one or more corrupt geometries).}
 
 \item{NA_if_empty}{logical; if TRUE, return NA for empty geometries}
 
 \item{dist_fun}{function to be used for great circle distances of geographical coordinates; for unprojected (long/lat) data, this should be a distance function of package geosphere, or compatible to that; it defaults to \link[geosphere]{distGeo} in that case; for other data metric lengths are computed.}
 
 \item{y}{object of class \code{sf}, \code{sfc} or \code{sfg}}
+
+\item{pattern}{character; define the pattern to match to, see details.}
 
 \item{sparse}{logical; should a sparse matrix be returned (TRUE) or a dense matrix?}
 
@@ -174,7 +168,7 @@ st_line_sample(x, n, density, type = "regular")
 
 \item{envelope}{object of class \code{sfc} or \code{sfg} with the envelope for a voronoi diagram}
 
-\item{dfMaxLength}{numeric; max length of a line segment. If \code{x} has geographical coordinates (long/lat), \code{dfMaxLength} is a length with unit metre, and segmentation takes place along the great circle, using \link[geosphere]{gcIntermediate}.}
+\item{dfMaxLength}{maximum length of a line segment. If \code{x} has geographical coordinates (long/lat), \code{dfMaxLength} is a numeric with length with unit metre, or an object of class \code{units} with length units; in this case, segmentation takes place along the great circle, using \link[geosphere]{gcIntermediate}.}
 
 \item{...}{ignored}
 
@@ -182,26 +176,28 @@ st_line_sample(x, n, density, type = "regular")
 
 \item{n}{integer; number of points to choose per geometry; if missing, n will be computed as \code{round(density * st_length(geom))}.}
 
-\item{density}{numeric; density (points per distance unit) of the sampling, possibly a vector of length equal to the number of features (otherwise recycled).}
+\item{density}{numeric; density (points per distance unit) of the sampling, possibly a vector of length equal to the number of features (otherwise recycled); \code{density} may be of class \code{units}.}
 
 \item{type}{character; indicate the sampling type, either "regular" or "random"}
+
+\item{sample}{numeric; a vector of numbers between 0 and 1 indicating the points to sample - if defined sample overrules n, density and type.}
 }
 \value{
-matrix (sparse or dense); if dense: of type \code{character} for \code{relate}, \code{numeric} for \code{distance}, and \code{logical} for all others; matrix has dimension \code{x} by \code{y}; if sparse (only possible for those who return logical in case of dense): return list of length length(x) with indices of the TRUE values for matching \code{y}.
+vector, matrix, or if \code{sparse=TRUE} a list representing a sparse logical matrix; if dense: matrix of type \code{character} for \code{st_relate}, of type \code{numeric} for \code{st_distance}, and \code{logical} for all others; matrix has dimension \code{NROW(x)} by \code{NROW(y)}; if sparse (only for logical predicates): a list of length \code{NROW(x)}, with entry \code{i} an integer vector with the \code{TRUE} indices for that row (if \code{m} is the dense matrix, list entry \code{l[[i]]} is identical to \code{which(m[i,])}).
 
-st_dimension returns 0 for points, 1 for lines, 2 for surfaces; if \code{NA_if_empty} is \code{TRUE} return \code{NA} for empty geometries.
+st_dimension returns a numeric vector with 0 for points, 1 for lines, 2 for surfaces, and, if \code{NA_if_empty} is \code{TRUE}, \code{NA} for empty geometries.
 
 st_area returns the area of a geometry, in the coordinate reference system used; in case \code{x} is in degrees longitude/latitude, \link[geosphere]{areaPolygon} is used for area calculation.
 
 st_length returns the length of a LINESTRING or MULTILINESTRING geometry, using the coordinate reference system used; if the coordinate reference system of \code{x} was set, the returned value has a unit of measurement. POINT or MULTIPOINT geometries return zero, POLYGON or MULTIPOLYGON are converted into LINESTRING or MULTILINESTRING, respectively.
 
-st_is_simple and st_is_valid return a logical vector
+st_is_simple returns a logical vector
 
 st_distance returns a dense numeric matrix of dimension length(x) by length(y)
 
-st_relate returns a dense \code{character} matrix; element [i,j] has nine characters, refering to the DE9-IM relationship between x[i] and y[j], encoded as IxIy,IxBy,IxEy,BxIy,BxBy,BxEy,ExIy,ExBy,ExEy where I refers to interior, B to boundary, and E to exterior, and e.g. BxIy the dimensionality of the intersection of the the boundary of x[i] and the interior of y[j], which is one of {0,1,2,F}, digits denoting dimensionality, F denoting not intersecting.
+in case \code{pattern} is not given, st_relate returns a dense \code{character} matrix; element [i,j] has nine characters, refering to the DE9-IM relationship between x[i] and y[j], encoded as IxIy,IxBy,IxEy,BxIy,BxBy,BxEy,ExIy,ExBy,ExEy where I refers to interior, B to boundary, and E to exterior, and e.g. BxIy the dimensionality of the intersection of the the boundary of x[i] and the interior of y[j], which is one of {0,1,2,F}, digits denoting dimensionality, F denoting not intersecting. When \code{pattern} is given, returns a dense logical or sparse index list with matches to the given pattern; see also \url{https://en.wikipedia.org/wiki/DE-9IM}.
 
-functions \code{st_intersects} up to \code{st_equals_exact} return a sparse or dense logical matrix with rows and columns corresponding to the number of geometries (or rows) in x and y, respectively
+the binary logical functions (\code{st_intersects} up to \code{st_equals_exact}) return a sparse or dense logical matrix with rows and columns corresponding to the number of geometries (or rows) in x and y, respectively
 
 \code{st_buffer}, \code{st_boundary}, \code{st_convex_hull}, \code{st_simplify},
 \code{st_triangulate}, \code{st_voronoi}, \code{st_polygonize}, \code{st_line_merge},
@@ -231,9 +227,6 @@ in case of \code{st_line_merge}, \code{x} must be an object of class \code{MULTI
 \code{st_combine} combines geometries without resolving borders, using \link{c.sfg}; see \link{st_union} for resolving boundaries.
 }
 \examples{
-p1 = st_as_sfc("POLYGON((0 0, 0 10, 10 0, 10 10, 0 0))")
-st_is_valid(p1)
-st_is_valid(st_sfc(st_point(0:1), p1[[1]]), reason = TRUE)
 x = st_sfc(
 	st_point(0:1), 
 	st_linestring(rbind(c(0,0),c(1,1))), 
@@ -253,6 +246,13 @@ pol1 = st_polygon(list(rbind(c(0,0),c(1,0),c(1,1),c(0,1),c(0,0)))) - 0.5
 pol2 = pol1 + 1
 pol3 = pol1 + 2
 st_relate(st_sfc(p1, p2), st_sfc(pol1, pol2, pol3))
+sfc = st_sfc(st_point(c(0,0)), st_point(c(3,3)))
+grd = st_make_grid(sfc, n = c(3,3))
+st_intersects(grd)
+st_relate(grd, pattern = "****1****") # sides, not corners, internals
+st_relate(grd, pattern = "****0****") # only corners touch
+st_rook = function(a, b = a) st_relate(a, b, pattern = "F***1****")
+st_rook(grd)
 nc = st_read(system.file("shape/nc.shp", package="sf"))
 plot(st_convex_hull(nc))
 plot(nc, border = grey(.5))
@@ -273,16 +273,22 @@ mls = st_multilinestring(list(rbind(c(0,0), c(1,1)), rbind(c(2,0), c(1,1))))
 st_line_merge(st_sfc(mls))
 plot(nc, axes = TRUE)
 plot(st_centroid(nc), add = TRUE, pch = 3)
+sf = st_sf(a=1, geom=st_sfc(st_linestring(rbind(c(0,0),c(1,1)))), crs = 4326)
+seg = st_segmentize(sf, units::set_units(100, km))
+nrow(seg$geom[[1]])
 st_combine(nc)
 plot(st_union(nc))
 ls = st_sfc(st_linestring(rbind(c(0,0),c(0,1))),
 	st_linestring(rbind(c(0,0),c(10,0))))
 st_line_sample(ls, density = 1)
 ls = st_sfc(st_linestring(rbind(c(0,0),c(0,1))),
- st_linestring(rbind(c(0,0),c(.1,0))), crs = 4326) 
+ st_linestring(rbind(c(0,0),c(.1,0))), crs = 4326)
 try(st_line_sample(ls, density = 1/1000)) # error
 st_line_sample(st_transform(ls, 3857), n = 5) # five points for each line
 st_line_sample(st_transform(ls, 3857), n = c(1, 3)) # one and three points
 st_line_sample(st_transform(ls, 3857), density = 1/1000) # one per km
 st_line_sample(st_transform(ls, 3857), density = c(1/1000, 1/10000)) # one per km, one per 10 km
+st_line_sample(st_transform(ls, 3857), density = units::set_units(1, 1/km)) # one per km
+# five equidistant points including start and end:
+st_line_sample(st_transform(ls, 3857), sample = c(0, 0.25, 0.5, 0.75, 1)) 
 }

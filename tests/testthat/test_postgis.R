@@ -32,10 +32,11 @@ test_that("can write to db", {
     expect_error(st_write_db(), "connection")
     expect_silent(st_write_db(pg, pts, "sf_meuse__"))
     expect_error(st_write_db(pg, pts, "sf_meuse__"), "exists")
-    expect_silent(st_write_db(pg, pts, "sf_meuse__", overwrite = TRUE))
+    expect_silent(st_write_db(pg, pts, "sf_meuse__", drop = TRUE))
     expect_silent(st_write_db(pg, pts, "sf_meuse2__", binary = FALSE))
     expect_warning(z <- st_set_crs(pts, epsg_31370))
-    expect_warning(st_write_db(pg, z, "sf_meuse3__",  binary = TRUE), "proj4")
+    #expect_warning(st_write_db(pg, z, "sf_meuse3__",  binary = TRUE), "proj4")
+    expect_silent(st_write_db(pg, z, "sf_meuse3__",  binary = TRUE))
 })
 
 test_that("sf can write units to database (#264)", {
@@ -43,7 +44,7 @@ test_that("sf can write units to database (#264)", {
     ptsu <- pts
     ptsu[["length"]] <- ptsu[["cadmium"]]
     units(ptsu[["length"]]) <- units::make_unit("km")
-    expect_silent(st_write_db(pg, ptsu, "sf_units__", overwrite = TRUE))
+    expect_silent(st_write_db(pg, ptsu, "sf_units__", drop = TRUE))
     r <- st_read_db(pg, "sf_units__")
     expect_is(r$length, "numeric")
     expect_equal(sort(r[["length"]]), sort(as.numeric(ptsu[["length"]])))
@@ -59,12 +60,12 @@ test_that("can write to other schema", {
     skip_if_not(could_schema, "Could not create schema (might need to run 'GRANT CREATE ON DATABASE postgis TO <user>')")
     expect_error(st_write_db(pg, pts, c("public", "sf_meuse__")), "exists")
     expect_silent(st_write_db(pg, pts, c("sf_test__", "sf_meuse__")))
-    expect_error(st_write_db(pg, pts, c("sf_test__", "sf_meuse__")), "overwrite")
-    expect_silent(st_write_db(pg, pts, c("sf_test__", "sf_meuse__"), overwrite = TRUE))
+    expect_error(st_write_db(pg, pts, c("sf_test__", "sf_meuse__")), "drop")
+    expect_silent(st_write_db(pg, pts, c("sf_test__", "sf_meuse__"), drop = TRUE))
     expect_silent(st_write_db(pg, pts, c("sf_test__", "sf_meuse2__"), binary = FALSE))
     expect_warning(z <- st_set_crs(pts, epsg_31370))
-    expect_warning(st_write_db(pg, z, c("sf_test__", "sf_meuse33__"),  binary = TRUE), "proj4")
-    expect_warning(st_write_db(pg, z, c("sf_test__", "sf_meuse4__"),  binary = FALSE), "proj4")
+    expect_silent(st_write_db(pg, z, c("sf_test__", "sf_meuse33__"),  binary = TRUE))
+    expect_silent(st_write_db(pg, z, c("sf_test__", "sf_meuse4__"),  binary = FALSE))
     
     # weird name work, but create lots of noise from RPostgreSQL
     #expect_silent(st_write_db(pg, pts, c(NULL, "sf_test__.meuse__")))
@@ -73,7 +74,8 @@ test_that("can write to other schema", {
 test_that("can read from db", {
     skip_if_not(can_con(pg), "could not connect to postgis database")
     q <- "select * from sf_meuse__"
-    expect_warning(x <- st_read_db(pg, query = q), "crs")
+    #expect_warning(x <- st_read_db(pg, query = q), "crs")
+    expect_silent(x <- st_read_db(pg, query = q))
     
     expect_error(st_read_db(), "no connection provided")
     expect_error(st_read_db(pg), "table name or a query")
@@ -90,7 +92,8 @@ test_that("can read from db", {
     
     z <- st_read_db(pg, "sf_meuse3__")
     expect_equal(dim(pts), dim(z))
-    expect_identical(st_crs(NA), st_crs(z))
+    #expect_identical(st_crs(NA), st_crs(z))
+    expect_identical(st_crs(epsg_31370), st_crs(z))
     expect_identical(st_precision(pts), st_precision(z))
     
     w <- st_read_db(pg, c("sf_test__", "sf_meuse__"))
@@ -227,6 +230,21 @@ ST_GeomFromText('POINT( 181232 333168 )', 28992));"
 	x <- st_layers("PG:dbname=postgis")
 })
 
+test_that("new SRIDs are handled correctly", {
+    skip_if_not(can_con(pg), "could not connect to postgis database")
+	data(meuse, package = "sp")
+	meuse_sf = st_as_sf(meuse, coords = c("x", "y"), crs = NA_crs_)
+
+	crs = st_crs(paste("+proj=sterea  +lat_0=52 +lon_0=5", # creates FALSE, but new one
+		"+k=1.0 +x_0=155000 +y_0=463000 +ellps=bessel",
+		"+towgs84=565.4171,50.3319,465.5524,-0.398957,0.343988,-1.87740,4.0725 +units=m +no_defs"))
+	st_crs(meuse_sf) = crs
+	expect_silent(st_write_db(pg, meuse_sf, drop = TRUE))
+	expect_warning(x <- st_read_db(pg, query = "select * from meuse_sf limit 3;"), 
+		"not found in EPSG support files")
+	expect_true(st_crs(x) == crs)
+})
+
 if (can_con(pg)) {
     # cleanup
     try(db_drop_table_schema(pg, "meuse_multi"), silent = TRUE)
@@ -250,4 +268,3 @@ test_that("schema_table", {
     expect_equal(sf:::schema_table("a", "b"), c("b", "a"))
     expect_equal(sf:::schema_table("a"), c("public", "a"))
 })
-

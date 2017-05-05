@@ -22,7 +22,8 @@ skip0x = function(x) {
 }
 
 #' @name st_as_sfc
-#' @param EWKB logical; if TRUE, parse as EWKB (PostGIS: ST_AsEWKB), otherwise as ISO WKB (PostGIS: ST_AsBinary)
+#' @param EWKB logical; if TRUE, parse as EWKB (extended WKB; PostGIS: ST_AsEWKB), otherwise as ISO WKB (PostGIS: ST_AsBinary)
+#' @param spatialite logical; if \code{TRUE}, assume the WKB is assumed to be in the spatialite dialect, see \url{https://www.gaia-gis.it/gaia-sins/BLOB-Geometry.html}
 #' @param pureR logical; if TRUE, use only R code, if FALSE, use compiled (C++) code; use TRUE when the endian-ness of the binary differs from the host machine (\code{.Platform$endian}).
 #' @details when converting from WKB, the object \code{x} is either a character vector such as typically obtained from PostGIS (either with leading "0x" or without), or a list with raw vectors representing the features in binary (raw) form.
 #' @examples
@@ -31,7 +32,11 @@ skip0x = function(x) {
 #' wkb = structure(list("0x01010000204071000000000000801A064100000000AC5C1441"), class = "WKB")
 #' st_as_sfc(wkb, EWKB = TRUE)
 #' @export
-st_as_sfc.WKB = function(x, ..., EWKB = FALSE, pureR = FALSE, crs = NA_crs_) {
+st_as_sfc.WKB = function(x, ..., EWKB = FALSE, spatialite = FALSE, pureR = FALSE, crs = NA_crs_) {
+	if (EWKB && spatialite)
+		stop("arguments EWKB and spatialite cannot both be TRUE")
+	if (spatialite && pureR)
+		stop("pureR implementation for spatialite reading is not available")
     if (all(vapply(x, is.character, TRUE))) {
 		x <- if (pureR)
 				structure(lapply(x, hex_to_raw), class = "WKB")
@@ -44,18 +49,21 @@ st_as_sfc.WKB = function(x, ..., EWKB = FALSE, pureR = FALSE, crs = NA_crs_) {
 	ret = if (pureR)
 			R_read_wkb(x, readWKB, EWKB = EWKB)
 		else
-			CPL_read_wkb(x, EWKB = EWKB, endian = as.integer(.Platform$endian == "little"))
-	if (is.na(crs) && EWKB && !is.null(attr(ret, "epsg")) && attr(ret, "epsg") != 0)
-		crs = attr(ret, "epsg")
-	attr(ret, "epsg") = NULL
-	st_sfc(ret, crs = crs)
+			CPL_read_wkb(x, EWKB, spatialite, endian = as.integer(.Platform$endian == "little"))
+	if (is.na(crs) && (EWKB || spatialite) && !is.null(attr(ret, "srid")) && attr(ret, "srid") != 0)
+		crs = attr(ret, "srid")
+	if (! is.na(st_crs(crs))) {
+		attr(ret, "srid") = NULL # remove
+		st_sfc(ret, crs = crs)
+	} else
+		st_sfc(ret) # leave attr srid in place: PostGIS srid that is not an EPSG code
 }
 
 R_read_wkb = function(x, readWKB, EWKB = EWKB) {
 	ret = lapply(x, readWKB, EWKB = EWKB)
-	epsg = attr(ret[[1]], "epsg")
-	ret = lapply(ret, function(x) { attr(x, "epsg") = NULL; x })
-	attr(ret, "epsg") = epsg
+	srid = attr(ret[[1]], "srid")
+	ret = lapply(ret, function(x) { attr(x, "srid") = NULL; x })
+	attr(ret, "srid") = srid
 	ret
 }
 
@@ -176,7 +184,7 @@ readData = function(rc, EWKB = FALSE) {
 		stop(paste("type", pt$tp, "unsupported")))
 	class(ret) <- c(pt$zm, pt$tp, "sfg")
 	if (!is.na(srid))
-		attr(ret, "epsg") <- srid
+		attr(ret, "srid") <- srid
 	ret
 }
 
@@ -219,21 +227,30 @@ st_as_binary = function(x, ...) UseMethod("st_as_binary")
 #' @param EWKB logical; use EWKB (PostGIS), or (default) ISO-WKB?
 #' @param pureR logical; use pure R solution, or C++?
 #' @param precision numeric; if zero, do not modify; to reduce precision: negative values convert to float (4-byte real); positive values convert to round(x*precision)/precision. See details.
-#' @param hex logical; return hexadecimal encoded (character)?
-#' @details for the precion model, see also \url{http://tsusiatsoftware.net/jts/javadoc/com/vividsolutions/jts/geom/PrecisionModel.html}. There, it is written that: ``... to specify 3 decimal places of precision, use a scale factor of 1000. To specify -3 decimal places of precision (i.e. rounding to the nearest 1000), use a scale factor of 0.001.''. Note that ALL coordinates, so also Z or M values (if present) are affected.
+#' @param hex logical; return as (unclassed) hexadecimal encoded character vector?
+#' @details \code{st_as_binary} is called on sfc objects on their way to the GDAL or GEOS libraries, and hence does rounding (if requested) on the fly before e.g. computing spatial predicates like \link{st_intersects}. The examples show a round-trip of an \code{sfc} to and from binary.
+#' 
+#' For the precision model used, see also \url{https://locationtech.github.io/jts/javadoc/org/locationtech/jts/geom/PrecisionModel.html}. There, it is written that: ``... to specify 3 decimal places of precision, use a scale factor of 1000. To specify -3 decimal places of precision (i.e. rounding to the nearest 1000), use a scale factor of 0.001.''. Note that ALL coordinates, so also Z or M values (if present) are affected.
 #' @export
+#' @examples
+#' x = st_sfc(st_point(c(1/3, 1/6)), precision = 1000)
+#' st_as_sfc(st_as_binary(x)) # rounds
 st_as_binary.sfc = function(x, ..., EWKB = FALSE, endian = .Platform$endian, pureR = FALSE,
 		precision = attr(x, "precision"), hex = FALSE) {
 	stopifnot(endian %in% c("big", "little"))
 	if (pureR && precision != 0.0)
 		stop("for non-zero precision values, use pureR = FALSE")
-	if (pureR) 
-		structure(lapply(x, st_as_binary, EWKB = EWKB, pureR = pureR, endian = endian), class = "WKB")
+	ret = if (pureR) 
+		structure(lapply(x, st_as_binary.sfg, EWKB = EWKB, pureR = pureR, endian = endian), class = "WKB")
 	else {
 		stopifnot(endian == .Platform$endian)
 		structure(CPL_write_wkb(x, EWKB, endian == "little", Dimension(x[[1]]), precision), 
 				class = "WKB")
 	}
+	if (hex)
+		vapply(ret, CPL_raw_to_hex, "")
+	else
+		ret
 }
 
 createType = function(x, endian, EWKB = FALSE) {
@@ -260,15 +277,18 @@ createType = function(x, endian, EWKB = FALSE) {
 #' @export
 st_as_binary.sfg = function(x, ..., endian = .Platform$endian, EWKB = FALSE, pureR = FALSE, 
 		hex = FALSE) {
+# if pureR, it's done here, if not, it's done in st_as_binary.sfc
 	stopifnot(endian %in% c("big", "little"))
-	if (! pureR) {
-		stopifnot(endian == .Platform$endian)
-		CPL_write_wkb(st_sfc(x), EWKB, endian == "little", Dimension(x), 0.0)[[1]]
-	} else {
+	if (! pureR)
+		st_as_binary.sfc(st_sfc(x), endian == endian, EWKB = EWKB, pureR = pureR, hex = hex, ...)[[1]]
+	else {
 		rc <- rawConnection(raw(0), "r+")
 		on.exit(close(rc))
 		writeData(x, rc, endian, EWKB)
-		rawConnectionValue(rc)
+		r = rawConnectionValue(rc)
+		if (hex)
+			r = rawToHex(r)
+		r
 	}
 }
 

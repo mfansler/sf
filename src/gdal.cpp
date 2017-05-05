@@ -206,11 +206,10 @@ Rcpp::List sfc_from_ogr(std::vector<OGRGeometry *> g, bool destroy = false) {
 		Rcpp::RawVector raw(g[i]->WkbSize());
 		handle_error(g[i]->exportToWkb(wkbNDR, &(raw[0]), wkbVariantIso));
 		lst[i] = raw;
-		OGRGeometryFactory f;
 		if (destroy)
-			f.destroyGeometry(g[i]);
+			OGRGeometryFactory::destroyGeometry(g[i]);
 	}
-	Rcpp::List ret = CPL_read_wkb(lst, false, native_endian());
+	Rcpp::List ret = CPL_read_wkb(lst, false, false, native_endian());
 	ret.attr("crs") = crs;
 	ret.attr("class") = "sfc";
 	return ret;
@@ -246,9 +245,7 @@ Rcpp::List CPL_roundtrip(Rcpp::List sfc) { // for debug purposes
 }
 
 // [[Rcpp::export]]
-Rcpp::List CPL_transform(Rcpp::List sfc, Rcpp::CharacterVector proj4, Rcpp::IntegerVector epsg) {
-	// a hard (but quite sane) assumption here is that in case epsg[0] != NA_INTEGER,
-	// proj4 and epsg correspond, and point to the same SRS.
+Rcpp::List CPL_transform(Rcpp::List sfc, Rcpp::CharacterVector proj4) {
 
 	// import proj4string:
 	OGRSpatialReference *dest = new OGRSpatialReference;
@@ -280,14 +277,22 @@ Rcpp::List CPL_transform(Rcpp::List sfc, Rcpp::CharacterVector proj4, Rcpp::Inte
 	}
 
 	Rcpp::List ret = sfc_from_ogr(g, true); // destroys g;
-	if (epsg[0] != NA_INTEGER) {
-		Rcpp::List crs = ret.attr("crs");
-		crs(0) = epsg;
-		ret.attr("crs") = crs;
-	}
 	ct->DestroyCT(ct);
 	dest->Release();
 	return ret; 
+}
+
+// [[Rcpp::export]]
+Rcpp::List CPL_wrap_dateline(Rcpp::List sfc, Rcpp::CharacterVector opt, bool quiet = true) {
+
+	std::vector <char *> options = create_options(opt, quiet);
+	std::vector<OGRGeometry *> g = ogr_from_sfc(sfc, NULL);
+	std::vector<OGRGeometry *> ret(g.size());
+	for (size_t i = 0; i < g.size(); i++) {
+		ret[i] = OGRGeometryFactory::transformWithOptions(g[i], NULL, options.data());
+		OGRGeometryFactory::destroyGeometry(g[i]);
+	}
+	return sfc_from_ogr(ret, true); // destroys ret;
 }
 
 // [[Rcpp::export]]

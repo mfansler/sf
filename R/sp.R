@@ -150,10 +150,16 @@ Polygons2POLYGON = function(PolygonsLst) {
 	lapply(PolygonsLst, function(x) x@coords)
 }
 
+#' @rdname coerce-methods
+#' @aliases coerce,Spatial,sf-method
 setAs("Spatial", "sf", function(from) st_as_sf(from))
 
+#' @rdname coerce-methods
+#' @aliases coerce,Spatial,sfc-method
 setAs("Spatial", "sfc", function(from) st_as_sfc(from))
 
+#' @rdname coerce-methods
+#' @aliases coerce,sf,Spatial-method
 setAs("sf", "Spatial", function(from) {
 	if (!requireNamespace("sp", quietly = TRUE))
 		stop("package sp required, please install it first")
@@ -162,16 +168,14 @@ setAs("sf", "Spatial", function(from) {
 	sp::addAttrToGeom(as(geom, "Spatial"), data.frame(from), match.ID = FALSE)
 })
 
+#' @rdname coerce-methods
+#' @aliases coerce,sfc,Spatial-method
 setAs("sfc", "Spatial", function(from) as_Spatial(from))
 
 # setAs("sfg", "Spatial", function(from) as(st_sfc(from), "Spatial"))
 ##  doesn't work for:
 ## as(st_point(0:1), "Spatial")
 
-#' Convert to sp object
-#' 
-#' @param from sfc to convert
-#' @param cast logical. Coerce GEOMETRIES to a type using `st_cast` (default TRUE)
 as_Spatial = function(from, cast = TRUE) {
   if (cast) {
     from <- st_cast(from)
@@ -180,7 +184,7 @@ as_Spatial = function(from, cast = TRUE) {
 	if (zm %in% c("XYM", "XYZM"))
 		stop("geometries containing M not supported by sp")
 	StopZ = function(zm) { if (zm %in% c("XYZ", "XYZM")) 
-		stop("Z not supported: try st_drop_zm first?") }
+		stop("Z not supported: use st_zm first to drop Z?") }
 	switch(class(from)[1],
 		"sfc_POINT" = sfc2SpatialPoints(from),
 		"sfc_MULTIPOINT" = sfc2SpatialMultiPoints(from),

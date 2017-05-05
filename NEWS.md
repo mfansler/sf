@@ -1,4 +1,49 @@
+# version 0.4-2
+* `summarise.sf` now always returns an `sf` object, also for global (non-grouped) summaries.
+
+* `summarise.sf` gains an argument `do_union` which determines whether to union the geometries for which a summary is given, or to `st_combine` them (not resolving boundaries); #331
+
+* rename argument `union` of `aggregate.sf` into `do_union`, for consistency with `summarise`; #331
+
+* add a `nest_` method for `sf` objects
+
+* `st_relate` gets a `pattern` parameter, same as `rgeos::gRelate`, #234
+
+* (experimental) support for direct reading of spatialite (sqlite) geometry blobs
+
+* build proper support for `cbind` and `rbind` methods for `sf`, which work (as documented) when _all_ arguments are of class `sf`; `dplyr::bind_cols` or `st_sf(data.frame(sf, df))` work for binding `data.frame`s to an `sf` object.
+
+* units support for function arguments of `st_segmentize` and `st_line_sample`
+
+* document problem reading shapefiles from USB drives on OSX, #252
+
+* improve docs of `st_is_valid` and `st_make_valid`, #296
+
+* coercing `sf` to `data.frame` now works better, #298
+
+* `st_line_sample` gains argument `sample` to specify the points t.b. sampled, #299 #300 thanks to @joethorley
+
+* add compatibility to upcoming dplyr 0.6.0, #304 #42
+
+* write GDAL fields by name, not by number, fixing a KML problem #308
+
+* `st_write` gains arguments `delete_layer` and `delete_dsn` to allow overwrite capability #307 #274
+
+* `write_sf` defaults to `delete_layer=TRUE`, silently overwriting layers if they're already present
+
+* compatibility with GDAL 2.2beta0, #303, #309
+
+* replace `st_write_db` with a version that is fast for large datasets (#285), thanks to Josh London
+
+* take out more memory leaking examples in tests
+
+* the `aggregate` method for `sf` objects now assumes the `by` argument to be identical to that of `stats::aggregate`
+
+* `st_wrap_dateline` wraps (cuts up) geometries crossing the antimeridian, such that they no longer cross it.
+
 # version 0.4-1
+
+* restore 3.3.0 and c++11 requirement
 
 * `st_read` now respects time that is read as UTC
 

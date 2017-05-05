@@ -46,27 +46,28 @@ Rcpp::NumericVector get_dbl6(Rcpp::List in) {
 }
 
 void SetFields(OGRFeature *poFeature, std::vector<OGRFieldType> tp, Rcpp::List obj, size_t i = 0) {
+	Rcpp::CharacterVector nm  = obj.attr("names");
 	for (size_t j = 0; j < tp.size(); j++) {
 		if (j == (size_t) poFeature->GetFieldCount())
-			throw std::invalid_argument("Impossible: field count reached\n");
+			throw std::invalid_argument("Impossible: field count reached\n"); // #nocov
 		switch (tp[j]) {
 			case OFTString: {
 				Rcpp::CharacterVector cv;
 				cv = obj[j];
 				if (! Rcpp::CharacterVector::is_na(cv[i]))
-					poFeature->SetField(j, (const char *) cv[i]);
+					poFeature->SetField(nm[j], (const char *) cv[i]);
 				} break;
 			case OFTInteger: {
 				Rcpp::IntegerVector iv;
 				iv = obj[j];
 				if (! Rcpp::IntegerVector::is_na(iv[i]))
-					poFeature->SetField(j, (int) iv[i]);
+					poFeature->SetField(nm[j], (int) iv[i]);
 				} break;
 			case OFTReal: {
 				Rcpp::NumericVector nv;
 				nv = obj[j];
 				if (! Rcpp::NumericVector::is_na(nv[i]))
-					poFeature->SetField(j, (double) nv[i]);
+					poFeature->SetField(nm[j], (double) nv[i]);
 				} break;
 			case OFTDate: {
 				Rcpp::NumericVector nv;
@@ -79,7 +80,7 @@ void SetFields(OGRFeature *poFeature, std::vector<OGRFieldType> tp, Rcpp::List o
 				Rcpp::Function as_POSIXlt_Date("as.POSIXlt.Date");
 				Rcpp::Function unlist("unlist");
 				Rcpp::NumericVector ret = unlist(as_POSIXlt_Date(nv0)); // use R
-				poFeature->SetField(j, 1900 + (int) ret[5], (int) ret[4], (int) ret[3]);
+				poFeature->SetField(nm[j], 1900 + (int) ret[5], (int) ret[4], (int) ret[3]);
 				} break;
 			case OFTDateTime: {
 				Rcpp::NumericVector nv;
@@ -91,7 +92,7 @@ void SetFields(OGRFeature *poFeature, std::vector<OGRFieldType> tp, Rcpp::List o
 				nv0.attr("tzone") = "UTC";
 				Rcpp::Function as_POSIXlt_POSIXct("as.POSIXlt.POSIXct");
 				Rcpp::NumericVector rd = get_dbl6(as_POSIXlt_POSIXct(nv0)); // use R
-				poFeature->SetField(j, 1900 + (int) rd[5], (int) rd[4], 
+				poFeature->SetField(nm[j], 1900 + (int) rd[5], (int) rd[4], 
 					(int) rd[3], (int) rd[2], (int) rd[1], 
 					(float) rd[0], 100); // nTZFlag 0: unkown; 1: local; 100: GMT
 				} break;
@@ -107,42 +108,87 @@ void SetFields(OGRFeature *poFeature, std::vector<OGRFieldType> tp, Rcpp::List o
 // [[Rcpp::export]]
 void CPL_write_ogr(Rcpp::List obj, Rcpp::CharacterVector dsn, Rcpp::CharacterVector layer,
 	Rcpp::CharacterVector driver, Rcpp::CharacterVector dco, Rcpp::CharacterVector lco,
-	Rcpp::List geom, Rcpp::CharacterVector dim, bool quiet = false, bool update = false) {
+	Rcpp::List geom, Rcpp::CharacterVector dim, bool quiet = false, bool update = false,
+	bool delete_dsn = false, bool delete_layer = false) {
 
 	// init:
-	if (driver.size() != 1 || dsn.size() != 1 || layer.size() != 1) {
-		Rcpp::Rcout << "driver, dsn or layer unspecified" << std::endl;
-		throw std::invalid_argument("Driver unspecified.\n");
-	}
+	if (driver.size() != 1 || dsn.size() != 1 || layer.size() != 1)
+		throw std::invalid_argument("argument dsn, layer or driver not of length 1.\n");
 
 	/* GDALAllRegister(); -- has been done during .onLoad() */
 	// get driver:
 	GDALDriver *poDriver = GetGDALDriverManager()->GetDriverByName(driver[0]);
 	if (poDriver == NULL) {
-		Rcpp::Rcout << driver[0] << " driver not available." << std::endl;
+		Rcpp::Rcout << "driver `" << driver[0] << "' not available." << std::endl;
 		throw std::invalid_argument("Driver not available.\n");
-	}  else if (! quiet)
-		Rcpp::Rcout << "Writing layer `" << layer[0] << "' to data source `" << dsn[0] <<
-			"' using driver `" << driver[0] << "'" << std::endl;
+	}
 
-	// open data set:
+	// delete data source:
+	if (delete_dsn) {
+		if (poDriver->Delete(dsn[0]) != CE_None) {
+			if (! quiet)
+				Rcpp::Rcout << "Deleting source `" << dsn[0] << "' failed" << std::endl;
+		} else if (! quiet)
+			Rcpp::Rcout << "Deleting source `" << dsn[0] << "' using driver `" << driver[0] << "'" << std::endl;
+	}
+
+	// data set:
 	std::vector <char *> options = create_options(dco, quiet);
 	GDALDataset *poDS; 
-	if (!update && (poDS = (GDALDataset *) GDALOpenEx(dsn[0], GDAL_OF_VECTOR | GDAL_OF_READONLY, NULL, 
-			options.data(), NULL)) != NULL) {
+
+	// delete layer:
+	if (delete_layer && (poDS = (GDALDataset *) GDALOpenEx(dsn[0], GDAL_OF_VECTOR | GDAL_OF_UPDATE, NULL, 
+				options.data(), NULL)) != NULL) { // don't complain if the layer is not present
+		// find & delete layer:
+		bool deleted = false;
+		for (int iLayer = 0; iLayer < poDS->GetLayerCount(); iLayer++) {
+			OGRLayer *poLayer = poDS->GetLayer(iLayer);
+			if (poLayer != NULL && EQUAL(poLayer->GetName(), layer[0])) {
+				OGRErr err = poDS->DeleteLayer(iLayer);
+				if (! quiet) {
+					if (err == OGRERR_UNSUPPORTED_OPERATION)
+						Rcpp::Rcout << "Deleting layer not supported by driver `" << driver[0] << "'"  // #nocov
+							<< std::endl; // #nocov
+					else  {
+						Rcpp::Rcout << "Deleting layer `" << layer[0] << "' using driver `" << 
+							driver[0] << "'" << std::endl;
+					}
+				}
+				deleted = (err == OGRERR_NONE);
+				break;
+			}
+		}
+		if (! deleted && ! quiet)
+			Rcpp::Rcout << "Deleting layer `" << layer[0] << "' failed" << std::endl;
 		GDALClose(poDS);
-		Rcpp::Rcout << "Dataset " <<  dsn[0] << 
-			" already exists; remove first, or use update=TRUE to append." << std::endl;
-		throw std::invalid_argument("Dataset already exists.\n");
+	}
+	
+	// update ds:
+	if (update && (poDS = (GDALDataset *) GDALOpenEx(dsn[0], GDAL_OF_VECTOR | GDAL_OF_UPDATE, NULL, 
+				options.data(), NULL)) != NULL) {
+		if (! quiet)
+			Rcpp::Rcout << "Updating layer `" << layer[0] << "' to data source `" << dsn[0] <<
+			"' using driver `" << driver[0] << "'" << std::endl;
+	} else { // create new ds: 
+		// error when it already exists:
+		if ((poDS = (GDALDataset *) GDALOpenEx(dsn[0], GDAL_OF_VECTOR | GDAL_OF_READONLY, NULL, 
+					options.data(), NULL)) != NULL) {
+			GDALClose(poDS);
+			Rcpp::Rcout << "Dataset " <<  dsn[0] << 
+				" already exists: remove first, use update=TRUE to append," << std::endl <<  
+				"delete_layer=TRUE to delete layer, or delete_dsn=TRUE to remove the entire data source before writing." 
+				<< std::endl;
+			throw std::invalid_argument("Dataset already exists.\n");
+		}
+		// create:
+		if ((poDS = poDriver->Create(dsn[0], 0, 0, 0, GDT_Unknown, options.data())) == NULL) {
+			Rcpp::Rcout << "Creating dataset " <<  dsn[0] << " failed." << std::endl;
+			throw std::invalid_argument("Creation failed.\n");
+		} else if (! quiet)
+			Rcpp::Rcout << "Writing layer `" << layer[0] << "' to data source `" << dsn[0] <<
+				"' using driver `" << driver[0] << "'" << std::endl;
 	}
 
-	if (update && (poDS = (GDALDataset *) GDALOpenEx(dsn[0], GDAL_OF_VECTOR | GDAL_OF_UPDATE, NULL, 
-			options.data(), NULL)) != NULL)
-		Rcpp::Rcout << "Updating " <<  dsn[0] << std::endl;
-	else if ((poDS = poDriver->Create(dsn[0], 0, 0, 0, GDT_Unknown, options.data())) == NULL) {
-		Rcpp::Rcout << "Creating dataset " <<  dsn[0] << " failed." << std::endl;
-		throw std::invalid_argument("Creation failed.\n");
-	}
 	Rcpp::CharacterVector clsv = geom.attr("class");
 	OGRwkbGeometryType wkbType = (OGRwkbGeometryType) make_type(clsv[0], dim[0], false, NULL, 0);
 	// read geometries:

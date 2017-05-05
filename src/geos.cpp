@@ -101,7 +101,7 @@ Rcpp::List sfc_from_geometry(GEOSContextHandle_t hGEOSCtxt, std::vector<GEOSGeom
 		GEOSGeom_destroy_r(hGEOSCtxt, geom[i]);
 	}
 	GEOSWKBWriter_destroy_r(hGEOSCtxt, wkb_writer);
-	return CPL_read_wkb(out, true, native_endian());
+	return CPL_read_wkb(out, true, false, native_endian());
 }
 
 Rcpp::NumericVector get_dim(double dim0, double dim1) {
@@ -185,7 +185,7 @@ log_prfn which_prep_geom_fn(const std::string op) {
 
 // [[Rcpp::export]]
 Rcpp::List CPL_geos_binop(Rcpp::List sfc0, Rcpp::List sfc1, std::string op, double par = 0.0, 
-		bool sparse = true, bool prepared = false) {
+		std::string pattern = "", bool sparse = true, bool prepared = false) {
 
 	GEOSContextHandle_t hGEOSCtxt = CPL_geos_init();
 
@@ -233,6 +233,18 @@ Rcpp::List CPL_geos_binop(Rcpp::List sfc0, Rcpp::List sfc1, std::string op, doub
 				Rcpp::LogicalVector rowi(sfc1.length()); 
 				for (int j = 0; j < sfc1.length(); j++) 
 					rowi(j) = chk_(GEOSEqualsExact_r(hGEOSCtxt, gmv0[i], gmv1[j], par));
+				if (! sparse)
+					densemat(i,_) = rowi;
+				else
+					sparsemat[i] = get_which(rowi);
+				R_CheckUserInterrupt();
+			}
+		} else if (op == "relate_pattern") { // needing pattern
+			for (int i = 0; i < sfc0.length(); i++) { // row
+				Rcpp::LogicalVector rowi(sfc1.length()); 
+				for (int j = 0; j < sfc1.length(); j++) 
+					rowi(j) = chk_(GEOSRelatePattern_r(hGEOSCtxt, gmv0[i], gmv1[j], 
+						pattern.c_str()));
 				if (! sparse)
 					densemat(i,_) = rowi;
 				else
@@ -355,13 +367,16 @@ Rcpp::List CPL_geos_union(Rcpp::List sfc, bool by_feature = false) {
 	std::vector<GEOSGeom> gmv = geometries_from_sfc(hGEOSCtxt, sfc, &dim);
 	std::vector<GEOSGeom> gmv_out(by_feature ? sfc.size() : 1);
 	if (by_feature) {
-		for (int i = 0; i < sfc.size(); i++)
+		for (int i = 0; i < sfc.size(); i++) {
 			gmv_out[i] = GEOSUnaryUnion_r(hGEOSCtxt, gmv[i]);
+			GEOSGeom_destroy_r(hGEOSCtxt, gmv[i]);
+		}
 	} else {
 		GEOSGeom gc = GEOSGeom_createCollection_r(hGEOSCtxt, GEOS_GEOMETRYCOLLECTION, gmv.data(), gmv.size());
 		gmv_out[0] = GEOSUnaryUnion_r(hGEOSCtxt, gc);
 		GEOSGeom_destroy_r(hGEOSCtxt, gc);
 	}
+
 	Rcpp::List out(sfc_from_geometry(hGEOSCtxt, gmv_out, dim)); // destroys gmv_out
 	CPL_geos_finish(hGEOSCtxt);
 	out.attr("precision") = sfc.attr("precision");
@@ -390,7 +405,7 @@ Rcpp::List CPL_geos_op(std::string op, Rcpp::List sfc,
 	std::vector<GEOSGeom> out(sfc.length());
 
 	if (op == "buffer") {
-		if (bufferDist.size() != g.size())
+		if (bufferDist.size() != (int) g.size())
 			throw std::invalid_argument("invalid dist argument"); // #nocov
 		for (size_t i = 0; i < g.size(); i++)
 			out[i] = chkNULL(GEOSBuffer_r(hGEOSCtxt, g[i], bufferDist[i], nQuadSegs));
@@ -558,13 +573,13 @@ std::string CPL_geos_version(bool b = false) {
 
 // [[Rcpp::export]]
 Rcpp::NumericMatrix CPL_geos_dist(Rcpp::List sfc0, Rcpp::List sfc1) {
-	Rcpp::NumericMatrix out = CPL_geos_binop(sfc0, sfc1, "distance", 0.0, false)[0];
+	Rcpp::NumericMatrix out = CPL_geos_binop(sfc0, sfc1, "distance", 0.0, "", false)[0];
 	return out;
 }
 
 // [[Rcpp::export]]
 Rcpp::CharacterVector CPL_geos_relate(Rcpp::List sfc0, Rcpp::List sfc1) {
-	Rcpp::CharacterVector out = CPL_geos_binop(sfc0, sfc1, "relate", 0.0, false)[0];
+	Rcpp::CharacterVector out = CPL_geos_binop(sfc0, sfc1, "relate", 0.0, "", false)[0];
 	return out;	
 }
 

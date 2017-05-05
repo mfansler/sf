@@ -156,9 +156,9 @@ $(document).ready(function () {
 <pre class="r"><code>library(sf)
 fname &lt;- system.file(&quot;shape/nc.shp&quot;, package=&quot;sf&quot;)
 fname
-## [1] &quot;/tmp/RtmpaaWcHJ/Rinst7c9138a02f68/sf/shape/nc.shp&quot;
+## [1] &quot;/tmp/RtmpOKn432/Rinst703e747975df/sf/shape/nc.shp&quot;
 nc &lt;- st_read(fname)
-## Reading layer `nc' from data source `/tmp/RtmpaaWcHJ/Rinst7c9138a02f68/sf/shape/nc.shp' using driver `ESRI Shapefile'
+## Reading layer `nc' from data source `/tmp/RtmpOKn432/Rinst703e747975df/sf/shape/nc.shp' using driver `ESRI Shapefile'
 ## converted into: POLYGON
 ## Simple feature collection with 100 features and 14 fields
 ## geometry type:  MULTIPOLYGON
@@ -203,7 +203,7 @@ Available layers:
 <p>Alternatively, a user can set the global option <code>stringsAsFactors</code>, and this will have the same effect:</p>
 <pre class="r"><code>options(stringsAsFactors = FALSE)
 st_read(fname)
-## Reading layer `nc' from data source `/tmp/RtmpaaWcHJ/Rinst7c9138a02f68/sf/shape/nc.shp' using driver `ESRI Shapefile'
+## Reading layer `nc' from data source `/tmp/RtmpOKn432/Rinst703e747975df/sf/shape/nc.shp' using driver `ESRI Shapefile'
 ## converted into: POLYGON
 ## Simple feature collection with 100 features and 14 fields
 ## geometry type:  MULTIPOLYGON
@@ -218,7 +218,7 @@ st_read(fname)
 <pre class="r"><code>st_write(nc, &quot;nc1.shp&quot;)</code></pre>
 <p>The file name is taken as the data source name. The default for the layer name is the basename (filename without path) of the the data source name. For this, <code>st_write</code> needs to guess the driver. The above command is, for instance, equivalent to:</p>
 <pre class="r"><code>st_write(nc, dsn = &quot;nc1.shp&quot;, layer = &quot;nc.shp&quot;, driver = &quot;ESRI Shapefile&quot;)
-## Writing layer `nc.shp' to data source `nc1.shp' using driver `ESRI Shapefile'
+## Writing layer `nc' to data source `nc1.shp' using driver `ESRI Shapefile'
 ## features:       100
 ## fields:         14
 ## geometry type:  Multi Polygon</code></pre>
@@ -463,10 +463,11 @@ st_as_sfc(x)
 ## [4] st_as_sf.sf*        
 ## see '?methods' for accessing help and source code
 methods(st_as_sfc)
-## [1] st_as_sfc.SpatialLines*       st_as_sfc.SpatialMultiPoints*
-## [3] st_as_sfc.SpatialPixels*      st_as_sfc.SpatialPoints*     
-## [5] st_as_sfc.SpatialPolygons*    st_as_sfc.WKB*               
-## [7] st_as_sfc.character*          st_as_sfc.map*               
+##  [1] st_as_sfc.SpatialLines*       st_as_sfc.SpatialMultiPoints*
+##  [3] st_as_sfc.SpatialPixels*      st_as_sfc.SpatialPoints*     
+##  [5] st_as_sfc.SpatialPolygons*    st_as_sfc.WKB*               
+##  [7] st_as_sfc.character*          st_as_sfc.factor*            
+##  [9] st_as_sfc.list*               st_as_sfc.map*               
 ## see '?methods' for accessing help and source code</code></pre>
 <p>An example would be:</p>
 <pre class="r"><code>library(sp)
@@ -513,7 +514,7 @@ $(document).ready(function () {
   (function () {
     var script = document.createElement("script");
     script.type = "text/javascript";
-    script.src  = "https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
     document.getElementsByTagName("head")[0].appendChild(script);
   })();
 </script>

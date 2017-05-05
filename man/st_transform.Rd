@@ -10,6 +10,8 @@
 \alias{st_transform.sfg}
 \alias{st_transform}
 \alias{st_proj_info}
+\alias{st_transform}
+\alias{st_wrap_dateline}
 \title{Transform or convert coordinates of simple feature}
 \usage{
 st_transform(x, crs, ...)
@@ -21,6 +23,8 @@ st_transform(x, crs, ...)
 \method{st_transform}{sfg}(x, crs, ...)
 
 st_proj_info(type = "proj")
+
+st_wrap_dateline(x, options = "WRAPDATELINE=YES", quiet = TRUE)
 }
 \arguments{
 \item{x}{object of class sf, sfc or sfg}
@@ -34,6 +38,10 @@ st_proj_info(type = "proj")
 \item{check}{logical; perform a sanity check on resulting polygons?}
 
 \item{type}{character; one of \code{proj}, \code{ellps}, \code{datum} or \code{units}}
+
+\item{options}{character; should have "WRAPDATELINE=YES" to function; another parameter that is used is "DATELINEOFFSET=10" (where 10 is the default value)}
+
+\item{quiet}{logical; print options after they have been parsed?}
 }
 \description{
 Transform or convert coordinates of simple feature
@@ -44,6 +52,8 @@ transforms coordinates of object to new projection. Features that cannot be tran
 the st_transform method for sfg objects assumes that the crs of the object is available as an attribute of that name.
 
 \code{st_proj_info} lists the available projections, ellipses, datums or units supported by the Proj.4 library
+
+for a discussion of using \code{options}, see https://github.com/edzer/sfr/issues/280
 }
 \examples{
 p1 = st_point(c(7,52))
@@ -60,4 +70,5 @@ library(units)
 as.units(st_area(st_transform(nc[1,], 2264)), make_unit("m")^2)
 st_transform(structure(p1, proj4string = "+init=epsg:4326"), "+init=epsg:3857")
 st_proj_info("datum")
+st_wrap_dateline(st_sfc(st_linestring(rbind(c(-179,0),c(179,0))), crs = 4326))
 }

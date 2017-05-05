@@ -18,7 +18,6 @@ st_as_sfc(c("POINT(0 0)", "POINT(1 1)"))
 st_as_sfc(c("POINT(0 0)", "POINT(1 1)", "POLYGON((0 0,1 1,0 1,0 0))"))
 st_as_sfc(character(0))
 st_as_sfc(character(0), 4326)
-try(st_as_sfc(c("POINT(0 0)", "POINT(1 1)", "POLYGON(0 0,1 1,0 1,0 0)"))) # causes small memory leak
 st_as_sfc(c("POINT(0 0)", "POINT(1 1)", "POLYGON((0 0,1 1,0 1,0 0))"), 
 	"+proj=longlat +datum=WGS84")
 dg = st_as_sf(d, wkt = "geom")
@@ -166,5 +165,7 @@ ls = st_sfc(st_linestring(rbind(c(0,0),c(0,1))),
 st_sample(ls, 80)
 st_sample(nc[1:2,], size = c(10,20))
 
-class(st_bind_cols(nc, as.data.frame(nc)[1:3]))
+#class(st_bind_cols(nc, as.data.frame(nc)[1:3]))
+class(dplyr::bind_cols(nc, as.data.frame(nc)[1:3]))
 class(rbind(nc, nc))
+class(cbind(nc, nc))

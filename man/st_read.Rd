@@ -33,9 +33,9 @@ message when there are multiple layers, or give an error if there are no layers 
 
 \item{geometry_column}{integer or character; in case of multiple geometry fields, which one to take?}
 
-\item{type}{integer; ISO number of desired simple feature type; see details. If left zero, and \code{promote_to_multi} 
+\item{type}{integer; ISO number of desired simple feature type; see details. If left zero, and \code{promote_to_multi}
 is \code{TRUE}, in case of mixed feature geometry
-types, conversion to the highest numeric type value found will be attempted. Different values for each geometry column
+types, conversion to the highest numeric type value found will be attempted. A vector with different values for each geometry column
 can be given.}
 
 \item{promote_to_multi}{logical; in case of a mix of Point and MultiPoint, or of LineString and MultiLineString, or of
@@ -51,11 +51,11 @@ and a warning is given when precision is lost (i.e., values are larger than 2^53
 
 \item{table}{table name}
 
-\item{query}{SQL query to select records}
+\item{query}{SQL query to select records; see details}
 
 \item{geom_column}{character or integer: indicator of name or position of the geometry column; if not provided, the last column of type character is chosen}
 
-\item{EWKB}{logical; is the WKB is of type EWKB? defaults to TRUE if \code{conn} is of class code{PostgreSQLConnection} or \code{PqConnection}}
+\item{EWKB}{logical; is the WKB is of type EWKB? if missing, defaults to \code{TRUE} if \code{conn} is of class code{PostgreSQLConnection} or \code{PqConnection}, and to \code{FALSE} otherwise}
 }
 \value{
 object of class \link{sf} when a layer was succesfully read; in case argument \code{layer} is missing and
@@ -73,8 +73,12 @@ values see \url{https://en.wikipedia.org/wiki/Well-known_text#Well-known_binary}
 may lead to succesful conversion. The typical conversion from POLYGON (3) to MULTIPOLYGON (6) should work; the other
 way around (type=3), secondary rings from MULTIPOLYGONS may be dropped without warnings. \code{promote_to_multi} is handled on a per-geometry column basis; \code{type} may be specfied for each geometry columns.
 
+In case of problems reading shapefiles from USB drives on OSX, please see \url{https://github.com/edzer/sfr/issues/252}.
+
 \code{read_sf} and \code{write_sf} are aliases for \code{st_read} and \code{st_write}, respectively, with some
 modified default arguments.
+
+if \code{table} is not given but \code{query} is, the spatial reference system (crs) of the table queried is only available in case it has been stored into each geometry record (e.g., by PostGIS, when using EWKB)
 
 in case geom_column is missing: if table is missing, this function will try to read the name of the geometry column from table \code{geometry_columns}, in other cases, or when this fails, the geom_column is assumed to be the last column of mode character. If table is missing, the SRID cannot be read and resolved into a proj4string by the database, and a warning will be given.
 }

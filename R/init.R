@@ -5,8 +5,8 @@
 #' @importFrom grid convertUnit current.viewport linesGrob pathGrob pointsGrob polylineGrob unit viewport
 #' @import graphics
 #' @importFrom Rcpp evalCpp
-#' @importFrom DBI dbConnect dbDisconnect dbWriteTable dbGetQuery dbSendQuery dbReadTable
-#' @importFrom units make_unit
+#' @importFrom DBI dbConnect dbDisconnect dbWriteTable dbGetQuery dbSendQuery dbReadTable dbExecute
+#' @importFrom units make_unit set_units
 #' @importFrom grDevices rgb
 #' @useDynLib sf
 NULL
