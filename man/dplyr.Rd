@@ -18,6 +18,8 @@
 \alias{dplyr}
 \alias{group_by.sf}
 \alias{dplyr}
+\alias{ungroup.sf}
+\alias{dplyr}
 \alias{mutate_.sf}
 \alias{dplyr}
 \alias{mutate.sf}
@@ -39,6 +41,7 @@
 \alias{slice.sf}
 \alias{dplyr}
 \alias{summarise.sf}
+\alias{summarise}
 \alias{dplyr}
 \alias{summarise_.sf}
 \alias{dplyr}
@@ -80,6 +83,8 @@ distinct.sf(.data, ..., .dots, .keep_all = FALSE)
 group_by_.sf(.data, ..., .dots, add = FALSE)
 
 group_by.sf(.data, ..., .dots, add = FALSE)
+
+ungroup.sf(x, ...)
 
 mutate_.sf(.data, ..., .dots)
 
@@ -142,7 +147,9 @@ anti_join.sf(x, y, by = NULL, copy = FALSE, ...)
 
 \item{add}{see corresponding function in dplyr}
 
-\item{do_union}{logical; should geometries be unioned, using \link{st_union}, or simply be combined using \link{st_combine}?}
+\item{x}{see \link[dplyr]{left_join}}
+
+\item{do_union}{logical; should geometries be unioned by using \link{st_union}, or simply be combined using \link{st_combine}? Using \link{st_union} resolves internal boundaries, but in case of unioning points may also change the order of the points.}
 
 \item{data}{see original function docs}
 
@@ -176,8 +183,6 @@ anti_join.sf(x, y, by = NULL, copy = FALSE, ...)
 
 \item{nest_cols}{see \link[tidyr]{nest}}
 
-\item{x}{see \link[dplyr]{left_join}}
-
 \item{y}{see \link[dplyr]{left_join}}
 
 \item{by}{see \link[dplyr]{left_join}}
@@ -187,7 +192,10 @@ anti_join.sf(x, y, by = NULL, copy = FALSE, ...)
 \item{suffix}{see \link[dplyr]{left_join}}
 }
 \description{
-Dplyr verb methods for sf objects
+Dplyr verb methods for sf objects. Geometries are sticky, use \link{as.data.frame} to let code{dplyr}'s own methods drop them.
+}
+\details{
+\code{select} keeps the geometry regardless whether it is selected or not; to deselect it, first pipe through \code{as.data.frame} to let dplyr's own \code{select} drop it.
 }
 \examples{
 library(dplyr)

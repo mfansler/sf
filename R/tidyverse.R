@@ -2,7 +2,7 @@
 
 #' Dplyr verb methods for sf objects
 #' 
-#' Dplyr verb methods for sf objects
+#' Dplyr verb methods for sf objects. Geometries are sticky, use \link{as.data.frame} to let code{dplyr}'s own methods drop them.
 #' @param .data data object of class \link{sf}
 #' @param .dots see corresponding function in package \code{dplyr}
 #' @param ... other arguments
@@ -70,6 +70,13 @@ group_by.sf <- function(.data, ..., .dots, add = FALSE) {
 
 #' @name dplyr
 #' @export
+ungroup.sf <- function(x, ...) {
+	class(x) <- setdiff(class(x), "sf")
+	st_as_sf(NextMethod())
+}
+
+#' @name dplyr
+#' @export
 #' @examples
 #' nc2 <- nc %>% mutate(area10 = AREA/10)
 mutate_.sf <- function(.data, ..., .dots) {
@@ -116,12 +123,6 @@ select_.sf <- function(.data, ..., .dots = NULL) {
   structure(ret, agr = st_agr(ret))
 }
 
-#select.sf <- function(.data, ..., .dots = NULL) {
-#  .dots <- c(.dots, attr(.data, "sf_column")) 
-#  ret = NextMethod()
-#  structure(ret, agr = st_agr(ret))
-#}
-
 unclass_sf <- function(x) {
 	i <- match("sf", class(x))
 	class <- class(x)[-seq_len(i)]
@@ -130,6 +131,7 @@ unclass_sf <- function(x) {
 
 #' @name dplyr
 #' @export
+#' @details \code{select} keeps the geometry regardless whether it is selected or not; to deselect it, first pipe through \code{as.data.frame} to let dplyr's own \code{select} drop it.
 select.sf <- if (requireNamespace("dplyr", quietly = TRUE) && utils::packageVersion("dplyr") > "0.5.0") {
   function(.data, ...) {
 	.data <- unclass_sf(.data)
@@ -178,11 +180,18 @@ slice.sf <- function(.data, ...) {
 
 #' @name dplyr
 #' @export
-#' @param do_union logical; should geometries be unioned, using \link{st_union}, or simply be combined using \link{st_combine}?
+#' @aliases summarise
+#' @param do_union logical; should geometries be unioned by using \link{st_union}, or simply be combined using \link{st_combine}? Using \link{st_union} resolves internal boundaries, but in case of unioning points may also change the order of the points.
 summarise.sf <- function(.data, ..., .dots, do_union = TRUE) {
 	sf_column = attr(.data, "sf_column")
 	crs = st_crs(.data)
 	ret = NextMethod()
+
+	if (utils::packageVersion("dplyr") <= "0.5.0") {
+		stopifnot(requireNamespace("lazyeval", quietly = TRUE))
+		do_union = is.null(.dots$do_union) || isTRUE(lazyeval::lazy_eval(.dots$do_union))
+	}
+
 	geom = if (inherits(.data, "grouped_df") || inherits(.data, "grouped_dt")) {
 		geom = st_geometry(.data)
 		i = lapply(attr(.data, "indices"), function(x) x + 1) # they are 0-based!!
