@@ -141,6 +141,10 @@ CPL_make_valid <- function(sfc) {
     .Call('sf_CPL_make_valid', PACKAGE = 'sf', sfc)
 }
 
+CPL_split <- function(sfc, blade) {
+    .Call('sf_CPL_split', PACKAGE = 'sf', sfc, blade)
+}
+
 CPL_geohash <- function(sfc, prec) {
     .Call('sf_CPL_geohash', PACKAGE = 'sf', sfc, prec)
 }
@@ -173,7 +177,3 @@ CPL_write_wkb <- function(sfc, EWKB = FALSE, endian = 0L, dim = "XY", precision 
     .Call('sf_CPL_write_wkb', PACKAGE = 'sf', sfc, EWKB, endian, dim, precision)
 }
 
-# Register entry points for exported C++ functions
-methods::setLoadAction(function(ns) {
-    .Call('sf_RcppExport_registerCCallable', PACKAGE = 'sf')
-})

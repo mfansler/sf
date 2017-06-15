@@ -1,4 +1,24 @@
+# version 0.5-0
+
+* fix bug reading and writing dates (months 1 off): #358
+
+* [.sf and [.sfc now also select on i when i is an `sfg` object, and accept a geometric predicate function with optional arguments; #352
+
+* on reading through GDAL, empty (NULL) geometries no longer result in an error; on creation, they no longer automatically give a `GEOMETRY` object; #351
+
+* on plotting with `ggplot2::geom_sf`, empty geometries no longer break; grid functions return `nullGrob()` for them; #351
+
+* arith operations on empty geometries no longer break or give warnings; #351
+
+* have `st_as_sf.data.frame` by default break on `NA` values in coordinates; #342
+
+* have `st_join` accept further arguments, to be passed on to the `join` function (e.g. a pattern for `st_relate`)
+
+* have WKB reader throw an error on (some) malformed inputs, and check for buffer bounds
+
 # version 0.4-3
+
+* back-port `do_union` argument to dplyr <= 0.5.0, using lazyeval
 
 * all strings returned from OGR/GDAL now get encoding set to `UTF-8`, making them work on non-UTF-8 platforms; #5
 

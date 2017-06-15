@@ -226,17 +226,25 @@ proj4string:    NA
 + 	m$GEOMETRY = st_as_sfc(m$GEOMETRY, spatialite = FALSE) # ISO wkb
 + 	print(st_sf(m), n = 3)
 + 
-+ 	db = system.file("sqlite/test3.sqlite", package = "sf")
-+ 	dbcon <- dbConnect(dbDriver("SQLite"), db)
-+ 	m = dbReadTable(dbcon, "HighWays")
-+ 	m$Geometry = st_as_sfc(m$Geometry, spatialite = TRUE) # spatialite wkb
-+ 	print(st_sf(m), n = 3)
-+ 	m = dbReadTable(dbcon, "Towns")
-+ 	m$Geometry = st_as_sfc(m$Geometry, spatialite = TRUE) # spatialite wkb
-+ 	print(st_sf(m), n = 3)
-+ 	m = dbReadTable(dbcon, "Regions")
-+ 	m$Geometry = st_as_sfc(m$Geometry, spatialite = TRUE) # spatialite wkb
-+ 	print(st_sf(m), n = 3)
++ 	db = system.file("sqlite/b.sqlite", package = "sf") # has an INT8 field
++ 	b = st_read(db)
++ 	print(b)
++ 	b = st_read(db, int64_as_string=TRUE)
++ 	print(b)
++ 
++ 	if (.Platform$endian == "little") {
++ 	  db = system.file("sqlite/test3.sqlite", package = "sf")
++ 	  dbcon <- dbConnect(dbDriver("SQLite"), db)
++ 	  m = dbReadTable(dbcon, "HighWays")
++ 	  m$Geometry = st_as_sfc(m$Geometry, spatialite = TRUE) # spatialite wkb
++ 	  print(st_sf(m), n = 3)
++ 	  m = dbReadTable(dbcon, "Towns")
++ 	  m$Geometry = st_as_sfc(m$Geometry, spatialite = TRUE) # spatialite wkb
++ 	  print(st_sf(m), n = 3)
++ 	  m = dbReadTable(dbcon, "Regions")
++ 	  m$Geometry = st_as_sfc(m$Geometry, spatialite = TRUE) # spatialite wkb
++ 	  print(st_sf(m), n = 3)
++ 	}
 + }
 Loading required package: RSQLite
 Simple feature collection with 155 features and 13 fields
@@ -269,6 +277,38 @@ First 3 features:
 1     1      10  1364     0      19 MULTIPOLYGON(((-81.47275543...
 2     0      10   542     3      12 MULTIPOLYGON(((-81.23989105...
 3     5     208  3616     6     260 MULTIPOLYGON(((-80.45634460...
+Reading layer `a.sqlite' from data source `/home/edzer/git/sf.Rcheck/sf/sqlite/b.sqlite' using driver `SQLite'
+Integer64 values larger than 9.0072e+15 lost significance after conversion to double;
+use argument int64_as_string = TRUE to import them lossless, as character
+Simple feature collection with 1 feature and 2 fields
+geometry type:  POINT
+dimension:      XY
+bbox:           xmin: 0 ymin: 1 xmax: 0 ymax: 1
+epsg (SRID):    NA
+proj4string:    NA
+Simple feature collection with 1 feature and 2 fields
+geometry type:  POINT
+dimension:      XY
+bbox:           xmin: 0 ymin: 1 xmax: 0 ymax: 1
+epsg (SRID):    NA
+proj4string:    NA
+  a       bigint   GEOMETRY
+1 1 4.611686e+18 POINT(0 1)
+Reading layer `a.sqlite' from data source `/home/edzer/git/sf.Rcheck/sf/sqlite/b.sqlite' using driver `SQLite'
+Simple feature collection with 1 feature and 2 fields
+geometry type:  POINT
+dimension:      XY
+bbox:           xmin: 0 ymin: 1 xmax: 0 ymax: 1
+epsg (SRID):    NA
+proj4string:    NA
+Simple feature collection with 1 feature and 2 fields
+geometry type:  POINT
+dimension:      XY
+bbox:           xmin: 0 ymin: 1 xmax: 0 ymax: 1
+epsg (SRID):    NA
+proj4string:    NA
+  a              bigint   GEOMETRY
+1 1 4611686018427387904 POINT(0 1)
 Simple feature collection with 10 features and 2 fields
 geometry type:  LINESTRING
 dimension:      XY
@@ -307,6 +347,15 @@ First 3 features:
 2      2 VENETO MULTIPOLYGON(((751705.49671...
 3      3 VENETO MULTIPOLYGON(((766247.78071...
 > 
+> csv = system.file("csv/pt.csv", package = "sf")
+> identical(st_read(quiet = TRUE, csv, options = "AUTODETECT_TYPE=Yes")$Int64[3], NA_real_)
+[1] TRUE
+> identical(st_read(quiet = TRUE, csv, int64_as_string = TRUE, stringsAsFactors = FALSE,
++ 	options = "AUTODETECT_TYPE=Yes")$Int64[3], NA_character_)
+[1] TRUE
+> identical(st_read(quiet = TRUE, csv, options = "AUTODETECT_TYPE=Yes")$Int32[3], NA_integer_)
+[1] TRUE
+> 
 > proc.time()
    user  system elapsed 
-  1.192   0.208   1.202 
+  1.100   0.296   1.088 

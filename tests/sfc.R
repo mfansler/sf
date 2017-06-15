@@ -95,6 +95,7 @@ sf_extSoftVersion()[1:3]
 ls = st_sfc(st_linestring(rbind(c(0,0),c(0,1))))
 ls * 2
 ls - 2
+(ls + 2) %% 3
 
 str(x)
 nc = st_read(system.file("shape/nc.shp", package="sf"), quiet = TRUE)
@@ -137,8 +138,8 @@ b = st_sf(a = 11:14,
  geom = st_sfc(st_point(c(10,10)), st_point(c(2,2)), st_point(c(2,2)), st_point(c(3,3))))
 st_join(a, b)
 st_join(a, b, left = FALSE)
-st_join(a, b, FUN = mean)
-st_join(a, b, FUN = mean, left = FALSE)
+# deprecated:
+try(x <- st_join(a, b, FUN = mean))
 
 # rbind:
 x = st_sf(a = 1:2, geom = st_sfc(list(st_point(0:1), st_point(0:1)), crs = 4326))

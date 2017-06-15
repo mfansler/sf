@@ -45,13 +45,17 @@ Create sf, which extends data.frame-like objects with a simple feature list colu
 \details{
 \code{agr}, attribute-geometry-relationship, specifies for each non-geometry attribute column how it relates to the geometry, and can have one of following values: "constant", "aggregate", "identity". "constant" is used for attributes that are constant throughout the geometry (e.g. land use), "aggregate" where the attribute is an aggregate value over the geometry (e.g. population density or population count), "identity" when the attributes uniquely identifies the geometry of particular "thing", such as a building ID or a city name. The default value, \code{NA_agr_}, implies we don't know.
 
-"[.sf" will return a \code{data.frame} if the geometry column (of class \code{sfc}) is dropped (\code{drop=TRUE}), an \code{sfc} object if only the geometry column is selected, otherwise returns an \code{sf} object; see also \link{[.data.frame}.
+\code{[.sf} will return a \code{data.frame} or vector if the geometry column (of class \code{sfc}) is dropped (\code{drop=TRUE}), an \code{sfc} object if only the geometry column is selected, and otherwise return an \code{sf} object; see also \link{[.data.frame}; for \code{[.sf} \code{...} arguments are passed to \code{op}.
 }
 \examples{
 g = st_sfc(st_point(1:2))
 st_sf(a=3,g)
 st_sf(g, a=3)
 st_sf(a=3, st_sfc(st_point(1:2))) # better to name it!
+# create empty structure with preallocated empty geometries:
+nrows <- 10
+geometry = st_sfc(lapply(1:nrows, function(x) st_geometrycollection()))
+df <- st_sf(id = 1:nrows, geometry = geometry)
 g = st_sfc(st_point(1:2), st_point(3:4))
 s = st_sf(a=3:4, g)
 s[1,]

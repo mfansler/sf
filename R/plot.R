@@ -4,7 +4,7 @@
 #' @param y ignored
 #' @param ... further specifications, see \link{plot_sf} and \link{plot}
 #' @param ncol integer; default number of colors to be used
-#' @param max.plot integer; lower boundary to maximium number of attributes to plot
+#' @param max.plot integer; lower boundary to maximium number of attributes to plot (defaults to 9)
 #' @param pch plotting symbol
 #' @param cex symbol size
 #' @param bg symbol background color
@@ -98,8 +98,9 @@ plot.sf <- function(x, y, ..., ncol = 10, col = NULL, max.plot = 9) {
 			max.plot = prod(mfrow)
 
 		if (isTRUE(is.finite(max.plot)) && ncol(x) - 1 > max.plot) {
-			warning(paste("plotting the first", max.plot, "out of", ncol(x)-1, "attributes; use max.plot =",
-				ncol(x) - 1, "to plot all"), call. = FALSE)
+			if (max_plot_missing)
+				warning(paste("plotting the first", max.plot, "out of", ncol(x)-1, 
+					"attributes; use max.plot =", ncol(x) - 1, "to plot all"), call. = FALSE)
 			x = x[, 1:max.plot]
 		}
 		# col selection may have changed; set cols again:
@@ -398,9 +399,9 @@ plot_sf = function(x, xlim = NULL, ylim = NULL, asp = NA, axes = FALSE, bgc = pa
 		plot(st_geometry(g), col = col_graticule, add = TRUE)
 		box()
 		if (axes) {
-			sel = g$type == "E" & g$y_start < min(g$y_start) + 0.01 * diff(pl_reg[3:4])
+			sel = g$type == "E" & g$plot12
 			linAxis(1L, g$x_start[sel], parse(text = g$degree_label[sel]), ...)
-			sel = g$type == "N" & g$x_start < min(g$x_start) + 0.01 * diff(pl_reg[1:2])
+			sel = g$type == "N" & g$plot12
 			linAxis(2L, g$y_start[sel], parse(text = g$degree_label[sel]), ...)
 		}
 	} else if (axes) {

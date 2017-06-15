@@ -9,6 +9,10 @@ test_that("well-known binary is read correctly", {
   g = st_as_sfc(wkb, EWKB = TRUE)[[1]]
   attr(g, "epsg") <- NULL
   expect_true(identical(g, st_point(c(181072,333611))))
+  wkb = structure(list("0x01010000204071000000000000801A064100000000AC5C1441"))
+  g = st_as_sfc(wkb, EWKB = TRUE)[[1]]
+  attr(g, "epsg") <- NULL
+  expect_true(identical(g, st_point(c(181072,333611))))
 })
 
 test_that("Char -> Raw conversion in R and C++ gives identical results", {
@@ -33,5 +37,14 @@ test_that("Reading of big-endian and little-endian gives the same result", {
   expect_identical(st_as_sfc(x, EWKB = TRUE), st_as_sfc(y, EWKB = TRUE))
   expect_identical(st_as_sfc(x, EWKB = TRUE, pureR = TRUE), st_as_sfc(y, EWKB = TRUE, pureR = TRUE))
   expect_identical(st_as_sfc(x, EWKB = TRUE), st_as_sfc(y, EWKB = TRUE, pureR = TRUE))
+})
+
+test_that("Reading of truncated buffers results in a proper error", {
+  wkb = structure(list("010100002040710000"), class = "WKB")
+  expect_error(st_as_sfc(wkb, EWKB = TRUE), "WKB buffer too small. Input file corrupt?")
+  wkb = structure(list("01"), class = "WKB")
+  expect_error(st_as_sfc(wkb, EWKB = FALSE), "WKB buffer too small. Input file corrupt?")
+  wkb = structure(list("0x01010000204071000000000000801A064100000000AC5C144"), class = "WKB")
+  expect_error(st_as_sfc(wkb, EWKB = TRUE), "WKB buffer too small. Input file corrupt?")
 })
 

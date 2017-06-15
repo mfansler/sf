@@ -55,6 +55,10 @@
 \alias{dplyr}
 \alias{nest_.sf}
 \alias{dplyr}
+\alias{separate_.sf}
+\alias{dplyr}
+\alias{unite_.sf}
+\alias{dplyr}
 \alias{inner_join.sf}
 \alias{dplyr}
 \alias{left_join.sf}
@@ -70,11 +74,11 @@
 \usage{
 filter_.sf(.data, ..., .dots)
 
-filter.sf(.data, ...)
+filter.sf(.data, ..., .dots)
 
 arrange_.sf(.data, ..., .dots)
 
-arrange.sf(.data, ...)
+arrange.sf(.data, ..., .dots)
 
 distinct_.sf(.data, ..., .dots, .keep_all = FALSE)
 
@@ -100,11 +104,11 @@ select.sf(.data, ...)
 
 rename_.sf(.data, ..., .dots)
 
-rename.sf(.data, ...)
+rename.sf(.data, ..., .dots)
 
 slice_.sf(.data, ..., .dots)
 
-slice.sf(.data, ...)
+slice.sf(.data, ..., .dots)
 
 summarise.sf(.data, ..., .dots, do_union = TRUE)
 
@@ -123,6 +127,11 @@ sample_frac.sf(tbl, size = 1, replace = FALSE, weight = NULL,
   .env = parent.frame())
 
 nest_.sf(data, key_col, nest_cols)
+
+separate_.sf(data, col, into, sep = "[^[:alnum:]]+", remove = TRUE,
+  convert = FALSE, extra = "warn", fill = "warn", ...)
+
+unite_.sf(data, col, from, sep = "_", remove = TRUE)
 
 inner_join.sf(x, y, by = NULL, copy = FALSE, suffix = c(".x", ".y"), ...)
 
@@ -182,6 +191,16 @@ anti_join.sf(x, y, by = NULL, copy = FALSE, ...)
 \item{.env}{see original function docs}
 
 \item{nest_cols}{see \link[tidyr]{nest}}
+
+\item{col}{see \link[tidyr]{separate}}
+
+\item{into}{see \link[tidyr]{separate}}
+
+\item{remove}{see \link[tidyr]{separate}}
+
+\item{extra}{see \link[tidyr]{separate}}
+
+\item{from}{see \link[tidyr]{unite}}
 
 \item{y}{see \link[dplyr]{left_join}}
 

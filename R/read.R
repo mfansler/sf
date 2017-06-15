@@ -14,7 +14,7 @@ set_utf8 = function(x) {
 #'
 #' Read simple features from file or database, or retrieve layer names and their geometry type(s)
 #' @param dsn data source name (interpretation varies by driver - for some drivers, dsn is a file name, but may also be a folder,
-#' or contain the name and access credentials of a database)
+#' or contain the name and access credentials of a database); in case of GeoJSON, \code{dsn} may be the character string holding the geojson data
 #' @param layer layer name (varies by driver, may be a file name without extension); in case \code{layer} is missing,
 #' \code{st_read} will read the first layer of \code{dsn}, give a warning and (unless \code{quiet = TRUE}) print a
 #' message when there are multiple layers, or give an error if there are no layers in \code{dsn}.
@@ -36,22 +36,23 @@ set_utf8 = function(x) {
 #' values see \url{https://en.wikipedia.org/wiki/Well-known_text#Well-known_binary}, but note that not every target value
 #' may lead to succesful conversion. The typical conversion from POLYGON (3) to MULTIPOLYGON (6) should work; the other
 #' way around (type=3), secondary rings from MULTIPOLYGONS may be dropped without warnings. \code{promote_to_multi} is handled on a per-geometry column basis; \code{type} may be specfied for each geometry columns.
-#' 
+#'
 #' In case of problems reading shapefiles from USB drives on OSX, please see \url{https://github.com/edzer/sfr/issues/252}.
 #' @return object of class \link{sf} when a layer was succesfully read; in case argument \code{layer} is missing and
 #' data source \code{dsn} does not contain a single layer, an object of class \code{sf_layers} is returned with the
 #' layer names, each with their geometry type(s). Note that the number of layers may also be zero.
 #' @examples
 #' nc = st_read(system.file("shape/nc.shp", package="sf"))
-#' summary(nc)
+#' summary(nc) # note that AREA was computed using Euclidian area on lon/lat degrees
 #'
 #' \dontrun{
-#' library(sp)
-#' example(meuse, ask = FALSE, echo = FALSE)
-#' st_write(st_as_sf(meuse), "PG:dbname=postgis", "meuse",
-#'      layer_options = "OVERWRITE=true")
-#' st_meuse = st_read("PG:dbname=postgis", "meuse")
-#' summary(st_meuse)}
+#'   library(sp)
+#'   example(meuse, ask = FALSE, echo = FALSE)
+#'   st_write(st_as_sf(meuse), "PG:dbname=postgis", "meuse",
+#'        layer_options = "OVERWRITE=true")
+#'   st_meuse = st_read("PG:dbname=postgis", "meuse")
+#'   summary(st_meuse)
+#' }
 
 #' @name st_read
 #' @note The use of \code{system.file} in examples make sure that examples run regardless where R is installed:
@@ -102,6 +103,15 @@ st_read = function(dsn, layer, ..., options = NULL, quiet = FALSE, geometry_colu
 #' @export
 #' @details \code{read_sf} and \code{write_sf} are aliases for \code{st_read} and \code{st_write}, respectively, with some
 #' modified default arguments.
+#' \code{read_sf} and \code{write_sf} are quiet by default: they do not print information
+#' about the data source.
+#' \code{write_sf} delete layers by default: it overwrites existing files.
+#' @examples
+#' # read geojson from string:
+#' geojson_txt <- paste("{\"type\":\"MultiPoint\",\"coordinates\":",
+#'    "[[3.2,4],[3,4.6],[3.8,4.4],[3.5,3.8],[3.4,3.6],[3.9,4.5]]}")
+#' x = read_sf(geojson_txt)
+#' x
 read_sf <- function(..., quiet = TRUE, stringsAsFactors = FALSE)
 	st_read(..., quiet = quiet, stringsAsFactors = stringsAsFactors)
 
@@ -150,13 +160,13 @@ clean_columns = function(obj, factorsAsCharacter) {
 #' @param factorsAsCharacter logical; convert \code{factor} objects into character strings (default), else into numbers by
 #' \code{as.numeric}.
 #' @param update logical; \code{FALSE} by default for single-layer drivers but \code{TRUE} by default for database drivers
-#' as defined by \code{db_drivers}. 
-#' For database-type drivers (e.g. GPKG) \code{TRUE} values will make \code{GDAL} try 
+#' as defined by \code{db_drivers}.
+#' For database-type drivers (e.g. GPKG) \code{TRUE} values will make \code{GDAL} try
 #' to update (append to) the existing data source, e.g. adding a table to an existing database.
 #' @param delete_dsn logical; delete data source \code{dsn} before attempting to write?
 #' @param delete_layer logical; delete layer \code{layer} before attempting to write? (not yet implemented)
-#' @details columns (variables) of a class not supported are dropped with a warning. When deleting layers or 
-#' data sources is not successful, no error is emitted. \code{delete_dsn} and \code{delete_layers} should be 
+#' @details columns (variables) of a class not supported are dropped with a warning. When deleting layers or
+#' data sources is not successful, no error is emitted. \code{delete_dsn} and \code{delete_layers} should be
 #' handled with care; the former may erase complete directories or databases.
 #' @seealso \link{st_drivers}
 #' @examples
@@ -250,8 +260,8 @@ print.sf_layers = function(x, ...) {
 	x$features[x$features < 0] = NA
 	cat("Available layers:\n")
 	if (length(x$name) == 0) {
-		cat("<none>\n")
-		invisible(x)
+		cat("<none>\n") # nocov
+		invisible(x)    # nocov
 	} else {
 		df = data.frame(unclass(x))
 		gt = if (n_gt > 1)
@@ -358,6 +368,7 @@ extension_map <- list(
         "gtm" = "GPSTrackMaker",
         "gxt" = "Geoconcept",
         "jml" = "JML",
+        "kml" = "KML",
         "map" = "WAsP",
         "mdb" = "Geomedia",
         "nc" = "netCDF",

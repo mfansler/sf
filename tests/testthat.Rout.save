@@ -19,17 +19,22 @@ Type 'q()' to quit R.
 > suppressPackageStartupMessages(library(sf))
 > 
 > test_check("sf")
-Reading layer `nc.gpkg' from data source `/home/edzer/git/sf.Rcheck/sf/gpkg/nc.gpkg' using driver `GPKG'
-converted into: MULTIPOLYGON
+Cannot open layer foo
+OGR: Unsupported geometry type
+Reading layer `nc' from data source `/home/edzer/git/sf.Rcheck/sf/shape/nc.shp' using driver `ESRI Shapefile'
 Simple feature collection with 100 features and 14 fields
-Attribute-geometry relationship: 0 constant, 8 aggregate, 6 identity
 geometry type:  MULTIPOLYGON
 dimension:      XY
 bbox:           xmin: -84.32385 ymin: 33.88199 xmax: -75.45698 ymax: 36.58965
 epsg (SRID):    4267
 proj4string:    +proj=longlat +datum=NAD27 +no_defs
-Cannot open layer foo
-OGR: Unsupported geometry type
+Reading layer `nc' from data source `/home/edzer/git/sf.Rcheck/sf/shape/nc.shp' using driver `ESRI Shapefile'
+Simple feature collection with 100 features and 14 fields
+geometry type:  MULTIPOLYGON
+dimension:      XY
+bbox:           xmin: -84.32385 ymin: 33.88199 xmax: -75.45698 ymax: 36.58965
+epsg (SRID):    4267
+proj4string:    +proj=longlat +datum=NAD27 +no_defs
 bna 
 csv 
 geojson 
@@ -37,6 +42,7 @@ gml
 gpkg 
 gxt 
 jml 
+kml 
 shp 
 sqlite 
 vdv 
@@ -49,8 +55,8 @@ Creating layer . failed.
 Failed to create feature 1 in x
 Failed to create feature 1 in x
 testthat results ================================================================
-OK: 534 SKIPPED: 0 FAILED: 0
+OK: 557 SKIPPED: 0 FAILED: 0
 > 
 > proc.time()
    user  system elapsed 
-  4.700   0.348   8.028 
+  5.816   0.424   9.436 

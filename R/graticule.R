@@ -100,11 +100,11 @@ st_graticule = function(x = c(-180,-90,180,90), crs = st_crs(x),
 	
 	# as in https://github.com/edzer/sfr/issues/198 : 
 	# recreate, and ignore bbox_ll:
-	if (any(!is.finite(st_bbox(box_ll)))) {
+	if (any(!is.finite(st_bbox(box_ll)))) { # nocov start -- checked manually
 		x = st_transform(st_graticule(datum = datum), crs)
 		x$degree_label = NA_character_
 		return(x)
-	}
+	} # nocov end
 
 	bb = st_bbox(box_ll)
 	if (is.null(lon)) {
@@ -144,7 +144,7 @@ st_graticule = function(x = c(-180,-90,180,90), crs = st_crs(x),
 	st_geometry(df) = geom
 	st_agr(df) = "constant"
 
-	if (!missing(x)) { # cut out box:
+	if (! missing(x)) { # cut out box:
 		#if (! is.na(crs))
 		#	box = st_transform(box, crs)
 		df = st_intersection(df, st_polygonize(box[1]))
@@ -167,6 +167,10 @@ graticule_attributes = function(df) {
 	dxdy = do.call(rbind, lapply(object, 
 		function(x) { y = x[[length(x)]]; n = nrow(y); apply(y[(n-1):n,], 2, diff) } ))
 	df$angle_end = apply(dxdy, 1, function(x) atan2(x[2], x[1])*180/pi)
+	bb = st_bbox(df)
+    selE = df$type == "E" & df$y_start < min(df$y_start) + 0.001 * (bb[3] - bb[1])
+	selN = df$type == "N" & df$x_start < min(df$x_start) + 0.001 * (bb[4] - bb[2])
+	df$plot12 = selE | selN
 	df
 }
 

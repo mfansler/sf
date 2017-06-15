@@ -30,8 +30,7 @@ format.sfc = function(x, ..., digits = 30) {
 #' pt1 = st_point(c(0,1))
 #' pt2 = st_point(c(1,1))
 #' (sfc = st_sfc(pt1, pt2))
-#' d = data.frame(a = 1:2)
-#" d$geom = sfc
+#' d = st_sf(data.frame(a=1:2, geom=sfc))
 #' @export
 st_sfc = function(..., crs = NA_crs_, precision = 0.0) {
 	lst = list(...)
@@ -78,11 +77,11 @@ st_sfc = function(..., crs = NA_crs_, precision = 0.0) {
 }
 
 #' @export
-"[.sfc" = function(x, i, j, ...) {
+"[.sfc" = function(x, i, j, ..., op = st_intersects) {
 	recompute_bb = !missing(i)
     old = x
-	if (!missing(i) && (inherits(i, "sf") || inherits(i, "sfc")))
-		i = lengths(st_geos_binop("intersects", x, i, ...)) != 0
+	if (!missing(i) && (inherits(i, "sf") || inherits(i, "sfc") || inherits(i, "sfg")))
+		i = lengths(op(x, i, ...)) != 0
     x = NextMethod("[")
 	a = attributes(old)
 	if (!is.null(names(x)))
@@ -127,7 +126,7 @@ print.sfc = function(x, ..., n = 5L, what = "Geometry set for", append = "") {
 	if (! is.null(attr(x, "n_empty"))) {
 		ne = attr(x, "n_empty")
 		if (ne > 0)
-			cat(paste0(" (of which ", ne, ifelse(ne > 1, " are ", " is "), "empty)"))
+			cat(paste0(" (with ", ne, ifelse(ne > 1, " geometries ", " geometry "), "empty)"))
 	}
 	cat("\n")
 	if (length(x)) {
@@ -307,7 +306,7 @@ st_precision.sfc <- function(x) {
 #' 
 #' @name st_precision
 #' @param precision numeric; see \link{st_as_binary} for how to do this.
-#' @details setting a precision has no direct effect on coordinates of geometries, but merely set an attribute tag to an \code{sfc} object. The effect takes place in \link{st_as_binary} or, more precise, in the C++ function \code{CPL_write_wkb}, where simple feature geometries are being serialized to well-known-binary (WKB). This happens always when routines are called in GEOS library (geometrical operations or predicates), for writing geometries using \link{st_write}, \link{write_sf} or \link{st_write_db}, and (if present) for liblwgeom (\link{st_make_valid}). Routines in these libraries receive rounded coordinates, and possibly return results based on them. \link{st_as_binary} contains an example of a roundtrip of \code{sfc} geometries through WKB, in order to see the rounding happening to R data.
+#' @details setting a precision has no direct effect on coordinates of geometries, but merely set an attribute tag to an \code{sfc} object. The effect takes place in \link{st_as_binary} or, more precise, in the C++ function \code{CPL_write_wkb}, where simple feature geometries are being serialized to well-known-binary (WKB). This happens always when routines are called in GEOS library (geometrical operations or predicates), for writing geometries using \link{st_write}, \link{write_sf} or \link{st_write_db}, and (if present) for liblwgeom (\link{st_make_valid}); also \link{aggregate} and \link{summarise} by default union geometries, which calls a GEOS library function. Routines in these libraries receive rounded coordinates, and possibly return results based on them. \link{st_as_binary} contains an example of a roundtrip of \code{sfc} geometries through WKB, in order to see the rounding happening to R data.
 #'
 #' The reason to support precision is that geometrical operations in GEOS or liblwgeom may work better at reduced precision. For writing data from R to external resources it is harder to think of a good reason to limiting precision.
 #' @examples 
@@ -346,14 +345,20 @@ st_set_precision.sf <- function(x, precision) {
 
 # if g may have NULL elements, replace it with (appropriate?) empty geometries
 fix_NULL_values = function(g) {
+
+	empty = switch(class(g)[1],
+		sfc_POINT = st_point(),
+		sfc_MULTIPOINT = st_multipoint(),
+		sfc_LINESTRING = st_linestring(),
+		sfc_MULTILINESTRING = st_multilinestring(),
+		sfc_POLYGON = st_polygon(),
+		sfc_MULTIPOLYGON = st_multipolygon(),
+		st_geometrycollection())
+
 	isNull = which(vapply(g, is.null, TRUE))
 	for (i in isNull)
-		g[[i]] = st_geometrycollection() # should improve here: try st_linestring() etc
-	attr(g, "n_empty") = length(isNull)
-	if (length(isNull))
-		structure(g, class = c("sfc_GEOMETRY", "sfc"))
-	else 
-		g
+		g[[i]] = empty
+	structure(g, n_empty = length(isNull))
 }
 
 #' retrieve coordinates in matrix form

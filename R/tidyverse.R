@@ -17,9 +17,7 @@ filter_.sf <- function(.data, ..., .dots) {
 }
 #' @name dplyr
 #' @export
-filter.sf <- function(.data, ...) {
-	st_as_sf(NextMethod())
-}
+filter.sf <- filter_.sf
 
 #' @name dplyr
 #' @export
@@ -33,9 +31,7 @@ arrange_.sf <- function(.data, ..., .dots) {
 }
 #' @name dplyr
 #' @export
-arrange.sf <- function(.data, ...) {
-	st_as_sf(NextMethod())
-}
+arrange.sf <- arrange_.sf
 
 #' @name dplyr
 #' @param .keep_all see corresponding function in dplyr
@@ -47,9 +43,7 @@ distinct_.sf <- function(.data, ..., .dots, .keep_all = FALSE) {
 }
 #' @name dplyr
 #' @export
-distinct.sf <- function(.data, ..., .dots, .keep_all = FALSE) {
-	st_as_sf(NextMethod())
-}
+distinct.sf <- distinct_.sf
 
 #' @name dplyr
 #' @param add see corresponding function in dplyr
@@ -63,10 +57,7 @@ group_by_.sf <- function(.data, ..., .dots, add = FALSE) {
 }
 #' @name dplyr
 #' @export
-group_by.sf <- function(.data, ..., .dots, add = FALSE) {
-	class(.data) <- setdiff(class(.data), "sf")
-	st_as_sf(NextMethod())
-}
+group_by.sf <- group_by_.sf
 
 #' @name dplyr
 #' @export
@@ -84,9 +75,7 @@ mutate_.sf <- function(.data, ..., .dots) {
 }
 #' @name dplyr
 #' @export
-mutate.sf <- function(.data, ..., .dots) {
-	st_as_sf(NextMethod())
-}
+mutate.sf <- mutate_.sf
 
 #' @name dplyr
 #' @export
@@ -102,13 +91,7 @@ transmute_.sf <- function(.data, ..., .dots) {
 }
 #' @name dplyr
 #' @export
-transmute.sf <- function(.data, ..., .dots) {
-	ret = NextMethod()
-	if (attr(ret, "sf_column") %in% names(ret))
-		st_as_sf(NextMethod())
-	else
-		ret
-}
+transmute.sf <- transmute_.sf
 
 #' @name dplyr
 #' @export
@@ -123,18 +106,15 @@ select_.sf <- function(.data, ..., .dots = NULL) {
   structure(ret, agr = st_agr(ret))
 }
 
-unclass_sf <- function(x) {
-	i <- match("sf", class(x))
-	class <- class(x)[-seq_len(i)]
-	structure(x, class = class)
-}
-
 #' @name dplyr
 #' @export
 #' @details \code{select} keeps the geometry regardless whether it is selected or not; to deselect it, first pipe through \code{as.data.frame} to let dplyr's own \code{select} drop it.
-select.sf <- if (requireNamespace("dplyr", quietly = TRUE) && utils::packageVersion("dplyr") > "0.5.0") {
-  function(.data, ...) {
-	.data <- unclass_sf(.data)
+select.sf <- function(.data, ...) {
+
+	if (!requireNamespace("dplyr", quietly = TRUE) || utils::packageVersion("dplyr") <= "0.5.0")
+		stop("requires dplyr > 0.5.0: install that first, then reinstall sf") # nocov
+
+	class(.data) <- setdiff(class(.data), "sf")
 	sf_column <- attr(.data, "sf_column")
 
 	if (!requireNamespace("rlang", quietly = TRUE))
@@ -142,12 +122,7 @@ select.sf <- if (requireNamespace("dplyr", quietly = TRUE) && utils::packageVers
 
 	ret <- dplyr::select(.data, ..., !! rlang::sym(sf_column))
 	st_as_sf(ret)
-  }
-} else {
-  function(.data, ...) {
-	stop("requires dplyr > 0.5.0: install that first, then reinstall sf")
-  }
-}
+} 
 
 
 #' @name dplyr
@@ -160,9 +135,7 @@ rename_.sf <- function(.data, ..., .dots) {
 
 #' @name dplyr
 #' @export
-rename.sf <- function(.data, ...) {
-	st_as_sf(NextMethod())
-}
+rename.sf <- rename_.sf
 
 #' @name dplyr
 #' @export
@@ -174,9 +147,7 @@ slice_.sf <- function(.data, ..., .dots) {
 
 #' @name dplyr
 #' @export
-slice.sf <- function(.data, ...) {
-	st_as_sf(NextMethod())
-}
+slice.sf <- slice_.sf
 
 #' @name dplyr
 #' @export
@@ -188,8 +159,8 @@ summarise.sf <- function(.data, ..., .dots, do_union = TRUE) {
 	ret = NextMethod()
 
 	if (utils::packageVersion("dplyr") <= "0.5.0") {
-		stopifnot(requireNamespace("lazyeval", quietly = TRUE))
-		do_union = is.null(.dots$do_union) || isTRUE(lazyeval::lazy_eval(.dots$do_union))
+		stopifnot(requireNamespace("lazyeval", quietly = TRUE)) # nocov
+		do_union = is.null(.dots$do_union) || isTRUE(lazyeval::lazy_eval(.dots$do_union)) # nocov
 	}
 
 	geom = if (inherits(.data, "grouped_df") || inherits(.data, "grouped_dt")) {
@@ -285,6 +256,27 @@ nest_.sf <- function(data, key_col, nest_cols) {
 	ret$data = lapply(ret$data, st_as_sf)
 	ret
 }
+
+#' @name dplyr
+#' @param col see \link[tidyr]{separate}
+#' @param into see \link[tidyr]{separate}
+#' @param remove see \link[tidyr]{separate}
+#' @param extra see \link[tidyr]{separate}
+#' @export
+separate_.sf = function(data, col, into, sep = "[^[:alnum:]]+", remove = TRUE,
+	convert = FALSE, extra = "warn", fill = "warn", ...) {
+	class(data) <- setdiff(class(data), "sf")
+	st_as_sf(NextMethod())
+}
+
+#' @name dplyr
+#' @param from see \link[tidyr]{unite}
+#' @export
+unite_.sf = function(data, col, from, sep = "_", remove = TRUE) {
+	class(data) <- setdiff(class(data), "sf")
+	st_as_sf(NextMethod())
+}
+
 
 ## tibble methods:
 

@@ -19,7 +19,7 @@ st_read_db(conn = NULL, table = NULL, query = NULL, geom_column = NULL,
 }
 \arguments{
 \item{dsn}{data source name (interpretation varies by driver - for some drivers, dsn is a file name, but may also be a folder,
-or contain the name and access credentials of a database)}
+or contain the name and access credentials of a database); in case of GeoJSON, \code{dsn} may be the character string holding the geojson data}
 
 \item{layer}{layer name (varies by driver, may be a file name without extension); in case \code{layer} is missing,
 \code{st_read} will read the first layer of \code{dsn}, give a warning and (unless \code{quiet = TRUE}) print a
@@ -77,6 +77,9 @@ In case of problems reading shapefiles from USB drives on OSX, please see \url{h
 
 \code{read_sf} and \code{write_sf} are aliases for \code{st_read} and \code{st_write}, respectively, with some
 modified default arguments.
+\code{read_sf} and \code{write_sf} are quiet by default: they do not print information
+about the data source.
+\code{write_sf} delete layers by default: it overwrites existing files.
 
 if \code{table} is not given but \code{query} is, the spatial reference system (crs) of the table queried is only available in case it has been stored into each geometry record (e.g., by PostGIS, when using EWKB)
 
@@ -90,15 +93,21 @@ that reside in the same directory, only one of them having extension \code{.shp}
 }
 \examples{
 nc = st_read(system.file("shape/nc.shp", package="sf"))
-summary(nc)
+summary(nc) # note that AREA was computed using Euclidian area on lon/lat degrees
 
 \dontrun{
-library(sp)
-example(meuse, ask = FALSE, echo = FALSE)
-st_write(st_as_sf(meuse), "PG:dbname=postgis", "meuse",
-     layer_options = "OVERWRITE=true")
-st_meuse = st_read("PG:dbname=postgis", "meuse")
-summary(st_meuse)}
+  library(sp)
+  example(meuse, ask = FALSE, echo = FALSE)
+  st_write(st_as_sf(meuse), "PG:dbname=postgis", "meuse",
+       layer_options = "OVERWRITE=true")
+  st_meuse = st_read("PG:dbname=postgis", "meuse")
+  summary(st_meuse)
+}
+# read geojson from string:
+geojson_txt <- paste("{\\"type\\":\\"MultiPoint\\",\\"coordinates\\":",
+   "[[3.2,4],[3,4.6],[3.8,4.4],[3.5,3.8],[3.4,3.6],[3.9,4.5]]}")
+x = read_sf(geojson_txt)
+x
 \dontrun{
 library(RPostgreSQL)
 conn = dbConnect(PostgreSQL(), dbname = "postgis")
