@@ -1,4 +1,38 @@
+# version 0.5-1
+
+* add spatial indexes to most binary geometry operations; #394 and http://r-spatial.org/r/2017/06/22/spatial-index.html
+
+* drastically reduce memory footprint of `st_intersection` and similar; #394
+
+* support RSQLite 2.0 by providing an `st_as_sfc` method for list columns of class `blob`
+
+* drop dependency on dbplyr
+
 # version 0.5-0
+
+* better handle empty/NULL geometries in shapefiles; #351
+
+* add `unite_.sf` method
+
+* deprecate `FUN` argument to `st_join`; #376
+
+* improve graticule tic label placement in `ggplot2`; #375 and https://github.com/tidyverse/ggplot2/issues/2119
+
+* improve `configure` logic to deal with libraries installed in custom locations; #335
+
+* fix bug where `geom_sf` wouldn't deal with Z and/or M geoms; #373
+
+* return more conveniently typed empty geoms; #372 
+
+* fix subsetting with `[` of `sf` using `drop = TRUE`, #370
+
+* in addition to `m`, allow `rad` units to `st_segmentize` 
+
+* add example how to `st_read` GeoJSON from a string; #185
+
+* add `separate_.sf` method
+
+* add `st_split` to split geometries (only available if compiled against liblwgeom), #359
 
 * fix bug reading and writing dates (months 1 off): #358
 

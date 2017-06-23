@@ -1,4 +1,4 @@
-#define GEOS_USE_ONLY_R_API // avoid using non-thread-safe GEOSxx functions without _r extension.
+#define GEOS_USE_ONLY_R_API // prevents using non-thread-safe GEOSxx functions without _r extension.
 #include <geos_c.h>
 
 #if GEOS_VERSION_MAJOR == 3 && GEOS_VERSION_MINOR >= 5
@@ -12,6 +12,16 @@
 #include <Rcpp.h>
 
 #include "wkb.h"
+
+typedef char (* log_fn)(GEOSContextHandle_t, const GEOSGeometry *, const GEOSGeometry *);
+typedef char (* log_prfn)(GEOSContextHandle_t, const GEOSPreparedGeometry *, 
+	const GEOSGeometry *);
+typedef GEOSGeom (* geom_fn)(GEOSContextHandle_t, const GEOSGeom, const GEOSGeom);
+
+void cb(void *item, void *userdata) { // callback function for tree selection
+	std::vector<size_t> *ret = (std::vector<size_t> *) userdata;
+	ret->push_back(*((size_t *) item));
+}
 
 static void __errorHandler(const char *fmt, ...) { // #nocov start
 
@@ -118,15 +128,11 @@ Rcpp::NumericVector get_dim(double dim0, double dim1) {
 }
 
 Rcpp::IntegerVector get_which(Rcpp::LogicalVector row) {
-	int j = 0;
+	std::vector<int32_t> v;
 	for (int i = 0; i < row.length(); i++)
 		if (row(i))
-			j++;
-	Rcpp::IntegerVector ret(j);
-	for (int i = 0, j = 0; i < row.length(); i++)
-		if (row(i))
-			ret(j++) = i + 1; // R is 1-based
-	return ret;
+			v.push_back(i + 1);
+	return Rcpp::wrap(v);
 }
 
 bool chk_(char value) {
@@ -135,15 +141,11 @@ bool chk_(char value) {
 	return value; // 1: true, 0: false
 }
 
-
-typedef char (* log_fn)(GEOSContextHandle_t, const GEOSGeometry *, const GEOSGeometry *);
-typedef char (* log_prfn)(GEOSContextHandle_t, const GEOSPreparedGeometry *, const GEOSGeometry *);
-
 log_fn which_geom_fn(const std::string op) {
 	if (op == "intersects")
 		return GEOSIntersects_r;
-	else if (op == "disjoint")
-		return GEOSDisjoint_r;
+//	else if (op == "disjoint")
+//		return GEOSDisjoint_r;
 	else if (op == "touches")
 		return GEOSTouches_r;
 	else if (op == "crosses")
@@ -166,8 +168,8 @@ log_fn which_geom_fn(const std::string op) {
 log_prfn which_prep_geom_fn(const std::string op) {
 	if (op == "intersects")
 		return GEOSPreparedIntersects_r;
-	else if (op == "disjoint")
-		return GEOSPreparedDisjoint_r;
+//	else if (op == "disjoint")
+//		return GEOSPreparedDisjoint_r;
 	else if (op == "touches")
 		return GEOSPreparedTouches_r;
 	else if (op == "crosses")
@@ -187,6 +189,15 @@ log_prfn which_prep_geom_fn(const std::string op) {
 	else if (op == "covered_by")
 		return GEOSPreparedCoveredBy_r;
 	throw std::range_error("wrong value for op"); // unlikely to happen unless user wants to #nocov
+}
+
+Rcpp::LogicalVector get_dense(std::vector<size_t> items, int length) {
+	Rcpp::LogicalVector rowi(length);
+	for (int j = 0; j < length; j++)
+		rowi(j) = false;
+	for (size_t j = 0; j < items.size(); j++)
+		rowi(items[j] - 1) = true; // items is 1-based
+	return rowi;
 }
 
 // [[Rcpp::export]]
@@ -234,6 +245,14 @@ Rcpp::List CPL_geos_binop(Rcpp::List sfc0, Rcpp::List sfc1, std::string op, doub
 			densemat = Rcpp::LogicalMatrix(sfc0.length(), sfc1.length());
 		Rcpp::List sparsemat(sfc0.length());
 
+		std::vector<size_t> items(gmv1.size());
+		GEOSSTRtree *tree1 = GEOSSTRtree_create_r(hGEOSCtxt, 10);
+		for (size_t i = 0; i < gmv1.size(); i++) {
+			items[i] = i;
+			if (! GEOSisEmpty_r(hGEOSCtxt, gmv1[i]))
+				GEOSSTRtree_insert_r(hGEOSCtxt, tree1, gmv1[i], &(items[i]));
+		}
+
 		if (op == "equals_exact") { // has it's own signature, needing `par':
 			for (int i = 0; i < sfc0.length(); i++) { // row
 				Rcpp::LogicalVector rowi(sfc1.length()); 
@@ -246,46 +265,66 @@ Rcpp::List CPL_geos_binop(Rcpp::List sfc0, Rcpp::List sfc1, std::string op, doub
 				R_CheckUserInterrupt();
 			}
 		} else if (op == "relate_pattern") { // needing pattern
+			if (GEOSRelatePatternMatch_r(hGEOSCtxt, pattern.c_str(), "FF*FF****"))
+				throw std::range_error("use st_disjoint for this pattern");
+			// all remaining can use tree:
 			for (int i = 0; i < sfc0.length(); i++) { // row
-				Rcpp::LogicalVector rowi(sfc1.length()); 
-				for (int j = 0; j < sfc1.length(); j++) 
-					rowi(j) = chk_(GEOSRelatePattern_r(hGEOSCtxt, gmv0[i], gmv1[j], 
-						pattern.c_str()));
-				if (! sparse)
-					densemat(i,_) = rowi; // #nocov
-				else
-					sparsemat[i] = get_which(rowi);
+				// pre-select sfc1's using tree:
+				std::vector<size_t> tree_sel, sel;
+				if (! GEOSisEmpty_r(hGEOSCtxt, gmv0[i]))
+					GEOSSTRtree_query_r(hGEOSCtxt, tree1, gmv0[i], cb, &tree_sel);
+				for (int j = 0; j < tree_sel.size(); j++)
+					if (chk_(GEOSRelatePattern_r(hGEOSCtxt, gmv0[i], gmv1[tree_sel[j]], pattern.c_str())))
+						sel.push_back(tree_sel[j] + 1); // 1-based
+				if (sparse) {
+					std::sort(sel.begin(), sel.end());
+					sparsemat[i] = Rcpp::IntegerVector(sel.begin(), sel.end());
+				} else // dense
+					densemat(i,_) = get_dense(sel, sfc1.length());
 				R_CheckUserInterrupt();
 			}
-		} else {
+		} else if (op == "disjoint")
+			throw std::range_error("disjoint should have been handled in R"); // #nocov
+		else { // anything else:
 			if (prepared) {
 				log_prfn logical_fn = which_prep_geom_fn(op);
 				for (int i = 0; i < sfc0.length(); i++) { // row
-					Rcpp::LogicalVector rowi(sfc1.length()); 
 					const GEOSPreparedGeometry *pr = GEOSPrepare_r(hGEOSCtxt, gmv0[i]);
-					for (int j = 0; j < sfc1.length(); j++)
-						rowi(j) = chk_(logical_fn(hGEOSCtxt, pr, gmv1[j]));
+					// pre-select sfc1's using tree:
+					std::vector<size_t> tree_sel, sel;
+					if (! GEOSisEmpty_r(hGEOSCtxt, gmv0[i]))
+						GEOSSTRtree_query_r(hGEOSCtxt, tree1, gmv0[i], cb, &tree_sel);
+					for (int j = 0; j < tree_sel.size(); j++)
+						if (chk_(logical_fn(hGEOSCtxt, pr, gmv1[tree_sel[j]])))
+							sel.push_back(tree_sel[j] + 1); // 1-based
+					if (sparse) {
+						std::sort(sel.begin(), sel.end());
+						sparsemat[i] = Rcpp::IntegerVector(sel.begin(), sel.end());
+					} else // dense
+						densemat(i,_) = get_dense(sel, sfc1.length());
 					GEOSPreparedGeom_destroy_r(hGEOSCtxt, pr);
-					if (! sparse)
-						densemat(i,_) = rowi;
-					else
-						sparsemat[i] = get_which(rowi);
 					R_CheckUserInterrupt();
 				}
 			} else {
 				log_fn logical_fn = which_geom_fn(op);
 				for (int i = 0; i < sfc0.length(); i++) { // row
-					Rcpp::LogicalVector rowi(sfc1.length()); 
-					for (int j = 0; j < sfc1.length(); j++)
-						rowi(j) = chk_(logical_fn(hGEOSCtxt, gmv0[i], gmv1[j]));
-					if (! sparse)
-						densemat(i,_) = rowi;
-					else
-						sparsemat[i] = get_which(rowi);
+					// pre-select sfc1's using tree:
+					std::vector<size_t> tree_sel, sel;
+					if (! GEOSisEmpty_r(hGEOSCtxt, gmv0[i]))
+						GEOSSTRtree_query_r(hGEOSCtxt, tree1, gmv0[i], cb, &tree_sel);
+					for (int j = 0; j < tree_sel.size(); j++)
+						if (chk_(logical_fn(hGEOSCtxt, gmv0[i], gmv1[tree_sel[j]])))
+							sel.push_back(tree_sel[j] + 1); // 1-based
+					if (sparse) {
+						std::sort(sel.begin(), sel.end());
+						sparsemat[i] = Rcpp::IntegerVector(sel.begin(), sel.end());
+					} else // dense
+						densemat(i,_) = get_dense(sel, sfc1.length());
 					R_CheckUserInterrupt();
 				}
 			}
 		}
+		GEOSSTRtree_destroy_r(hGEOSCtxt, tree1);
 		if (sparse)
 			ret_list = sparsemat;
 		else
@@ -493,78 +532,73 @@ Rcpp::List CPL_geos_voronoi(Rcpp::List sfc, Rcpp::List env, double dTolerance = 
 	return ret;
 }
 
-GEOSGeometry *chkNULLcnt(GEOSContextHandle_t hGEOSCtxt, GEOSGeometry *value, size_t *n) {
-	if (value == NULL)
-		throw std::range_error("GEOS exception"); // #nocov
-	if (!chk_(GEOSisEmpty_r(hGEOSCtxt, value)))
-		*n = *n + 1;
-	R_CheckUserInterrupt();
-	return value;
-}
-
 // [[Rcpp::export]]
 Rcpp::List CPL_geos_op2(std::string op, Rcpp::List sfcx, Rcpp::List sfcy) {
+
+	using namespace Rcpp; // so that later on the (_,1) works
 
 	int dim = 2;
 	GEOSContextHandle_t hGEOSCtxt = CPL_geos_init();
 	std::vector<GEOSGeom> x = geometries_from_sfc(hGEOSCtxt, sfcx, &dim);
 	std::vector<GEOSGeom> y = geometries_from_sfc(hGEOSCtxt, sfcy, &dim);
-	std::vector<GEOSGeom> out(x.size() * y.size());
+	std::vector<GEOSGeom> out;
+	std::vector<double> index_x, index_y;
+	std::vector<size_t> items(x.size());
 
-	size_t n = 0;
-	if (op == "intersection") {
-		for (size_t i = 0; i < y.size(); i++) {
-			for (size_t j = 0; j < x.size(); j++)
-				out[i * x.size() + j] = chkNULLcnt(hGEOSCtxt, GEOSIntersection_r(hGEOSCtxt, x[j], y[i]), &n);
-			R_CheckUserInterrupt();
+	geom_fn geom_function;
+
+	if (op == "intersection")
+		geom_function = (geom_fn) GEOSIntersection_r;
+	else if (op == "union")
+		geom_function = (geom_fn) GEOSUnion_r;
+	else if (op == "difference")
+		geom_function = (geom_fn) GEOSDifference_r;
+	else if (op == "sym_difference")
+		geom_function = (geom_fn) GEOSSymDifference_r;
+	else
+		throw std::invalid_argument("invalid operation"); // #nocov
+
+	GEOSSTRtree *tree = GEOSSTRtree_create_r(hGEOSCtxt, 10);
+	for (size_t i = 0; i < x.size(); i++) {
+		items[i] = i;
+		if (! GEOSisEmpty_r(hGEOSCtxt, x[i]))
+			GEOSSTRtree_insert_r(hGEOSCtxt, tree, x[i], &(items[i]));
+	}
+
+	for (size_t i = 0; i < y.size(); i++) {
+		// select x's using tree:
+		std::vector<size_t> sel;
+		sel.reserve(x.size());
+		if (! GEOSisEmpty_r(hGEOSCtxt, y[i]))
+			GEOSSTRtree_query_r(hGEOSCtxt, tree, y[i], cb, &sel);
+		std::sort(sel.begin(), sel.end());
+		for (size_t item = 0; item < sel.size(); item++) {
+			size_t j = sel[item];
+			GEOSGeom geom = geom_function(hGEOSCtxt, x[j], y[i]);
+			if (geom == NULL)
+				throw std::range_error("GEOS exception"); // #nocov
+			if (! chk_(GEOSisEmpty_r(hGEOSCtxt, geom))) {
+				index_x.push_back(j + 1);
+				index_y.push_back(i + 1);
+				out.push_back(geom); // keep
+			} else
+				GEOSGeom_destroy_r(hGEOSCtxt, geom); // discard
 		}
-	} else if (op == "union") {
-		for (size_t i = 0; i < y.size(); i++) {
-			for (size_t j = 0; j < x.size(); j++)
-				out[i * x.size() + j] = chkNULLcnt(hGEOSCtxt, GEOSUnion_r(hGEOSCtxt, x[j], y[i]), &n);
-			R_CheckUserInterrupt();
-		}
-	} else if (op == "difference") {
-		for (size_t i = 0; i < y.size(); i++) {
-			for (size_t j = 0; j < x.size(); j++)
-				out[i * x.size() + j] = chkNULLcnt(hGEOSCtxt, GEOSDifference_r(hGEOSCtxt, x[j], y[i]), &n);
-			R_CheckUserInterrupt();
-		}
-	} else if (op == "sym_difference") {
-		for (size_t i = 0; i < y.size(); i++) {
-			for (size_t j = 0; j < x.size(); j++)
-				out[i * x.size() + j] = chkNULLcnt(hGEOSCtxt, GEOSSymDifference_r(hGEOSCtxt, x[j], y[i]), &n);
-			R_CheckUserInterrupt();
-		}
-	} else 
-		throw std::invalid_argument("invalid operation"); // would leak g, g0 and out // #nocov
+		R_CheckUserInterrupt();
+	}
+	GEOSSTRtree_destroy_r(hGEOSCtxt, tree);
+
 	// clean up x and y:
 	for (size_t i = 0; i < x.size(); i++)
 		GEOSGeom_destroy_r(hGEOSCtxt, x[i]);
 	for (size_t i = 0; i < y.size(); i++)
 		GEOSGeom_destroy_r(hGEOSCtxt, y[i]);
-	// trim results back to non-empty geometries:
-	std::vector<GEOSGeom> out2(n);
-	Rcpp::NumericMatrix m(n, 2); // and a set of 1-based indices to x and y
-	size_t k = 0, l = 0;
-	for (size_t i = 0; i < y.size(); i++) {
-		for (size_t j = 0; j < x.size(); j++) {
-			l = i * x.size() + j;
-			if (!chk_(GEOSisEmpty_r(hGEOSCtxt, out[l]))) { // keep:
-				out2[k] = out[l];
-				m(k, 0) = j + 1;
-				m(k, 1) = i + 1;
-				k++;
-				if (k > n)
-					throw std::range_error("invalid k"); // #nocov
-			} else // discard:
-				GEOSGeom_destroy_r(hGEOSCtxt, out[l]);
-		}
-	}
-	if (k != n)
-		throw std::range_error("invalid k, check 2"); // #nocov
 
-	Rcpp::List ret(sfc_from_geometry(hGEOSCtxt, out2, dim)); // destroys out2
+	Rcpp::NumericMatrix m(index_x.size(), 2); // and a set of 1-based indices to x and y
+	m(_, 0) = Rcpp::NumericVector(index_x.begin(), index_x.end());
+	m(_, 1) = Rcpp::NumericVector(index_y.begin(), index_y.end());
+
+	Rcpp::List ret(sfc_from_geometry(hGEOSCtxt, out, dim)); // destroys out2
 	CPL_geos_finish(hGEOSCtxt);
 	ret.attr("crs") = sfcx.attr("crs");
 	ret.attr("idx") = m;
