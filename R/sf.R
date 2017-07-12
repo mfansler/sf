@@ -248,7 +248,7 @@ st_sf = function(..., agr = NA_agr_, row.names,
 
 
 	for (i in seq_along(all_sfc_names))
-		df[[ all_sfc_names[i] ]] = x[[ all_sfc_columns[i] ]]
+		df[[ all_sfc_names[i] ]] = fix_NULL_values(x[[ all_sfc_columns[i] ]])
 
 	if (! missing(precision))
 		attr(df[[sfc_name]], "precision") = precision
@@ -431,4 +431,11 @@ st_as_sfc.list = function(x, ..., crs = NA_crs_) {
 #' @export
 st_as_sfc.blob = function(x, ...) {
 	st_as_sfc.list(x, ...)
+}
+
+#' @name st_as_sfc
+#' @export
+st_as_sfc.bbox = function(x, ...) {
+	box = st_polygon(list(matrix(x[c(1, 2, 3, 2, 3, 4, 1, 4, 1, 2)], ncol = 2, byrow = TRUE)))
+	st_sfc(box, crs = st_crs(x))
 }

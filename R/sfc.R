@@ -82,7 +82,10 @@ st_sfc = function(..., crs = NA_crs_, precision = 0.0) {
     old = x
 	if (!missing(i) && (inherits(i, "sf") || inherits(i, "sfc") || inherits(i, "sfg")))
 		i = lengths(op(x, i, ...)) != 0
-    x = NextMethod("[")
+	cls = class(x)[1]
+	x = NextMethod()
+	if (any(vapply(x, is.null, TRUE)))
+		x = st_sfc(fix_NULL_values(x, cls))
 	a = attributes(old)
 	if (!is.null(names(x)))
 		a$names = names(x)[i]
@@ -91,7 +94,15 @@ st_sfc = function(..., crs = NA_crs_, precision = 0.0) {
     attributes(x) = a
 	if (recompute_bb)
 		attr(x, "bbox") = st_bbox(x)
-    structure(x, class = class(old))
+    structure(x, class = class(old), n_empty = sum(is.na(st_dimension(x))))
+}
+
+
+#' @export
+"[<-.sfc" = function (x, i, j, value) {
+	if (is.null(value) || inherits(value, "sfg"))
+		value = list(value)
+	st_sfc(fix_NULL_values(NextMethod()))
 }
 
 #' @export
@@ -150,7 +161,10 @@ print.sfc = function(x, ..., n = 5L, what = "Geometry set for", append = "") {
 	if (length(x) > n && n > 0)
 		cat(paste0("First ", n, " geometries:\n"))
 	for (i in seq_len(min(n, length(x))))
-		print(x[[i]], digits = 50)
+		if (inherits(x[[i]], "sfg"))
+			print(x[[i]], digits = 50)
+		else
+			print(x[[i]])
 	invisible(x)
 }
 
@@ -344,9 +358,9 @@ st_set_precision.sf <- function(x, precision) {
 }
 
 # if g may have NULL elements, replace it with (appropriate?) empty geometries
-fix_NULL_values = function(g) {
+fix_NULL_values = function(g, cls = class(g)[1]) {
 
-	empty = switch(class(g)[1],
+	empty = switch(cls,
 		sfc_POINT = st_point(),
 		sfc_MULTIPOINT = st_multipoint(),
 		sfc_LINESTRING = st_linestring(),
@@ -358,7 +372,8 @@ fix_NULL_values = function(g) {
 	isNull = which(vapply(g, is.null, TRUE))
 	for (i in isNull)
 		g[[i]] = empty
-	structure(g, n_empty = length(isNull))
+	ne = attr(g, "n_empty")
+	structure(g, n_empty = min(length(g), length(isNull) + ifelse(is.null(ne), 0, ne)))
 }
 
 #' retrieve coordinates in matrix form

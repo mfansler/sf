@@ -98,10 +98,10 @@ st_graticule = function(x = c(-180,-90,180,90), crs = st_crs(x),
 	if (!is.na(crs))
 		box_ll <- st_transform(box, datum, partial = TRUE)
 	
-	# as in https://github.com/edzer/sfr/issues/198 : 
+	# as in https://github.com/r-spatial/sf/issues/198 : 
 	# recreate, and ignore bbox_ll:
 	if (any(!is.finite(st_bbox(box_ll)))) { # nocov start -- checked manually
-		x = st_transform(st_graticule(datum = datum), crs)
+		x = st_transform(st_graticule(datum = datum, ndiscr = ndiscr), crs)
 		x$degree_label = NA_character_
 		return(x)
 	} # nocov end

@@ -177,7 +177,7 @@ st_distance = function(x, y, dist_fun) {
 #' st_relate(grd, pattern = "****0****") # only corners touch
 #' st_rook = function(a, b = a) st_relate(a, b, pattern = "F***1****")
 #' st_rook(grd)
-#' # queen neighbours, see https://github.com/edzer/sfr/issues/234#issuecomment-300511129
+#' # queen neighbours, see https://github.com/r-spatial/sf/issues/234#issuecomment-300511129
 #' st_queen <- function(a, b = a) st_relate(a, b, pattern = "F***T****")
 st_relate	= function(x, y, pattern = NA_character_, sparse = !is.na(pattern)) {
 	if (!is.na(pattern)) {
@@ -281,7 +281,8 @@ st_covered_by	= function(x, y, sparse = TRUE, prepared = TRUE)
 
 #' @name geos_binary_pred
 #' @export
-#' @param par numeric; parameter used for "equals_exact" (margin) and "is_within_distance"
+#' @param par numeric; parameter used for "equals_exact" (margin); 
+#' @details \code{st_equals_exact} returns true for two geometries of the same type and their vertices corresponding by index are equal up to a specified tolerance. 
 st_equals_exact = function(x, y, par, sparse = TRUE, prepared = FALSE) {
 	if (prepared)
 		stop("prepared geometries not supported for st_equals")
@@ -298,7 +299,9 @@ st_equals_exact = function(x, y, par, sparse = TRUE, prepared = FALSE) {
 #' Geometric unary operations on (pairs of) simple feature geometry sets
 #' @name geos_unary
 #' @param x object of class \code{sfg}, \code{sfg} or \code{sf}
-#' @param dist numeric; buffer distance for all, or for each of the elements in \code{x}
+#' @param dist numeric; buffer distance for all, or for each of the elements in \code{x}; in case
+#' \code{dist} is a \code{units} object, it should be convertible to \code{arc_degree} if
+#' \code{x} has geographic coordinates, and to \code{st_crs(x)$units} otherwise
 #' @param nQuadSegs integer; number of segments per quadrant (fourth of a circle)
 #' @return \code{st_buffer}, \code{st_boundary}, \code{st_convex_hull}, \code{st_simplify},
 #' \code{st_triangulate}, \code{st_voronoi}, \code{st_polygonize}, \code{st_line_merge},
@@ -314,8 +317,17 @@ st_buffer.sfg = function(x, dist, nQuadSegs = 30)
 
 #' @export
 st_buffer.sfc = function(x, dist, nQuadSegs = 30) {
-	if (isTRUE(st_is_longlat(x)))
+	if (isTRUE(st_is_longlat(x))) {
 		warning("st_buffer does not correctly buffer longitude/latitude data, dist needs to be in decimal degrees.")
+		if (inherits(dist, "units"))
+			dist = units::set_units(dist, "arc_degrees")
+	} else if (inherits(dist, "units")) {
+		if (is.na(st_crs(x)))
+			stop("x does not have a crs set: can't convert units")
+		if (is.null(st_crs(x)$units))
+			stop("x has a crs without units: can't convert units")
+		dist = units::set_units(dist, st_crs(x)$units)
+	}
 	dist = rep(dist, length.out = length(x))
 	st_sfc(CPL_geos_op("buffer", x, dist, nQuadSegs))
 }
@@ -535,6 +547,32 @@ st_centroid.sf = function(x) {
 
 #' @name geos_unary
 #' @export
+#' @details \code{st_point_on_surface} returns a point guaranteed to be on the (multi)surface.
+#' @examples
+#' plot(nc, axes = TRUE)
+#' plot(st_point_on_surface(nc), add = TRUE, pch = 3)
+st_point_on_surface = function(x)
+	UseMethod("st_point_on_surface")
+
+#' @export
+st_point_on_surface.sfg = function(x)
+	get_first_sfg(st_point_on_surface(st_sfc(x)))
+
+#' @export
+st_point_on_surface.sfc = function(x) { 
+	if (isTRUE(st_is_longlat(x)))
+		warning("st_point_on_surface may not give correct results for longitude/latitude data")
+	st_sfc(CPL_geos_op("point_on_surface", x, numeric(0)))
+}
+
+#' @export
+st_point_on_surface.sf = function(x) {
+	st_geometry(x) <- st_point_on_surface(st_geometry(x))
+	x
+}
+
+#' @name geos_unary
+#' @export
 #' @param dfMaxLength maximum length of a line segment. If \code{x} has geographical coordinates (long/lat), \code{dfMaxLength} is either a numeric expressed in meter, or an object of class \code{units} with length units or unit \code{rad}, and segmentation takes place along the great circle, using \link[geosphere]{gcIntermediate}.
 #' @param ... ignored
 #' @examples
@@ -658,7 +696,7 @@ get_first_sfg = function(x) {
 #' @param y object of class \code{sf}, \code{sfc} or \code{sfg}
 #' @export
 #' @return an object of the same class as that of the first argument (\code{x}) with the non-empty geometries resulting from applying the operation to all geometry pairs in \code{x} and \code{y}. In case \code{x} is of class \code{sf}, the matching attributes of the original object(s) are added. The \code{sfc} geometry list-column returned carries an attribute \code{idx}, which is an \code{n x 2} matrix with every row the index of the corresponding entries of \code{x} and \code{y}, respectively. 
-#' @details a spatial index is built on argument \code{x}; see http://r-spatial.org/r/2017/06/22/spatial-index.html
+#' @details a spatial index is built on argument \code{x}; see http://r-spatial.org/r/2017/06/22/spatial-index.html ; the referenece for the STR tree algorithm is: Leutenegger, Scott T., Mario A. Lopez, and Jeffrey Edgington. "STR: A simple and efficient algorithm for R-tree packing." Data Engineering, 1997. Proceedings. 13th international conference on. IEEE, 1997; for the pdf, search google scholar. 
 #' @seealso \link{st_union}
 #' @export
 st_intersection = function(x, y) UseMethod("st_intersection")

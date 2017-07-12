@@ -20,6 +20,8 @@
 \alias{geos_unary}
 \alias{st_centroid}
 \alias{geos_unary}
+\alias{st_point_on_surface}
+\alias{geos_unary}
 \alias{st_segmentize}
 \title{Geometric unary operations on (pairs of) simple feature geometry sets}
 \usage{
@@ -41,12 +43,16 @@ st_line_merge(x)
 
 st_centroid(x)
 
+st_point_on_surface(x)
+
 st_segmentize(x, dfMaxLength, ...)
 }
 \arguments{
 \item{x}{object of class \code{sfg}, \code{sfg} or \code{sf}}
 
-\item{dist}{numeric; buffer distance for all, or for each of the elements in \code{x}}
+\item{dist}{numeric; buffer distance for all, or for each of the elements in \code{x}; in case
+\code{dist} is a \code{units} object, it should be convertible to \code{arc_degree} if
+\code{x} has geographic coordinates, and to \code{st_crs(x)$units} otherwise}
 
 \item{nQuadSegs}{integer; number of segments per quadrant (fourth of a circle)}
 
@@ -79,6 +85,8 @@ Geometric unary operations on (pairs of) simple feature geometry sets
 in case of \code{st_polygonize}, \code{x} must be an object of class \code{LINESTRING} or \code{MULTILINESTRING}, or an \code{sfc} geometry list-column object containing these
 
 in case of \code{st_line_merge}, \code{x} must be an object of class \code{MULTILINESTRING}, or an \code{sfc} geometry list-column object containing these
+
+\code{st_point_on_surface} returns a point guaranteed to be on the (multi)surface.
 }
 \examples{
 nc = st_read(system.file("shape/nc.shp", package="sf"))
@@ -101,6 +109,8 @@ mls = st_multilinestring(list(rbind(c(0,0), c(1,1)), rbind(c(2,0), c(1,1))))
 st_line_merge(st_sfc(mls))
 plot(nc, axes = TRUE)
 plot(st_centroid(nc), add = TRUE, pch = 3)
+plot(nc, axes = TRUE)
+plot(st_point_on_surface(nc), add = TRUE, pch = 3)
 sf = st_sf(a=1, geom=st_sfc(st_linestring(rbind(c(0,0),c(1,1)))), crs = 4326)
 seg = st_segmentize(sf, units::set_units(100, km))
 seg = st_segmentize(sf, units::set_units(0.01, rad))

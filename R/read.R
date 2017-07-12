@@ -37,7 +37,7 @@ set_utf8 = function(x) {
 #' may lead to succesful conversion. The typical conversion from POLYGON (3) to MULTIPOLYGON (6) should work; the other
 #' way around (type=3), secondary rings from MULTIPOLYGONS may be dropped without warnings. \code{promote_to_multi} is handled on a per-geometry column basis; \code{type} may be specfied for each geometry columns.
 #'
-#' In case of problems reading shapefiles from USB drives on OSX, please see \url{https://github.com/edzer/sfr/issues/252}.
+#' In case of problems reading shapefiles from USB drives on OSX, please see \url{https://github.com/r-spatial/sf/issues/252}.
 #' @return object of class \link{sf} when a layer was succesfully read; in case argument \code{layer} is missing and
 #' data source \code{dsn} does not contain a single layer, an object of class \code{sf_layers} is returned with the
 #' layer names, each with their geometry type(s). Note that the number of layers may also be zero.
@@ -112,8 +112,12 @@ st_read = function(dsn, layer, ..., options = NULL, quiet = FALSE, geometry_colu
 #'    "[[3.2,4],[3,4.6],[3.8,4.4],[3.5,3.8],[3.4,3.6],[3.9,4.5]]}")
 #' x = read_sf(geojson_txt)
 #' x
-read_sf <- function(..., quiet = TRUE, stringsAsFactors = FALSE)
-	st_read(..., quiet = quiet, stringsAsFactors = stringsAsFactors)
+read_sf <- function(..., quiet = TRUE, stringsAsFactors = FALSE) {
+	if (! requireNamespace("tibble", quietly = TRUE))
+		stop("package tibble not available: install first?")
+	st_as_sf(tibble::as_tibble(as.data.frame(
+		st_read(..., quiet = quiet, stringsAsFactors = stringsAsFactors))))
+}
 
 clean_columns = function(obj, factorsAsCharacter) {
 	permitted = c("character", "integer", "numeric", "Date", "POSIXct")
@@ -186,7 +190,8 @@ clean_columns = function(obj, factorsAsCharacter) {
 #' st_write(nc, "PG:dbname=postgis", "sids", layer_options = "OVERWRITE=true")}
 #' @name st_write
 #' @export
-st_write = function(obj, dsn, layer = basename(dsn), driver = guess_driver_can_write(dsn), ...,
+st_write = function(obj, dsn, layer = file_path_sans_ext(basename(dsn)),
+		driver = guess_driver_can_write(dsn), ...,
 		dataset_options = NULL, layer_options = NULL, quiet = FALSE, factorsAsCharacter = TRUE,
 		update = driver %in% db_drivers, delete_dsn = FALSE, delete_layer = FALSE) {
 

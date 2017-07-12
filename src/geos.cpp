@@ -273,7 +273,7 @@ Rcpp::List CPL_geos_binop(Rcpp::List sfc0, Rcpp::List sfc1, std::string op, doub
 				std::vector<size_t> tree_sel, sel;
 				if (! GEOSisEmpty_r(hGEOSCtxt, gmv0[i]))
 					GEOSSTRtree_query_r(hGEOSCtxt, tree1, gmv0[i], cb, &tree_sel);
-				for (int j = 0; j < tree_sel.size(); j++)
+				for (size_t j = 0; j < tree_sel.size(); j++)
 					if (chk_(GEOSRelatePattern_r(hGEOSCtxt, gmv0[i], gmv1[tree_sel[j]], pattern.c_str())))
 						sel.push_back(tree_sel[j] + 1); // 1-based
 				if (sparse) {
@@ -294,7 +294,7 @@ Rcpp::List CPL_geos_binop(Rcpp::List sfc0, Rcpp::List sfc1, std::string op, doub
 					std::vector<size_t> tree_sel, sel;
 					if (! GEOSisEmpty_r(hGEOSCtxt, gmv0[i]))
 						GEOSSTRtree_query_r(hGEOSCtxt, tree1, gmv0[i], cb, &tree_sel);
-					for (int j = 0; j < tree_sel.size(); j++)
+					for (size_t j = 0; j < tree_sel.size(); j++)
 						if (chk_(logical_fn(hGEOSCtxt, pr, gmv1[tree_sel[j]])))
 							sel.push_back(tree_sel[j] + 1); // 1-based
 					if (sparse) {
@@ -312,7 +312,7 @@ Rcpp::List CPL_geos_binop(Rcpp::List sfc0, Rcpp::List sfc1, std::string op, doub
 					std::vector<size_t> tree_sel, sel;
 					if (! GEOSisEmpty_r(hGEOSCtxt, gmv0[i]))
 						GEOSSTRtree_query_r(hGEOSCtxt, tree1, gmv0[i], cb, &tree_sel);
-					for (int j = 0; j < tree_sel.size(); j++)
+					for (size_t j = 0; j < tree_sel.size(); j++)
 						if (chk_(logical_fn(hGEOSCtxt, gmv0[i], gmv1[tree_sel[j]])))
 							sel.push_back(tree_sel[j] + 1); // 1-based
 					if (sparse) {
@@ -476,6 +476,10 @@ Rcpp::List CPL_geos_op(std::string op, Rcpp::List sfc,
 		for (size_t i = 0; i < g.size(); i++) {
 			out[i] = chkNULL(GEOSGetCentroid_r(hGEOSCtxt, g[i]));
 		}
+	} else if (op == "point_on_surface") {
+		for (size_t i = 0; i < g.size(); i++) {
+			out[i] = chkNULL(GEOSPointOnSurface_r(hGEOSCtxt, g[i]));
+		}
 	} else
 #if GEOS_VERSION_MAJOR >= 3 && GEOS_VERSION_MINOR >= 4
 	if (op == "triangulate") {
@@ -546,6 +550,7 @@ Rcpp::List CPL_geos_op2(std::string op, Rcpp::List sfcx, Rcpp::List sfcy) {
 	std::vector<size_t> items(x.size());
 
 	geom_fn geom_function;
+	bool tree_empty = true;
 
 	if (op == "intersection")
 		geom_function = (geom_fn) GEOSIntersection_r;
@@ -561,15 +566,17 @@ Rcpp::List CPL_geos_op2(std::string op, Rcpp::List sfcx, Rcpp::List sfcy) {
 	GEOSSTRtree *tree = GEOSSTRtree_create_r(hGEOSCtxt, 10);
 	for (size_t i = 0; i < x.size(); i++) {
 		items[i] = i;
-		if (! GEOSisEmpty_r(hGEOSCtxt, x[i]))
+		if (! GEOSisEmpty_r(hGEOSCtxt, x[i])) {
 			GEOSSTRtree_insert_r(hGEOSCtxt, tree, x[i], &(items[i]));
+			tree_empty = false;
+		}
 	}
 
 	for (size_t i = 0; i < y.size(); i++) {
 		// select x's using tree:
 		std::vector<size_t> sel;
 		sel.reserve(x.size());
-		if (! GEOSisEmpty_r(hGEOSCtxt, y[i]))
+		if (! GEOSisEmpty_r(hGEOSCtxt, y[i]) && ! tree_empty)
 			GEOSSTRtree_query_r(hGEOSCtxt, tree, y[i], cb, &sel);
 		std::sort(sel.begin(), sel.end());
 		for (size_t item = 0; item < sel.size(); item++) {
