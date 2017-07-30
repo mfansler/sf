@@ -5,12 +5,13 @@
 \alias{aggregate}
 \title{aggregate an \code{sf} object}
 \usage{
-\method{aggregate}{sf}(x, by, FUN, ..., do_union = TRUE, simplify = TRUE)
+\method{aggregate}{sf}(x, by, FUN, ..., do_union = TRUE, simplify = TRUE,
+  join = st_intersects)
 }
 \arguments{
 \item{x}{object of class \link{sf}}
 
-\item{by}{(see \link[stats]{aggregate}): a list of grouping elements, each as long as the variables in the data frame x. The elements are coerced to factors before use.}
+\item{by}{either a list of grouping elements, each as long as the variables in the data frame \code{x} (see \link[stats]{aggregate}), or an object of class \code{sf} or \code{sfc}, the geometries of which are used to find aggregation groups of \code{x} by using function \code{join}}
 
 \item{FUN}{function passed on to \link[stats]{aggregate}, in case \code{ids} was specified and attributes need to be grouped}
 
@@ -19,10 +20,29 @@
 \item{do_union}{logical; should grouped geometries be unioned using \link{st_union}?}
 
 \item{simplify}{logical; see \link[stats]{aggregate}}
+
+\item{join}{logical spatial predicate function to use if \code{by} is a simple features object or geometry; see \link{st_join}}
 }
 \value{
-an \code{sf} object with aggregated attributes and geometries, with additional grouping variables having the names of \code{names(ids)} or named \code{Group.i} for \code{ids[[i]]}; see the \code{data.frame} method of \link[stats]{aggregate}.
+an \code{sf} object with aggregated attributes and geometries; additional grouping variables having the names of \code{names(ids)} or are named \code{Group.i} for \code{ids[[i]]}; see \link[stats]{aggregate}.
 }
 \description{
 aggregate an \code{sf} object, possibly union-ing geometries
+}
+\examples{
+m1 = cbind(c(0, 0, 1, 0), c(0, 1, 1, 0))
+m2 = cbind(c(0, 1, 1, 0), c(0, 0, 1, 0))
+pol = st_sfc(st_polygon(list(m1)), st_polygon(list(m2)))
+library(sf)
+set.seed(1985)
+d = data.frame(matrix(runif(15), ncol = 3))
+p = st_as_sf(x = d, coords = 1:2)
+plot(pol)
+plot(p, add = TRUE)
+(p_ag = aggregate(p, pol, mean))
+plot(p_ag) # geometry same as pol
+# works when x overlaps multiple objects in 'by':
+p_buff = st_buffer(p, 0.2)
+plot(p_buff, add = TRUE)
+aggregate(p_buff, pol, mean) # increased mean of second
 }

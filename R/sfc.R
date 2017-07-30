@@ -41,8 +41,8 @@ st_sfc = function(..., crs = NA_crs_, precision = 0.0) {
 			&& (length(lst[[1]]) == 0 || inherits(lst[[1]][[1]], "sfg")))
 		lst = lst[[1]]
 	stopifnot(is.numeric(crs) || is.character(crs) || inherits(crs, "crs"))
-	if (length(lst) == 0) # empty set: no geometries read
-		class(lst) = c("sfc_GEOMETRY", "sfc")
+	cls = if (length(lst) == 0) # empty set: no geometries read
+		c("sfc_GEOMETRY", "sfc")
 	else {
 		# n_empty:
 		if (is.null(attr(lst, "n_empty"))) { # we're NOT comming from CPL_read_wkb:
@@ -57,23 +57,24 @@ st_sfc = function(..., crs = NA_crs_, precision = 0.0) {
 				attr(lst, "single_type")
 			else
 				length(unique(vapply(lst, function(y) class(y)[2], ""))) == 1L
-		if (single) {
-			class(lst) = c(paste0("sfc_", class(lst[[1L]])[2L]), "sfc")
-			attr(lst, "classes") = NULL
-		} else {
-			class(lst) = c("sfc_GEOMETRY", "sfc")         # the mix
-			attr(lst, "classes") = vapply(lst, class, rep("", 3))[2L,]
-		}
 		attr(lst, "single_type") = NULL # clean up
+		if (single) {
+			attr(lst, "classes") = NULL
+			c(paste0("sfc_", class(lst[[1L]])[2L]), "sfc")
+		} else {
+			attr(lst, "classes") = vapply(lst, class, rep("", 3))[2L,]
+			c("sfc_GEOMETRY", "sfc")         # the mix
+		}
 	}
 	if (! missing(precision) || is.null(attr(lst, "precision")))
 		attr(lst, "precision") = precision
 
 	if (is.na(crs) && !is.null(attr(lst, "crs")))
 		crs = attr(lst, "crs")
-	st_crs(lst) = crs
 
-	structure(lst, "bbox" = c(st_bbox(lst)))
+	class(lst) = cls
+	attr(lst, "bbox") = compute_bbox(lst)
+	st_set_crs(lst, crs)
 }
 
 #' @export
@@ -93,7 +94,7 @@ st_sfc = function(..., crs = NA_crs_, precision = 0.0) {
 		a$classes = a$classes[i]
     attributes(x) = a
 	if (recompute_bb)
-		attr(x, "bbox") = st_bbox(x)
+		attr(x, "bbox") = compute_bbox(x)
     structure(x, class = class(old), n_empty = sum(is.na(st_dimension(x))))
 }
 
@@ -123,7 +124,7 @@ c.sfc = function(..., recursive = FALSE) {
 	ret = unlist(lapply(lst, unclass), recursive = FALSE)
 	attributes(ret) = attributes(lst[[1]]) # crs
 	class(ret) = cls
-	attr(ret, "bbox") = st_bbox(ret) # dispatch on class
+	attr(ret, "bbox") = compute_bbox(ret) # dispatch on class
 	if (! eq)
 		attr(ret, "classes") = vapply(ret, class, rep("", 3))[2L,]
 	ret
@@ -397,7 +398,8 @@ st_coordinates.sfc = function(x, ...) {
 		return(matrix(nrow = 0, ncol = 2))
 
 	ret = switch(class(x)[1],
-		sfc_POINT = t(simplify2array(x)),
+		sfc_POINT = matrix(unlist(x, use.names = FALSE), nrow = length(x), byrow = TRUE,
+		     dimnames = list(1:length(x))),
 		sfc_MULTIPOINT = ,
 		sfc_LINESTRING = coord_2(x),
 		sfc_MULTILINESTRING = ,

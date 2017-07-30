@@ -83,7 +83,7 @@ void handle_error(OGRErr err) {
 			default:
 				Rcpp::Rcout << "Error code: " << err << std::endl;    // #nocov
 		}
-		throw std::range_error("OGR error");
+		Rcpp::stop("OGR error");
 	}
 }
 
@@ -117,14 +117,7 @@ std::vector<OGRGeometry *> ogr_from_sfc(Rcpp::List sfc, OGRSpatialReference **sr
 	Rcpp::IntegerVector epsg(1);
 	epsg[0] = crs["epsg"];
 	Rcpp::String p4s = crs["proj4string"];
-	if (epsg[0] != NA_INTEGER) {
-		local_srs = new OGRSpatialReference;
-		OGRErr err = local_srs->importFromEPSG(epsg[0]);
-		if (err != 0) {
-			local_srs->Release(); // #nocov
-			handle_error(err);    // #nocov
-		}
-	} else if (p4s != NA_STRING) {
+	if (p4s != NA_STRING) {
 		Rcpp::CharacterVector cv = crs["proj4string"];
 		local_srs = new OGRSpatialReference;
 		OGRErr err = local_srs->importFromProj4(cv[0]);
@@ -210,7 +203,7 @@ Rcpp::List sfc_from_ogr(std::vector<OGRGeometry *> g, bool destroy = false) {
 	Rcpp::List crs = get_crs(g.size() && g[0] != NULL ? g[0]->getSpatialReference() : NULL);
 	for (size_t i = 0; i < g.size(); i++) {
 		if (g[i] == NULL)
-			throw std::range_error("NULL error in sfc_from_ogr"); // #nocov
+			Rcpp::stop("NULL error in sfc_from_ogr"); // #nocov
 		Rcpp::RawVector raw(g[i]->WkbSize());
 		handle_error(g[i]->exportToWkb(wkbNDR, &(raw[0]), wkbVariantIso));
 		lst[i] = raw;
@@ -253,6 +246,58 @@ Rcpp::List CPL_roundtrip(Rcpp::List sfc) { // for debug purposes
 }
 
 // [[Rcpp::export]]
+Rcpp::List CPL_circularstring_to_linestring(Rcpp::List sfc) { // need to pass more parameters?
+	std::vector<OGRGeometry *> g = ogr_from_sfc(sfc, NULL);
+	std::vector<OGRGeometry *> out(g.size());
+	for (size_t i = 0; i < g.size(); i++) {
+		OGRCircularString *cs = (OGRCircularString *) g[i];
+		out[i] = cs->CurveToLine();
+		OGRGeometryFactory::destroyGeometry(g[i]);
+	}
+	return sfc_from_ogr(out, true); // destroys out;
+}
+
+// [[Rcpp::export]]
+Rcpp::List CPL_multisurface_to_multipolygon(Rcpp::List sfc) { // need to pass more parameters?
+	std::vector<OGRGeometry *> g = ogr_from_sfc(sfc, NULL);
+	std::vector<OGRGeometry *> out(g.size());
+	for (size_t i = 0; i < g.size(); i++) {
+		OGRMultiSurface *cs = (OGRMultiSurface *) g[i];
+		if (cs->hasCurveGeometry(true)) {
+			out[i] = cs->getLinearGeometry();
+			OGRGeometryFactory::destroyGeometry(g[i]);
+		} else
+			out[i] = cs->CastToMultiPolygon(cs); // consumes cs #nocov
+		if (out[i] == NULL)
+			Rcpp::stop("CPL_multisurface_to_multipolygon: NULL returned - non-polygonal surface?"); // #nocov
+	}
+	return sfc_from_ogr(out, true); // destroys out;
+}
+
+// [[Rcpp::export]]
+Rcpp::List CPL_compoundcurve_to_linear(Rcpp::List sfc) { // need to pass more parameters?
+	std::vector<OGRGeometry *> g = ogr_from_sfc(sfc, NULL);
+	std::vector<OGRGeometry *> out(g.size());
+	for (size_t i = 0; i < g.size(); i++) {
+		OGRCompoundCurve *cs = (OGRCompoundCurve *) g[i];
+		out[i] = cs->getLinearGeometry();
+		OGRGeometryFactory::destroyGeometry(g[i]);
+	}
+	return sfc_from_ogr(out, true); // destroys out;
+}
+
+// [[Rcpp::export]]
+Rcpp::List CPL_curve_to_linestring(Rcpp::List sfc) { // need to pass more parameters? #nocov start
+	std::vector<OGRGeometry *> g = ogr_from_sfc(sfc, NULL);
+	std::vector<OGRGeometry *> out(g.size());
+	for (size_t i = 0; i < g.size(); i++) {
+		OGRCurve *cs = (OGRCurve *) g[i];
+		out[i] = cs->CastToLineString(cs);
+	}
+	return sfc_from_ogr(out, true); // destroys out;
+} // #nocov end
+
+// [[Rcpp::export]]
 Rcpp::List CPL_transform(Rcpp::List sfc, Rcpp::CharacterVector proj4) {
 
 	// import proj4string:
@@ -263,13 +308,13 @@ Rcpp::List CPL_transform(Rcpp::List sfc, Rcpp::CharacterVector proj4) {
 	std::vector<OGRGeometry *> g = ogr_from_sfc(sfc, NULL);
 	if (g.size() == 0) {
 		dest->Release(); // #nocov
-		throw std::range_error("CPL_transform: zero length geometry list"); // #nocov
+		Rcpp::stop("CPL_transform: zero length geometry list"); // #nocov
 	}
 	OGRCoordinateTransformation *ct = 
 		OGRCreateCoordinateTransformation(g[0]->getSpatialReference(), dest);
 	if (ct == NULL) {
 		dest->Release(); // #nocov
-		throw std::range_error("OGRCreateCoordinateTransformation() returned NULL: PROJ.4 available?"); // #nocov
+		Rcpp::stop("OGRCreateCoordinateTransformation() returned NULL: PROJ.4 available?"); // #nocov
 	}
 	for (size_t i = 0; i < g.size(); i++) {
 		CPLPushErrorHandler(CPLQuietErrorHandler);

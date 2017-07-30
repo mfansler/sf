@@ -132,9 +132,11 @@ plot.sfc_POINT = function(x, y, ..., pch = 1, cex = 1, col = 1, bg = 0, lwd = 1,
 	bg = rep(bg, length.out = npts)
 	cex = rep(cex, length.out = npts)
 	mat = do.call(rbind, x)
-	ne = apply(mat, 1, function(x) all(is.finite(x))) # ne: not empty
-	points(mat[ne,, drop = FALSE], pch = pch[ne], col = col[ne], bg = bg[ne], cex = cex[ne], lwd = lwd, lty = lty,
-		type = type)
+	if (!is.null(mat)) {
+		ne = apply(mat, 1, function(x) all(is.finite(x))) # ne: not empty
+		points(mat[ne,, drop = FALSE], pch = pch[ne], col = col[ne], bg = bg[ne], 
+			cex = cex[ne], lwd = lwd, lty = lty, type = type)
+	}
 }
 
 #' @name plot
@@ -178,6 +180,13 @@ plot.sfc_LINESTRING = function(x, y, ..., lty = 1, lwd = 1, col = 1, pch = 1, ty
 	  if (non_empty[i])
 		lines(x[[i]], lty = lty[i], lwd = lwd[i], col = col[i], pch = pch[i], type = type))
 	invisible(NULL)
+}
+
+#' @name plot
+#' @method plot sfc_CIRCULARSTRING
+#' @export
+plot.sfc_CIRCULARSTRING = function(x, y, ...) {
+	plot(st_cast(x, "LINESTRING"),  ...)
 }
 
 #' @name plot
@@ -261,7 +270,7 @@ plot.sfc_MULTIPOLYGON = function(x, y, ..., lty = 1, lwd = 1, col = NA, border =
 }
 
 # plot single geometrycollection:
-plot_gc = function(x, pch, cex, bg, border = 1, lty, lwd, col) {
+plot_gc = function(x, pch, cex, bg, border = 1, lty, lwd, col, add) {
 	lapply(x, function(subx) {
 		args = list(st_sfc(subx), pch = pch, cex = cex, bg = bg, border = border, 
 			lty = lty, lwd = lwd, col = col, add = TRUE)
@@ -271,8 +280,12 @@ plot_gc = function(x, pch, cex, bg, border = 1, lty, lwd, col) {
 			LINESTRING = plot.sfc_LINESTRING,
 			MULTILINESTRING = plot.sfc_MULTILINESTRING,
 			POLYGON = plot.sfc_POLYGON,
+			CIRCULARSTRING = plot.sfc_CIRCULARSTRING,
 			MULTIPOLYGON = plot.sfc_MULTIPOLYGON,
-			GEOMETRYCOLLECTION = plot_gc,
+			MULTISURFACE = plot.sfc_GEOMETRYCOLLECTION,
+			CURVEPOLYGON = plot.sfc_GEOMETRYCOLLECTION,
+			COMPOUNDCURVE = plot.sfc_GEOMETRYCOLLECTION,
+			GEOMETRYCOLLECTION = plot.sfc_GEOMETRYCOLLECTION,
 			stop(paste("plotting of", class(x)[2], "not yet supported: please file an issue"))
 		)
 		do.call(fn, args)

@@ -187,6 +187,41 @@ st_cast.GEOMETRYCOLLECTION <- function(x, to, ...) {
   )
 }
 
+#' @name st_cast
+#' @export
+st_cast.CIRCULARSTRING <- function(x, to, ...) {
+	if (to != "LINESTRING")
+		stop("CIRCULARSTRING can only be converted into LINESTRING")
+	CPL_circularstring_to_linestring(structure(list(x), crs = NA_crs_, precision = 0.0, 
+		class = c("sfc_CIRCULARSTRING", "sfc")))[[1]]
+}
+
+#' @name st_cast
+#' @export
+st_cast.MULTISURFACE <- function(x, to, ...) {
+	if (! missing(to) && to != "MULTIPOLYGON")
+		stop("MULTISURFACE can only be converted into MULTIPOLYGON")
+	CPL_multisurface_to_multipolygon(structure(list(x), crs = NA_crs_, precision = 0.0, 
+		class = c("sfc_MULTISURFACE", "sfc")))[[1]]
+}
+
+#' @name st_cast
+#' @export
+st_cast.COMPOUNDCURVE <- function(x, to, ...) {
+	if (! missing(to))
+		stop("to should be missing")
+	CPL_compoundcurve_to_linear(structure(list(x), crs = NA_crs_, precision = 0.0, 
+		class = c("sfc_COMPOUNDCURVE", "sfc")))[[1]]
+}
+
+#' @name st_cast
+#' @export
+st_cast.CURVE <- function(x, to, ...) { # nocov start
+	if (! missing(to) && to != "LINESTRING")
+		stop("CURVE can only be converted into LINESTRING")
+	CPL_curve_to_linestring(structure(list(x), crs = NA_crs_, precision = 0.0, 
+		class = c("sfc_CURVE", "sfc")))[[1]]
+} # nocov end
 
 # st_cast.class <- function(x, to) {
 #   switch(to, 
@@ -198,6 +233,4 @@ st_cast.GEOMETRYCOLLECTION <- function(x, to, ...) {
 #          POINT = x
 #   )
 # }
-
-
 

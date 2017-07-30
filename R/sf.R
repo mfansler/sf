@@ -46,11 +46,12 @@ st_as_sf.data.frame = function(x, ..., agr = NA_agr_, coords, wkt,
 		x$geometry = structure( lapply(split(as.vector(t(as.matrix(x[, coords]))), 
 				rep(seq_len(nrow(x)), each = length(coords))), 
 				function(vec) structure(vec, class = classdim)), 
-			n_empty = 0L, precision = 0, crs = st_crs(NA), 
-			bbox = c(xmin = min(x[[coords[1]]], na.rm = TRUE), 
-					ymin = min(x[[coords[2]]], na.rm = TRUE), 
-					xmax = max(x[[coords[1]]], na.rm = TRUE),
-					ymax = max(x[[coords[2]]], na.rm = TRUE)), 
+			n_empty = 0L, precision = 0, crs = NA_crs_, 
+			bbox = structure(
+				c(xmin = min(x[[coords[1]]], na.rm = TRUE), 
+				ymin = min(x[[coords[2]]], na.rm = TRUE), 
+				xmax = max(x[[coords[1]]], na.rm = TRUE),
+				ymax = max(x[[coords[2]]], na.rm = TRUE)), class = "bbox"),
 			class =  c("sfc_POINT", "sfc" ))
 
 		if (is.character(coords))
@@ -298,10 +299,14 @@ st_sf = function(..., agr = NA_agr_, row.names,
 		geom = geom[i]
 	}
 
-	x = if (missing(j))
-		NextMethod("[") # specifying drop would trigger a warning
-	else
-		NextMethod("[", drop = drop)
+	x = as.data.frame(x)
+	x = if (missing(j)) {
+		if (nargs == 2) # `[`(x,i)
+			x[i]
+		else
+			x[i, , drop = drop]
+	} else
+		x[i, j, drop = drop]
 
 	if (!missing(j))
 		agr = agr[j]
@@ -311,22 +316,8 @@ st_sf = function(..., agr = NA_agr_, row.names,
 	if (inherits(x, "sfc")) # drop was TRUE, and we selected geom column only
 		x
 	else if (! drop) {
-#		st_agr(x) = agr
-#		if (!(sf_column %in% names(x))) { # geom was deselected: make it sticky
-#			if (inherits(x, "sf"))
-#				x[[sf_column]] = geom
-#			else
-#				st_geometry(x) = geom
-#		}
-#		structure(x, "sf_column" = sf_column, 
-#			"agr" = agr[match(setdiff(names(x), sf_column), names(agr))])
-		if (inherits(x, "sf")) {
-			st_agr(x) = agr[!is.na(names(agr))]
-			attr(x, "sf_column") = sf_column
-		}
-		st_geometry(x) = geom
-		st_agr(x) = agr[match(setdiff(names(x), sf_column), names(agr))]
-		x
+		x[[ sf_column ]] = geom
+		st_set_agr(st_sf(x), agr[match(setdiff(names(x), sf_column), names(agr))])
 	} else
 		structure(x, class = setdiff(class(x), "sf"))
 }

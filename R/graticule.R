@@ -13,9 +13,9 @@
 #'  better than a graticule.
 #'
 #' @export
-#' @param x object of class \code{sf}, \code{sfc} or \code{sfg} or numeric vector with bounding box (minx,miny,maxx,maxy).
+#' @param x object of class \code{sf}, \code{sfc} or \code{sfg} or numeric vector with bounding box given as (minx, miny, maxx, maxy).
 #' @param crs object of class \code{crs}, with the display coordinate reference system
-#' @param datum object of class \code{crs}, with the coordinate reference system for the graticules
+#' @param datum either an object of class \code{crs} with the coordinate reference system for the graticules, or \code{NULL} in which case a grid in the coordinate system of \code{x} is drawn, or \code{NA}, in which case an empty \code{sf} object is returned.
 #' @param lon numeric; degrees east for the meridians
 #' @param lat numeric; degrees north for the parallels
 #' @param ndiscr integer; number of points to discretize a parallel or meridian
@@ -71,6 +71,15 @@ st_graticule = function(x = c(-180,-90,180,90), crs = st_crs(x),
 			lat = seq(-80, 80, by = 20)
 	}
 
+	if (is.null(crs))
+		crs = NA_crs_
+	
+	if (is.null(datum))
+		datum = crs
+
+	if (is.na(datum))
+		return(st_graticule()[0,]) # empty set, but with all variables
+
 	# Get the bounding box of the plotting space, in crs
 	bb = if (inherits(x, "sf") || inherits(x, "sfc") || inherits(x, "sfg"))
 		st_bbox(x)
@@ -78,7 +87,7 @@ st_graticule = function(x = c(-180,-90,180,90), crs = st_crs(x),
 		x
 	stopifnot(is.numeric(bb) && length(bb) == 4)
 
-	if (st_is_longlat(crs))
+	if (isTRUE(st_is_longlat(crs)))
 		bb = trim_bb(bb, margin)
 
 	ls1 = st_linestring(rbind(c(bb[1],bb[2]), c(bb[3],bb[2]), c(bb[3],bb[4]), 
@@ -95,8 +104,12 @@ st_graticule = function(x = c(-180,-90,180,90), crs = st_crs(x),
 	st_crs(box) = crs
 
 	# Now, in case we're not already in longlat, we convert to longlat:
-	if (!is.na(crs))
-		box_ll <- st_transform(box, datum, partial = TRUE)
+	box_ll = if (! is.na(crs))
+		st_transform(box, datum, partial = TRUE)
+	else {
+		datum = NA_crs_ # nocov - remove when geom_sf is on CRAN
+		box             # nocov
+	}
 	
 	# as in https://github.com/r-spatial/sf/issues/198 : 
 	# recreate, and ignore bbox_ll:
@@ -108,17 +121,22 @@ st_graticule = function(x = c(-180,-90,180,90), crs = st_crs(x),
 
 	bb = st_bbox(box_ll)
 	if (is.null(lon)) {
-		lon = if (bb[1] < -170 && bb[3] > 170) # "global"
-				seq(-180, 180, by = 60)
-			else
-				pretty(bb[c(1,3)], n = 6)
+		lon = if (bb[3] <= 180 && bb[1] < -170 && bb[3] > 170) # global, -180,180:
+			seq(-180, 180, by = 60)
+		else
+			pretty(bb[c(1,3)], n = 6)
 	}
 	if (is.null(lat))
 		lat = pretty(bb[c(2,4)], n = 6)
 
 	# sanity:
-	lon = lon[lon >= -180 & lon <= 180]
-	lat = lat[lat > -90 & lat < 90]
+	if (isTRUE(st_is_longlat(datum))) {
+		lon = if (min(lon) >= -15 && max(lon) > 195) # +- 4%
+			lon[lon >= 0 & lon <= 360] # assume 0,360
+		else
+			lon[lon >= -180 & lon <= 180]
+		lat = lat[lat > -90 & lat < 90]
+	}
 
 	# widen bb if pretty() created values outside the box_ll:
 	bb = c(min(bb[1], min(lon)), min(bb[2],min(lat)), max(bb[3], max(lon)), max(bb[4], max(lat)))
@@ -133,7 +151,10 @@ st_graticule = function(x = c(-180,-90,180,90), crs = st_crs(x),
 	
 	df = data.frame(degree = c(lon, lat))
 	df$type = c(rep("E", length(lon)), rep("N", length(lat)))
-	df$degree_label = c(degreeLabelsEW(lon), degreeLabelsNS(lat)) 
+	df$degree_label = if (is.na(crs) || !isTRUE(st_is_longlat(datum)))
+			c(format(lon), format(lat))
+		else
+			c(degreeLabelsEW(lon), degreeLabelsNS(lat)) 
 
 	geom = st_sfc(c(long_list, lat_list), crs = datum)
 
@@ -144,16 +165,18 @@ st_graticule = function(x = c(-180,-90,180,90), crs = st_crs(x),
 	st_geometry(df) = geom
 	st_agr(df) = "constant"
 
-	if (! missing(x)) { # cut out box:
-		#if (! is.na(crs))
-		#	box = st_transform(box, crs)
+	if (! missing(x)) # cut out box:
 		df = st_intersection(df, st_polygonize(box[1]))
-	}
+
 	graticule_attributes(st_cast(df, "MULTILINESTRING"))
 }
 
 graticule_attributes = function(df) {
 	object = st_geometry(df)
+
+	if (nrow(df) == 0)
+		return(df)
+
 	xy = cbind(
 		do.call(rbind, lapply(object, function(x) { y = x[[1]]; y[1,] } )),
 		do.call(rbind, lapply(object, function(x) { y = x[[length(x)]]; y[nrow(y),] } ))
@@ -168,23 +191,25 @@ graticule_attributes = function(df) {
 		function(x) { y = x[[length(x)]]; n = nrow(y); apply(y[(n-1):n,], 2, diff) } ))
 	df$angle_end = apply(dxdy, 1, function(x) atan2(x[2], x[1])*180/pi)
 	bb = st_bbox(df)
-    selE = df$type == "E" & df$y_start < min(df$y_start) + 0.001 * (bb[3] - bb[1])
+	selE = df$type == "E" & df$y_start < min(df$y_start) + 0.001 * (bb[3] - bb[1])
 	selN = df$type == "N" & df$x_start < min(df$x_start) + 0.001 * (bb[4] - bb[2])
 	df$plot12 = selE | selN
 	df
 }
 
-trim_bb = function(bb = c(-180, -90, 180, 90), margin) {
+trim_bb = function(bb = c(-180, -90, 180, 90), margin, wrap=c(-180,180)) {
 	stopifnot(margin > 0 && margin <= 1.0)
 	fr = 1.0 - margin
-	if (bb[1] < -180 * fr)
-		bb[1] = -180 * fr
-	if (bb[3] > 180 * fr)
-		bb[3] = 180 * fr
-	if (bb[2] < -90 * fr)
-		bb[2] = -90 * fr
-	if (bb[4] > 90 * fr)
-		bb[4] = 90 * fr
+	if (min(bb[c(1,3)]) >= -15. && max(bb[c(1,3)]) > 195.) { # 0-360 span:
+		wrap=c(0., 360.)
+		bb[1] = max(bb[1], .5 * wrap[1] * fr)
+		bb[3] = min(bb[3], wrap[2] * fr)
+	} else {
+		bb[1] = max(bb[1], wrap[1] * fr)
+		bb[3] = min(bb[3], wrap[2] * fr)
+	}
+	bb[2] = max(bb[2], -90. * fr)
+	bb[4] = min(bb[4],  90. * fr)
 	bb
 }
 

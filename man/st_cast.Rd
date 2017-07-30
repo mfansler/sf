@@ -16,10 +16,20 @@
 \alias{st_cast}
 \alias{st_cast.GEOMETRYCOLLECTION}
 \alias{st_cast}
+\alias{st_cast.CIRCULARSTRING}
+\alias{st_cast}
+\alias{st_cast.MULTISURFACE}
+\alias{st_cast}
+\alias{st_cast.COMPOUNDCURVE}
+\alias{st_cast}
+\alias{st_cast.CURVE}
+\alias{st_cast}
 \alias{st_cast}
 \alias{st_cast.sfc}
 \alias{st_cast}
 \alias{st_cast.sf}
+\alias{st_cast}
+\alias{st_cast.sfc_CIRCULARSTRING}
 \title{Cast geometry to another type: either simplify, or cast explicitly}
 \usage{
 \method{st_cast}{MULTIPOLYGON}(x, to, ...)
@@ -36,11 +46,21 @@
 
 \method{st_cast}{GEOMETRYCOLLECTION}(x, to, ...)
 
+\method{st_cast}{CIRCULARSTRING}(x, to, ...)
+
+\method{st_cast}{MULTISURFACE}(x, to, ...)
+
+\method{st_cast}{COMPOUNDCURVE}(x, to, ...)
+
+\method{st_cast}{CURVE}(x, to, ...)
+
 st_cast(x, to, ...)
 
 \method{st_cast}{sfc}(x, to, ..., ids = seq_along(x), group_or_split = TRUE)
 
 \method{st_cast}{sf}(x, to, ..., warn = TRUE, do_split = TRUE)
+
+\method{st_cast}{sfc_CIRCULARSTRING}(x, to, ...)
 }
 \arguments{
 \item{x}{object of class \code{sfg}, \code{sfc} or \code{sf}}
