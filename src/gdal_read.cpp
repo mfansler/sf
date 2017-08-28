@@ -243,8 +243,8 @@ Rcpp::List CPL_read_ogr(Rcpp::CharacterVector datasource, Rcpp::CharacterVector 
 	std::vector<OGRFeature *> poFeatureV(n); // full archive
 
 	if (! quiet)
-		Rcpp::Rcout << "Reading layer `" << layer[0] << "' from data source `" << datasource[0] <<
-			"' using driver `" << poDS->GetDriverName() << "'" << std::endl;
+		Rcpp::Rcout << "Reading layer `" << layer[0] << "' from data source `" << datasource[0] << // #nocov
+			"' using driver `" << poDS->GetDriverName() << "'" << std::endl;                       // #nocov
 
 	OGRFeatureDefn *poFDefn = poLayer->GetLayerDefn();
 
@@ -434,6 +434,8 @@ Rcpp::List CPL_read_ogr(Rcpp::CharacterVector datasource, Rcpp::CharacterVector 
 			Rcpp::Rcout << "converted into: " << poGeom[0]->getGeometryName() << std::endl; // #nocov
 		// convert to R:
 		Rcpp::List sfc = sfc_from_ogr(poGeom, false); // don't destroy
+		OGRGeomFieldDefn *fdfn = poFDefn->GetGeomFieldDefn(iGeom);
+		sfc.attr("crs") = get_crs(fdfn->GetSpatialRef()); // overwrite: see #449 for the reason why
 		out[iGeom + poFDefn->GetFieldCount()] = sfc;
 	}
 

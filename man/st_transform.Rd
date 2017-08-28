@@ -29,7 +29,7 @@ st_wrap_dateline(x, options = "WRAPDATELINE=YES", quiet = TRUE)
 \arguments{
 \item{x}{object of class sf, sfc or sfg}
 
-\item{crs}{coordinate reference system: integer with the epsg code, or character with proj4string}
+\item{crs}{coordinate reference system: integer with the EPSG code, or character with proj4string}
 
 \item{...}{ignored}
 
@@ -47,13 +47,13 @@ st_wrap_dateline(x, options = "WRAPDATELINE=YES", quiet = TRUE)
 Transform or convert coordinates of simple feature
 }
 \details{
-transforms coordinates of object to new projection. Features that cannot be tranformed are returned as empty geometries.
+Transforms coordinates of object to new projection. Features that cannot be transformed are returned as empty geometries.
 
-the st_transform method for sfg objects assumes that the crs of the object is available as an attribute of that name.
+The \code{st_transform} method for \code{sfg} objects assumes that the CRS of the object is available as an attribute of that name.
 
 \code{st_proj_info} lists the available projections, ellipses, datums or units supported by the Proj.4 library
 
-for a discussion of using \code{options}, see https://github.com/r-spatial/sf/issues/280
+For a discussion of using \code{options}, see \url{https://github.com/r-spatial/sf/issues/280}
 }
 \examples{
 p1 = st_point(c(7,52))
@@ -67,7 +67,7 @@ st_area(nc[1,]) # area, using geosphere::areaPolygon
 st_area(st_transform(nc[1,], 32119)) # NC state plane, m
 st_area(st_transform(nc[1,], 2264)) # NC state plane, US foot
 library(units)
-as.units(st_area(st_transform(nc[1,], 2264)), make_unit("m")^2)
+set_units(st_area(st_transform(nc[1,], 2264)), m^2)
 st_transform(structure(p1, proj4string = "+init=epsg:4326"), "+init=epsg:3857")
 st_proj_info("datum")
 st_wrap_dateline(st_sfc(st_linestring(rbind(c(-179,0),c(179,0))), crs = 4326))

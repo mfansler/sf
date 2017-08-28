@@ -1,10 +1,10 @@
 check_join = function(x, y) {
 	if (inherits(y, "sf"))
-		stop("y should be a data.frame; no spatial joins supported yet", .call = FALSE)
+		stop("y should be a data.frame; for spatial joins, use st_join", .call = FALSE)
 }
 
 sf_join = function(g, sf_column) {
-	g[[ sf_column ]] = st_sfc(fix_NULL_values(g[[ sf_column ]]))
+	g[[ sf_column ]] = st_sfc(g[[ sf_column ]])
 	class(g) = setdiff(class(g), "sf")
 	st_sf(g)
 }
@@ -65,10 +65,9 @@ anti_join.sf = function(x, y, by = NULL, copy = FALSE, ...) {
 #' @param join geometry predicate function with the same profile as \link{st_intersects}; see details
 #' @param FUN deprecated;
 #' @param suffix length 2 character vector; see \link[base]{merge}
-#' @param prepared logical; see \link{st_intersects}
 #' @param left logical; if \code{TRUE} carry out left join, else inner join; 
 #' see also \link[dplyr]{left_join}
-#' @param ... arguments passed on to the \code{join} function (e.g. a pattern for \link{st_relate})
+#' @param ... arguments passed on to the \code{join} function (e.g. \code{prepared}, or a pattern for \link{st_relate})
 #' @details alternative values for argument \code{join} are: \link{st_disjoint}
 #' \link{st_touches} \link{st_crosses} \link{st_within} \link{st_contains}
 #' \link{st_overlaps} \link{st_covers} \link{st_covered_by} \link{st_equals} or
@@ -87,13 +86,13 @@ anti_join.sf = function(x, y, by = NULL, copy = FALSE, ...) {
 #' st_join(a, b) %>% group_by(a.x) %>% summarise(mean(a.y))
 #' @export
 st_join = function(x, y, join = st_intersects, FUN, suffix = c(".x", ".y"), 
-		prepared = TRUE, left = TRUE, ...) {
+		left = TRUE, ...) {
 	stopifnot(inherits(x, "sf") && inherits(y, "sf"))
 	if (!missing(FUN)) {
 		.Deprecated("aggregate")
 		stop("for aggregation/summarising after st_join, see examples in ?st_join")
 	}
-	i = join(x, y, prepared = prepared, ...)
+	i = join(x, y, ...)
 	st_geometry(y) = NULL
 	which.x = which(names(x) %in% names(y))
 	which.y = which(names(y) %in% names(x))
@@ -108,5 +107,5 @@ st_join = function(x, y, join = st_intersects, FUN, suffix = c(".x", ".y"),
 		i = lapply(i, function(x) { if (length(x) == 0) NA_integer_ else x })
 		ix = rep(seq_len(nrow(x)), lengths(i))
 	}
-	st_sf(cbind(as.data.frame(x)[ix,], y[unlist(i),,drop=FALSE]))
+	st_sf(cbind(as.data.frame(x)[ix,], y[unlist(i), , drop = FALSE]))
 }

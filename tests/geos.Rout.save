@@ -101,7 +101,7 @@ dimension:      XY
 bbox:           xmin: -84.32385 ymin: 33.88199 xmax: -75.45698 ymax: 36.58965
 epsg (SRID):    4267
 proj4string:    +proj=longlat +datum=NAD27 +no_defs
-MULTIPOLYGON(((-81.4727554321289 36.23435592651...
+MULTIPOLYGON (((-81.4727554321289 36.2343559265...
 > 
 > st_dimension(st_sfc(st_point(0:1), st_linestring(rbind(c(0,0),c(1,1))), 
 + 	st_polygon(list(rbind(c(0,0), c(1,0), c(1,1), c(0,1), c(0,0))))))
@@ -125,8 +125,8 @@ dimension:      XY
 bbox:           xmin: 0 ymin: 0 xmax: 6.880179 ymax: 0.8878369
 epsg (SRID):    NA
 proj4string:    NA
-MULTIPOINT(0 0.887836897512898)
-MULTIPOINT(0.298648830503225 0, 2.4841704731807...
+MULTIPOINT (0 0.887836897512898)
+MULTIPOINT (0.298648830503225 0, 2.484170473180...
 > 
 > g = st_make_grid(nc, n = c(20,10))
 > 
@@ -154,7 +154,7 @@ In st_interpolate_aw(nc["BIR74"], g, extensive = TRUE) :
 > 
 > mls = st_multilinestring(list(rbind(c(0,0), c(1,1)), rbind(c(2,0), c(1,1))))
 > st_line_merge(mls)
-LINESTRING(0 0, 1 1, 2 0)
+LINESTRING (0 0, 1 1, 2 0)
 > 
 > if (sf_extSoftVersion()["GEOS"] >= "3.5.0") {
 +  # voronoi:
@@ -306,6 +306,27 @@ Error in CPL_geos_binop(st_geometry(x), st_geometry(y), op, par, pattern,  :
 > st_distance(p, p, by_element = TRUE)
 [1] 0 0 0
 > 
+> # from https://github.com/r-spatial/sf/issues/458 :
+> pts <- st_sfc(st_point(c(.5,.5)), st_point(c(1.5, 1.5)), st_point(c(2.5, 2.5)))
+> pol <- st_polygon(list(rbind(c(0,0), c(2,0), c(2,2), c(0,2), c(0,0))))
+> pol_df <- data.frame(id = 1) 
+> st_geometry(pol_df) <- st_sfc(pol)
+> st_intersects(pts, pol_df[pol_df$id == 2,]) # with empty sf/sfc
+[[1]]
+integer(0)
+
+[[2]]
+integer(0)
+
+[[3]]
+integer(0)
+
+> st_intersects(pts, pol_df[pol_df$id == 2,], sparse = FALSE) # with empty sf/sfc
+    
+[1,]
+[2,]
+[3,]
+> 
 > proc.time()
    user  system elapsed 
-  3.764   0.244   3.756 
+  3.640   0.300   3.635 

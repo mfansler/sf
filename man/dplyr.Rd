@@ -2,62 +2,42 @@
 % Please edit documentation in R/tidyverse.R, R/join.R
 \name{dplyr}
 \alias{dplyr}
-\alias{filter_.sf}
-\alias{dplyr}
 \alias{filter.sf}
-\alias{dplyr}
-\alias{arrange_.sf}
 \alias{dplyr}
 \alias{arrange.sf}
 \alias{dplyr}
-\alias{distinct_.sf}
-\alias{dplyr}
 \alias{distinct.sf}
-\alias{dplyr}
-\alias{group_by_.sf}
 \alias{dplyr}
 \alias{group_by.sf}
 \alias{dplyr}
 \alias{ungroup.sf}
 \alias{dplyr}
-\alias{mutate_.sf}
-\alias{dplyr}
 \alias{mutate.sf}
-\alias{dplyr}
-\alias{transmute_.sf}
 \alias{dplyr}
 \alias{transmute.sf}
 \alias{dplyr}
-\alias{select_.sf}
-\alias{dplyr}
 \alias{select.sf}
 \alias{dplyr}
-\alias{rename_.sf}
-\alias{dplyr}
 \alias{rename.sf}
-\alias{dplyr}
-\alias{slice_.sf}
 \alias{dplyr}
 \alias{slice.sf}
 \alias{dplyr}
 \alias{summarise.sf}
 \alias{summarise}
 \alias{dplyr}
-\alias{summarise_.sf}
+\alias{gather.sf}
 \alias{dplyr}
-\alias{gather_.sf}
-\alias{dplyr}
-\alias{spread_.sf}
+\alias{spread.sf}
 \alias{dplyr}
 \alias{sample_n.sf}
 \alias{dplyr}
 \alias{sample_frac.sf}
 \alias{dplyr}
-\alias{nest_.sf}
+\alias{nest.sf}
 \alias{dplyr}
-\alias{separate_.sf}
+\alias{separate.sf}
 \alias{dplyr}
-\alias{unite_.sf}
+\alias{unite.sf}
 \alias{dplyr}
 \alias{inner_join.sf}
 \alias{dplyr}
@@ -72,53 +52,33 @@
 \alias{anti_join.sf}
 \title{Dplyr verb methods for sf objects}
 \usage{
-filter_.sf(.data, ..., .dots)
-
 filter.sf(.data, ..., .dots)
-
-arrange_.sf(.data, ..., .dots)
 
 arrange.sf(.data, ..., .dots)
 
-distinct_.sf(.data, ..., .dots, .keep_all = FALSE)
-
 distinct.sf(.data, ..., .dots, .keep_all = FALSE)
-
-group_by_.sf(.data, ..., .dots, add = FALSE)
 
 group_by.sf(.data, ..., .dots, add = FALSE)
 
 ungroup.sf(x, ...)
 
-mutate_.sf(.data, ..., .dots)
-
 mutate.sf(.data, ..., .dots)
-
-transmute_.sf(.data, ..., .dots)
 
 transmute.sf(.data, ..., .dots)
 
-select_.sf(.data, ..., .dots = NULL)
-
 select.sf(.data, ...)
 
-rename_.sf(.data, ..., .dots)
-
 rename.sf(.data, ..., .dots)
-
-slice_.sf(.data, ..., .dots)
 
 slice.sf(.data, ..., .dots)
 
 summarise.sf(.data, ..., .dots, do_union = TRUE)
 
-summarise_.sf(.data, ..., .dots, do_union = TRUE)
+gather.sf(data, key, value, ..., na.rm = FALSE, convert = FALSE,
+  factor_key = FALSE)
 
-gather_.sf(data, key_col, value_col, gather_cols, na.rm = FALSE,
-  convert = FALSE, factor_key = FALSE)
-
-spread_.sf(data, key_col, value_col, fill = NA, convert = FALSE,
-  drop = TRUE, sep = NULL)
+spread.sf(data, key, value, fill = NA, convert = FALSE, drop = TRUE,
+  sep = NULL)
 
 sample_n.sf(tbl, size, replace = FALSE, weight = NULL,
   .env = parent.frame())
@@ -126,12 +86,12 @@ sample_n.sf(tbl, size, replace = FALSE, weight = NULL,
 sample_frac.sf(tbl, size = 1, replace = FALSE, weight = NULL,
   .env = parent.frame())
 
-nest_.sf(data, key_col, nest_cols)
+nest.sf(data, ..., .key = "data")
 
-separate_.sf(data, col, into, sep = "[^[:alnum:]]+", remove = TRUE,
+separate.sf(data, col, into, sep = "[^[:alnum:]]+", remove = TRUE,
   convert = FALSE, extra = "warn", fill = "warn", ...)
 
-unite_.sf(data, col, from, sep = "_", remove = TRUE)
+unite.sf(data, col, ..., sep = "_", remove = TRUE)
 
 inner_join.sf(x, y, by = NULL, copy = FALSE, suffix = c(".x", ".y"), ...)
 
@@ -162,11 +122,9 @@ anti_join.sf(x, y, by = NULL, copy = FALSE, ...)
 
 \item{data}{see original function docs}
 
-\item{key_col}{see original function docs}
+\item{key}{see original function docs}
 
-\item{value_col}{see original function docs}
-
-\item{gather_cols}{see original function docs}
+\item{value}{see original function docs}
 
 \item{na.rm}{see original function docs}
 
@@ -190,7 +148,7 @@ anti_join.sf(x, y, by = NULL, copy = FALSE, ...)
 
 \item{.env}{see original function docs}
 
-\item{nest_cols}{see \link[tidyr]{nest}}
+\item{.key}{see \link[tidyr]{nest}}
 
 \item{col}{see \link[tidyr]{separate}}
 
@@ -199,8 +157,6 @@ anti_join.sf(x, y, by = NULL, copy = FALSE, ...)
 \item{remove}{see \link[tidyr]{separate}}
 
 \item{extra}{see \link[tidyr]{separate}}
-
-\item{from}{see \link[tidyr]{unite}}
 
 \item{y}{see \link[dplyr]{left_join}}
 
@@ -215,6 +171,8 @@ Dplyr verb methods for sf objects. Geometries are sticky, use \link{as.data.fram
 }
 \details{
 \code{select} keeps the geometry regardless whether it is selected or not; to deselect it, first pipe through \code{as.data.frame} to let dplyr's own \code{select} drop it.
+
+\code{nest.sf} assumes that a simple feature geometry list-column was among the columns that were nested.
 }
 \examples{
 library(dplyr)
@@ -248,4 +206,9 @@ nc$row = 1:100 # needed for spread to work
 nc \%>\% select(SID74, SID79, geometry, row) \%>\% 
 	gather(VAR, SID, -geometry, -row) \%>\% 
 	spread(VAR, SID) \%>\% head()
+storms.sf = st_as_sf(storms, coords = c("long", "lat"), crs = 4326)
+x <- storms.sf \%>\% group_by(name, year) \%>\% nest
+trs = lapply(x$data, function(tr) st_cast(st_combine(tr), "LINESTRING")[[1]]) \%>\% st_sfc(crs = 4326)
+trs.sf = st_sf(x[,1:2], trs)
+plot(trs.sf["year"], axes = TRUE)
 }

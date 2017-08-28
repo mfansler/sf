@@ -19,3 +19,7 @@ geometry-only object deriving from \code{Spatial}, of the appropriate class
 \description{
 Methods to coerce simple feature objects to \code{Spatial*} objects
 }
+\examples{
+nc = st_read(system.file("shape/nc.shp", package="sf"))
+as_Spatial(st_geometry(nc[1,]))
+}

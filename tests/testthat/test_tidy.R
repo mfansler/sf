@@ -10,10 +10,8 @@ test_that("select works", {
 
 suppressMessages(library(tidyr))
 test_that("separate and unite work", {
-  expect_true(st_read(system.file("shape/nc.shp", package="sf")) %>%
-    separate(CNTY_ID, c("a", "b"), sep = 2) %>% inherits("sf"))
-  expect_true(st_read(system.file("shape/nc.shp", package="sf")) %>%
-    separate(CNTY_ID, c("a", "b"), sep = 2) %>% 
+  expect_true(nc %>% separate(CNTY_ID, c("a", "b"), sep = 2) %>% inherits("sf"))
+  expect_true(nc %>% separate(CNTY_ID, c("a", "b"), sep = 2) %>% 
 	unite(CNTY_ID_NEW, c("a", "b"), sep = "") %>% inherits("sf"))
 })
 
@@ -30,4 +28,12 @@ test_that("sample_n etc work", {
  sample_n(d, 2)
  sample_frac(d, .5)
  d %>% group_by(a) %>% nest
+})
+
+test_that("st_intersection of tbl returns tbl", {
+ nc = read_sf(system.file("shape/nc.shp", package="sf")) 
+ nc = st_transform(nc[1:3,], 3857)
+ st_agr(nc) = "constant"
+ expect_is(nc, "tbl_df")
+ expect_is(st_intersection(nc[1:3], nc[4:6]), "tbl_df")
 })

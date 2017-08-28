@@ -14,18 +14,19 @@ format.sfc = function(x, ..., digits = 30) {
 }
 
 #' Create simple feature collection object of class sfc from list
-#' 
+#'
 #' Create simple feature list column, set class, and add coordinate reference system
-#' 
+#'
 #' @name sfc
-#' @param ... one or more simple feature geometries
-#' @param crs coordinate reference system: integer with the epsg code, or character with proj4string
+#' @param ... zero or more simple feature geometries (objects of class \code{sfg}), or a single list of such objects; \code{NULL} values will get replaced by empty geometries.
+#' @param crs coordinate reference system: integer with the EPSG code, or character with proj4string
 #' @param precision numeric; see \link{st_as_binary}
-#' 
-#' @details a simple feature collection object is a list of class 
-#' \code{c("stc_TYPE", "sfc")} which contains objects of identical type. This 
-#' function creates such an object from a list of simple feature geometries (of 
-#' class \code{sfg}). 
+#' @return an object of class \code{sfc}, which is a classed list-column with simple feature geometries.
+#'
+#' @details A simple feature collection object is a list of class
+#' \code{c("stc_TYPE", "sfc")} which typically contains objects of identical type; 
+#' in case of a mix of types or an empty set, \code{TYPE} is set to the 
+#' superclass \code{GEOMETRY}.
 #' @examples
 #' pt1 = st_point(c(0,1))
 #' pt2 = st_point(c(1,1))
@@ -37,65 +38,84 @@ st_sfc = function(..., crs = NA_crs_, precision = 0.0) {
 	# if we have only one arg, which is already a list with sfg's, but NOT a geometrycollection:
 	# (this is the old form of calling st_sfc; it is way faster to call st_sfc(lst) if lst
 	# already contains a zillion sfg objects, than do.call(st_sfc, lst) ...
-	if (length(lst) == 1 && is.list(lst[[1]]) && !inherits(lst[[1]], "sfg") 
-			&& (length(lst[[1]]) == 0 || inherits(lst[[1]][[1]], "sfg")))
+	if (length(lst) == 1 && is.list(lst[[1]]) && !inherits(lst[[1]], "sfg")
+			&& (length(lst[[1]]) == 0 || inherits(lst[[1]][[1]], "sfg") || is.null(lst[[1]][[1]])))
 		lst = lst[[1]]
 	stopifnot(is.numeric(crs) || is.character(crs) || inherits(crs, "crs"))
+
+	# check for NULLs:
+	a = attributes(lst)
+	is_null = vapply(lst, is.null, TRUE)
+	lst = unclass(lst)
+	lst = lst[! is_null]
+	attributes(lst) = a
+
+	sfg_classes = vapply(lst, class, rep(NA_character_, 3))
 	cls = if (length(lst) == 0) # empty set: no geometries read
 		c("sfc_GEOMETRY", "sfc")
 	else {
-		# n_empty:
-		if (is.null(attr(lst, "n_empty"))) { # we're NOT comming from CPL_read_wkb:
-			attr(lst, "n_empty") = sum(vapply(lst, function(x) length(x) == 0, TRUE))
-			u = unique(vapply(lst, class, rep("", 3))[1,])
-			if (length(u) > 1)
-				stop(paste("found multiple dimensions:", paste(u, collapse = " ")))
-		} 
-
 		# class: do we have a mix of geometry types?
 		single = if (!is.null(attr(lst, "single_type"))) # set by CPL_read_wkb:
 				attr(lst, "single_type")
 			else
-				length(unique(vapply(lst, function(y) class(y)[2], ""))) == 1L
+				length(unique(sfg_classes[2L,])) == 1L
 		attr(lst, "single_type") = NULL # clean up
-		if (single) {
-			attr(lst, "classes") = NULL
-			c(paste0("sfc_", class(lst[[1L]])[2L]), "sfc")
-		} else {
-			attr(lst, "classes") = vapply(lst, class, rep("", 3))[2L,]
-			c("sfc_GEOMETRY", "sfc")         # the mix
-		}
+		if (single)
+			c(paste0("sfc_", sfg_classes[2L, 1L]), "sfc")
+		else
+			c("sfc_GEOMETRY", "sfc")    # the mix
 	}
+
+	if (any(is_null)) {
+		ret = vector("list", length(is_null))
+		ret[!is_null] = lst
+		ret[ is_null] = list(typed_empty(cls))
+		attributes(ret) = attributes(lst)
+		lst = ret
+	}
+
+	# set class:
+	class(lst) = cls
+
+	# set precision
 	if (! missing(precision) || is.null(attr(lst, "precision")))
 		attr(lst, "precision") = precision
 
+	# (re)compute & set bbox:
+	attr(lst, "bbox") = compute_bbox(lst)
+
+	# get & set crs:
 	if (is.na(crs) && !is.null(attr(lst, "crs")))
 		crs = attr(lst, "crs")
+	st_crs(lst) = crs
 
-	class(lst) = cls
-	attr(lst, "bbox") = compute_bbox(lst)
-	st_set_crs(lst, crs)
+	# set classes attr in case of GEOMETRY
+	if (inherits(lst, "sfc_GEOMETRY")) # recompute, as NULL's may have been substituted:
+		attr(lst, "classes") = vapply(lst, class, rep(NA_character_, 3))[2L,]
+
+	# set n_empty, check XY* is uniform:
+	if (is.null(attr(lst, "n_empty")) || any(is_null)) { # n_empty is set by CPL_read_wkb:
+		attr(lst, "n_empty") = sum(vapply(lst, sfg_is_empty, TRUE))
+		if (length(u <- unique(sfg_classes[1L,])) > 1)
+			stop(paste("found multiple dimensions:", paste(u, collapse = " ")))
+	}
+	lst
+}
+
+sfg_is_empty = function(x) {
+	switch(class(x)[2],
+		POINT = any(!is.finite(x)),
+		MULTIPOINT = , LINESTRING = , CIRCULARSTRING = , CURVE = nrow(x) == 0,
+		length(x) == 0
+	)
 }
 
 #' @export
 "[.sfc" = function(x, i, j, ..., op = st_intersects) {
-	recompute_bb = !missing(i)
     old = x
 	if (!missing(i) && (inherits(i, "sf") || inherits(i, "sfc") || inherits(i, "sfg")))
 		i = lengths(op(x, i, ...)) != 0
-	cls = class(x)[1]
-	x = NextMethod()
-	if (any(vapply(x, is.null, TRUE)))
-		x = st_sfc(fix_NULL_values(x, cls))
-	a = attributes(old)
-	if (!is.null(names(x)))
-		a$names = names(x)[i]
-	if (!is.null(a$classes))
-		a$classes = a$classes[i]
-    attributes(x) = a
-	if (recompute_bb)
-		attr(x, "bbox") = compute_bbox(x)
-    structure(x, class = class(old), n_empty = sum(is.na(st_dimension(x))))
+	st_sfc(NextMethod(), crs = st_crs(old), precision = st_precision(old))
 }
 
 
@@ -103,15 +123,12 @@ st_sfc = function(..., crs = NA_crs_, precision = 0.0) {
 "[<-.sfc" = function (x, i, j, value) {
 	if (is.null(value) || inherits(value, "sfg"))
 		value = list(value)
-	st_sfc(fix_NULL_values(NextMethod()))
+	class(x) = setdiff(class(x), "sfc")
+	st_sfc(NextMethod())
 }
 
 #' @export
 c.sfc = function(..., recursive = FALSE) {
-#	lst = list(...)
-#	ret = do.call(st_sfc, unlist(lapply(lst, unclass), recursive = FALSE))
-#	return(st_set_crs(ret, st_crs(lst[[1]])))
-
 	lst = list(...)
 	cls = class(lst[[1]])
 	eq = if (length(lst) > 1)
@@ -131,7 +148,7 @@ c.sfc = function(..., recursive = FALSE) {
 }
 
 #' @export
-print.sfc = function(x, ..., n = 5L, what = "Geometry set for", append = "") { 
+print.sfc = function(x, ..., n = 5L, what = "Geometry set for", append = "") {
 	sep = if (length(x) != 1) "s" else ""
 	cls = substr(class(x)[1], 5, nchar(class(x)[1]))
 	cat(paste0(what, " ", length(x), " feature", sep, " ", append))
@@ -183,10 +200,10 @@ summary.sfc = function(object, ..., maxsum = 7L, maxp4s = 10L) {
     epsg = paste0("epsg:", attr(object, "crs")$epsg)
 	levels(u) = c(levels(u), epsg)
     p4s = attr(object, "crs")$proj4string
-	if (!is.na(p4s)) { 
+	if (!is.na(p4s)) {
 		if (nchar(p4s) > maxp4s)
 			p4s = paste0(substr(p4s, 1L, maxp4s), "...")
-		levels(u) = c(levels(u), p4s)	
+		levels(u) = c(levels(u), p4s)
 	}
     summary(u, maxsum = maxsum, ...)
 }
@@ -204,7 +221,7 @@ as.data.frame.sfc = function(x, ...) {
 st_geometry.sfc = function(obj, ...) obj
 
 #' Return geometry type of an object
-#' 
+#'
 #' Return geometry type of an object, as a factor
 #' @param x object of class \link{sf} or \link{sfc}
 #' @return a factor with the geometry type of each simple feature in x
@@ -239,7 +256,7 @@ st_geometry_type = function(x) {
 #' @param ... ignored
 #' @param drop logical; drop, or (FALSE) add?
 #' @param what character which dimensions to drop or add
-#' @details only combinations \code{drop=TRUE}, \code{what = "ZM"}, and \code{drop=FALSE}, \code{what="Z"} are supported so far. In case \code{add=TRUE}, \code{x} should have \code{XY} geometry, and zero values are added for \code{Z}.
+#' @details Only combinations \code{drop=TRUE}, \code{what = "ZM"}, and \code{drop=FALSE}, \code{what="Z"} are supported so far. In case \code{add=TRUE}, \code{x} should have \code{XY} geometry, and zero values are added for \code{Z}.
 #' @examples
 #' st_zm(st_linestring(matrix(1:32,8)))
 #' x = st_sfc(st_linestring(matrix(1:32,8)), st_linestring(matrix(1:8,2)))
@@ -280,12 +297,12 @@ st_zm.sfg <- function(x, ..., drop = TRUE, what = "ZM") {
 		else
 			c(unclass(x), 0)
 		structure(ret, class = c("XYZ", class(x)[2:3]))
-	} else 
+	} else
 		stop("this combination of `x', `drop' and `what' is not implemented")
 }
 
 #' @export
-st_zm.list <- function(x, ..., drop = TRUE, what = "ZM") 
+st_zm.list <- function(x, ..., drop = TRUE, what = "ZM")
 	lapply(x, st_zm, drop = drop, what = what)
 
 #' @export
@@ -294,12 +311,12 @@ st_zm.matrix <- function(x, ..., drop = TRUE, what = "ZM")  {
 		x[,1:2]
 	} else if (!drop && what == "Z") {
 		cbind(unclass(x), 0)
-	} else 
+	} else
 		stop("this combination of drop and what is not implemented")
 }
 
 #' Get precision
-#' 
+#'
 #' @param x object of class \code{sfc} or \code{sf}
 #' @export
 st_precision <- function(x) {
@@ -318,13 +335,13 @@ st_precision.sfc <- function(x) {
 }
 
 #' Set precision
-#' 
+#'
 #' @name st_precision
 #' @param precision numeric; see \link{st_as_binary} for how to do this.
-#' @details setting a precision has no direct effect on coordinates of geometries, but merely set an attribute tag to an \code{sfc} object. The effect takes place in \link{st_as_binary} or, more precise, in the C++ function \code{CPL_write_wkb}, where simple feature geometries are being serialized to well-known-binary (WKB). This happens always when routines are called in GEOS library (geometrical operations or predicates), for writing geometries using \link{st_write}, \link{write_sf} or \link{st_write_db}, and (if present) for liblwgeom (\link{st_make_valid}); also \link{aggregate} and \link{summarise} by default union geometries, which calls a GEOS library function. Routines in these libraries receive rounded coordinates, and possibly return results based on them. \link{st_as_binary} contains an example of a roundtrip of \code{sfc} geometries through WKB, in order to see the rounding happening to R data.
+#' @details Setting a \code{precision} has no direct effect on coordinates of geometries, but merely set an attribute tag to an \code{sfc} object. The effect takes place in \link{st_as_binary} or, more precise, in the C++ function \code{CPL_write_wkb}, where simple feature geometries are being serialized to well-known-binary (WKB). This happens always when routines are called in GEOS library (geometrical operations or predicates), for writing geometries using \link{st_write}, \link{write_sf} or \link{st_write_db}, and (if present) for liblwgeom (\link{st_make_valid}); also \link{aggregate} and \link{summarise} by default union geometries, which calls a GEOS library function. Routines in these libraries receive rounded coordinates, and possibly return results based on them. \link{st_as_binary} contains an example of a roundtrip of \code{sfc} geometries through WKB, in order to see the rounding happening to R data.
 #'
 #' The reason to support precision is that geometrical operations in GEOS or liblwgeom may work better at reduced precision. For writing data from R to external resources it is harder to think of a good reason to limiting precision.
-#' @examples 
+#' @examples
 #' x <- st_sfc(st_point(c(pi, pi)))
 #' st_precision(x)
 #' st_precision(x) <- 0.01
@@ -358,10 +375,8 @@ st_set_precision.sf <- function(x, precision) {
     st_set_precision(x, value)
 }
 
-# if g may have NULL elements, replace it with (appropriate?) empty geometries
-fix_NULL_values = function(g, cls = class(g)[1]) {
-
-	empty = switch(cls,
+typed_empty = function(cls) {
+	switch(cls[1],
 		sfc_POINT = st_point(),
 		sfc_MULTIPOINT = st_multipoint(),
 		sfc_LINESTRING = st_linestring(),
@@ -369,20 +384,14 @@ fix_NULL_values = function(g, cls = class(g)[1]) {
 		sfc_POLYGON = st_polygon(),
 		sfc_MULTIPOLYGON = st_multipolygon(),
 		st_geometrycollection())
-
-	isNull = which(vapply(g, is.null, TRUE))
-	for (i in isNull)
-		g[[i]] = empty
-	ne = attr(g, "n_empty")
-	structure(g, n_empty = min(length(g), length(isNull) + ifelse(is.null(ne), 0, ne)))
 }
 
 #' retrieve coordinates in matrix form
-#' 
+#'
 #' retrieve coordinates in matrix form
 #' @param x object of class sf, sfc or sfg
 #' @param ... ignored
-#' @return matrix with coordinates (X, Y, possibly Z and/or M) in rows, possibly followed by integer indicators \code{L1},...,\code{L3} that point out to which structure the coordinate belongs; for \code{POINT} this is absent (each coordinate is a feature), for \code{LINESTRING} \code{L1} refers to the feature, for \code{MULTIPOLYGON} \code{L1} refers to the main ring or holes, \code{L2} to the ring id in the \code{MULTIPOLYGON}, and \code{L3} to the simple feature. 
+#' @return matrix with coordinates (X, Y, possibly Z and/or M) in rows, possibly followed by integer indicators \code{L1},...,\code{L3} that point out to which structure the coordinate belongs; for \code{POINT} this is absent (each coordinate is a feature), for \code{LINESTRING} \code{L1} refers to the feature, for \code{MULTIPOLYGON} \code{L1} refers to the main ring or holes, \code{L2} to the ring id in the \code{MULTIPOLYGON}, and \code{L3} to the simple feature.
 #' @export
 st_coordinates = function(x, ...) UseMethod("st_coordinates")
 
@@ -417,12 +426,12 @@ coord_2 = function(x) { # x is a list with matrices
 	cbind(do.call(rbind, x), L1 = rep(seq_along(x), times = vapply(x, nrow, 0L)))
 }
 
-coord_3 = function(x) { # x is a list of list with matrices
+coord_3 = function(x) { # x is a list of lists with matrices
 	x = lapply(x, coord_2)
 	cbind(do.call(rbind, x), L2 = rep(seq_along(x), times = vapply(x, nrow, 0L)))
 }
 
-coord_4 = function(x) { # x is a list of list with matrices
+coord_4 = function(x) { # x is a list of lists of lists with matrices
 	x = lapply(x, coord_3)
 	cbind(do.call(rbind, x), L3 = rep(seq_along(x), times = vapply(x, nrow, 0L)))
 }
