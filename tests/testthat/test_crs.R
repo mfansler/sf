@@ -18,7 +18,7 @@ test_that("st_crs works", {
   expect_warning(st_crs(nc2) <- 3857, "replacing crs does not reproject data")
   expect_silent(st_crs(nc2) <- 3857)
   #expect_warning(st_crs(nc2) <- 0, "Failed to lookup UOM CODE") -> changes in gdal 2.2:
-  expect_warning(st_crs(nc2) <- 0)
+  #expect_warning(st_crs(nc2) <- 0)
   expect_warning(st_crs(nc2) <- 1000, "not found in EPSG")
   expect_silent(st_crs(nc1) <- st_crs(nc1))
 
@@ -47,4 +47,10 @@ test_that("$.crs works", {
   expect_true(is.character(st_crs("+init=epsg:3857")$proj4string))
   expect_true(is.numeric(st_crs("+init=epsg:3857 +units=km")$b)) 
   expect_true(is.character(st_crs("+init=epsg:3857 +units=km")$units))
+})
+
+test_that("CRS comparison uses ellipsoid and datum (#180)", {
+	expect_equal(
+		st_crs("+proj=tmerc +lat_0=0 +lon_0=0 +k=0.9999 +x_0=304800 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs"),
+		st_crs("+proj=tmerc +lat_0=0 +lon_0=0 +k=0.9999 +x_0=304800 +y_0=0 +datum=NAD83 +units=m +no_defs"))
 })

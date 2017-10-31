@@ -43,15 +43,16 @@
 
 st_as_sfc(x, ...)
 
-\method{st_as_sfc}{SpatialPoints}(x, ...)
+\method{st_as_sfc}{SpatialPoints}(x, ..., precision = 0)
 
-\method{st_as_sfc}{SpatialPixels}(x, ...)
+\method{st_as_sfc}{SpatialPixels}(x, ..., precision = 0)
 
-\method{st_as_sfc}{SpatialMultiPoints}(x, ...)
+\method{st_as_sfc}{SpatialMultiPoints}(x, ..., precision = 0)
 
-\method{st_as_sfc}{SpatialLines}(x, ..., forceMulti = FALSE)
+\method{st_as_sfc}{SpatialLines}(x, ..., precision = 0, forceMulti = FALSE)
 
-\method{st_as_sfc}{SpatialPolygons}(x, ..., forceMulti = FALSE)
+\method{st_as_sfc}{SpatialPolygons}(x, ..., precision = 0,
+  forceMulti = FALSE)
 
 \method{st_as_sfc}{map}(x, ...)
 }
@@ -60,13 +61,16 @@ st_as_sfc(x, ...)
 
 \item{...}{further arguments}
 
-\item{crs}{integer or character; coordinate reference system for the geometry, see \link{st_crs}}
+\item{crs}{integer or character; coordinate reference system for the
+geometry, see \code{\link[=st_crs]{st_crs()}}}
 
 \item{EWKB}{logical; if TRUE, parse as EWKB (extended WKB; PostGIS: ST_AsEWKB), otherwise as ISO WKB (PostGIS: ST_AsBinary)}
 
 \item{spatialite}{logical; if \code{TRUE}, WKB is assumed to be in the spatialite dialect, see \url{https://www.gaia-gis.it/gaia-sins/BLOB-Geometry.html}; this is only supported in native endian-ness (i.e., files written on system with the same endian-ness as that on which it is being read).}
 
 \item{pureR}{logical; if TRUE, use only R code, if FALSE, use compiled (C++) code; use TRUE when the endian-ness of the binary differs from the host machine (\code{.Platform$endian}).}
+
+\item{precision}{precision value; see \link{st_as_binary}}
 
 \item{forceMulti}{logical; if \code{TRUE}, force coercion into \code{MULTIPOLYGON} or \code{MULTILINE} objects, else autodetect}
 }
@@ -76,7 +80,10 @@ Convert foreign geometry object to an sfc object
 \details{
 When converting from WKB, the object \code{x} is either a character vector such as typically obtained from PostGIS (either with leading "0x" or without), or a list with raw vectors representing the features in binary (raw) form.
 
-If \code{x} is a character vector, it should be a vector containing the well-known-text representations of a single geometry for each vector element.
+If \code{x} is a character vector, it should be a vector containing
+the \href{http://www.opengeospatial.org/standards/wkt-crs}{well-known-text} or
+\href{http://postgis.refractions.net/docs/using_postgis_dbmanagement.html#EWKB_EWKT}{Postgis EWKT}
+representations of a single geometry for each vector element.
 
 If \code{x} is a \code{factor}, it is converted to \code{character}.
 }
@@ -85,4 +92,5 @@ wkb = structure(list("01010000204071000000000000801A064100000000AC5C1441"), clas
 st_as_sfc(wkb, EWKB = TRUE)
 wkb = structure(list("0x01010000204071000000000000801A064100000000AC5C1441"), class = "WKB")
 st_as_sfc(wkb, EWKB = TRUE)
+st_as_sfc("SRID=3978;LINESTRING(1663106 -105415,1664320 -104617)")
 }

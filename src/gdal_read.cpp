@@ -1,3 +1,6 @@
+#include <string>
+#include <sstream>
+
 #include <ogrsf_frmts.h>
 
 #include "Rcpp.h"
@@ -38,16 +41,15 @@ Rcpp::List allocate_out_list(OGRFeatureDefn *poFDefn, int n_features, bool int64
 			case OFTReal:
 				out[i] = Rcpp::NumericVector(n_features);
 				break;
-			case OFTString:
-				out[i] = Rcpp::CharacterVector(n_features);
-				break;
 			case OFTStringList:
 			case OFTRealList:
 			case OFTIntegerList:
+			case OFTInteger64List:
 				out[i] = Rcpp::List(n_features);
 				break;
+			case OFTString:
 			default:
-				Rcpp::stop("Unrecognized field type\n"); // #nocov
+				out[i] = Rcpp::CharacterVector(n_features);
 				break;
 		}
 		names[i] = poFieldDefn->GetNameRef();
@@ -143,15 +145,21 @@ Rcpp::List CPL_get_layers(Rcpp::CharacterVector datasource, Rcpp::CharacterVecto
 		OGRLayer *poLayer = poDS->GetLayer(iLayer);
 		names(iLayer) = poLayer->GetName();
 		int nGeomFieldCount = poLayer->GetLayerDefn()->GetGeomFieldCount();
-		Rcpp::CharacterVector fieldtp(nGeomFieldCount);
-		if( nGeomFieldCount > 1 ) {
-			for(int iGeom = 0; iGeom < nGeomFieldCount; iGeom ++ ) {
-				OGRGeomFieldDefn* poGFldDefn = poLayer->GetLayerDefn()->GetGeomFieldDefn(iGeom);
-				fieldtp(iGeom) = OGRGeometryTypeToName(poGFldDefn->GetType());
-			}
-		} else if (poLayer->GetGeomType() != wkbUnknown)
-			fieldtp(0) = OGRGeometryTypeToName(poLayer->GetGeomType());
-		geomtype(iLayer) = fieldtp;
+		if (nGeomFieldCount == 0) {
+			Rcpp::CharacterVector fieldtp(1); // #nocov start ; though tested in #334
+			fieldtp(0) = NA_STRING;
+			geomtype(iLayer) = fieldtp;       // #nocov end
+		} else {
+			Rcpp::CharacterVector fieldtp(nGeomFieldCount);
+			if( nGeomFieldCount > 1 ) {
+				for(int iGeom = 0; iGeom < nGeomFieldCount; iGeom ++ ) {
+					OGRGeomFieldDefn* poGFldDefn = poLayer->GetLayerDefn()->GetGeomFieldDefn(iGeom);
+					fieldtp(iGeom) = OGRGeometryTypeToName(poGFldDefn->GetType());
+				}
+			} else if (poLayer->GetGeomType() != wkbUnknown)
+				fieldtp(0) = OGRGeometryTypeToName(poLayer->GetGeomType());
+			geomtype(iLayer) = fieldtp;
+		}
 		OGRFeatureDefn *poFDefn = poLayer->GetLayerDefn();
 		field_count(iLayer) = poFDefn->GetFieldCount();
 		feature_count(iLayer) = poLayer->GetFeatureCount();
@@ -169,23 +177,6 @@ Rcpp::List CPL_get_layers(Rcpp::CharacterVector datasource, Rcpp::CharacterVecto
 	out.attr("names") = Rcpp::CharacterVector::create("name", "geomtype", "driver", "features", "fields");
 	out.attr("class") = Rcpp::CharacterVector::create("sf_layers");
 	return out;
-}
-
-std::vector<OGRGeometry *> replace_null_with_empty(std::vector<OGRGeometry *> poGeom) {
-	OGRwkbGeometryType gt = wkbGeometryCollection;
-	for (size_t i = 0; i < poGeom.size(); i++) {
-		if (poGeom[i] != NULL) {
-			gt = poGeom[i]->getGeometryType(); // first non-NULL
-			break;
-		}
-	}
-	for (size_t i = 0; i < poGeom.size(); i++) {
-		if (poGeom[i] == NULL)
-			poGeom[i] = OGRGeometryFactory::createGeometry(gt);
-		if (poGeom[i] == NULL)
-			Rcpp::stop("createGeometry returned NULL"); // #nocov
-	}
-	return poGeom;
 }
 
 // [[Rcpp::export]]
@@ -344,33 +335,60 @@ Rcpp::List CPL_read_ogr(Rcpp::CharacterVector datasource, Rcpp::CharacterVector 
 				case OFTStringList: {
 					Rcpp::List lv;
 					lv = out[iField];
-					OGRField *psField = poFeature->GetRawFieldRef(iField);
-					Rcpp::CharacterVector cv(psField->StringList.nCount);
+					char **sl = poFeature->GetFieldAsStringList(iField);
+					Rcpp::CharacterVector cv(CSLCount(sl));
 					for (int j = 0; j < cv.size(); j++)
-						cv(j) = psField->StringList.paList[j];
+						cv[j] = sl[j];
 					lv[i] = cv;
 					}
 					break;
 				case OFTRealList: {
+					// for all *List types, NA is handled by zero-length lists
 					Rcpp::List lv; // #nocov start
 					lv = out[iField];
-					OGRField *psField = poFeature->GetRawFieldRef(iField);
-					Rcpp::NumericVector numv(psField->RealList.nCount);
-					for (int j = 0; j < numv.size(); j++)
-						numv(j) = psField->RealList.paList[j];
-					lv[i] = numv;
+					int n;
+					const double *dl = poFeature->GetFieldAsDoubleList(iField, &n);
+					Rcpp::NumericVector nv(n);
+					for (int j = 0; j < nv.size(); j++)
+						nv[j] = dl[j];
+					lv[i] = nv;
 					}
-					break;
+					break; // #nocov end
 				case OFTIntegerList: {
 					Rcpp::List lv;
 					lv = out[iField];
-					OGRField *psField = poFeature->GetRawFieldRef(iField);
-					Rcpp::IntegerVector iv(psField->IntegerList.nCount);
+					int n;
+					const int *il = poFeature->GetFieldAsIntegerList(iField, &n);
+					Rcpp::IntegerVector iv(n);
 					for (int j = 0; j < iv.size(); j++)
-						iv(j) = psField->IntegerList.paList[j];
+						iv[j] = il[j];
 					lv[i] = iv;
 					} 
-					break; // #nocov end
+					break;
+				case OFTInteger64List: {
+					Rcpp::List lv;
+					lv = out[iField];
+					int n;
+					const GIntBig *int64list = poFeature->GetFieldAsInteger64List(iField, &n);
+					if (int64_as_string) {
+						Rcpp::CharacterVector cv(n);
+						for (int j = 0; j < cv.size(); j++) {
+							std::stringstream stream;
+							stream << int64list[j];
+							cv[j] = stream.str();
+						}
+						lv[i] = cv;
+					} else {
+						Rcpp::NumericVector nv(n);
+						for (int j = 0; j < nv.size(); j++) {
+							nv[j] = (double) int64list[j];
+							if (nv[j] > dbl_max_int64)
+									warn_int64 = true; // #nocov
+						}
+						lv[i] = nv;
+					}
+					}
+					break;
 				default: // break through: anything else to be converted to string?
 				case OFTString: {
 					Rcpp::CharacterVector cv;
@@ -395,6 +413,7 @@ Rcpp::List CPL_read_ogr(Rcpp::CharacterVector datasource, Rcpp::CharacterVector 
 		i++;
 	} // all read...
 
+	std::vector<OGRGeometry *> to_be_freed;
 	for (int iGeom = 0; iGeom < poFDefn->GetGeomFieldCount(); iGeom++ ) {
 		std::vector<OGRGeometry *> poGeom(n);
 		for (size_t i = 0; i < n; i++)
@@ -428,7 +447,24 @@ Rcpp::List CPL_read_ogr(Rcpp::CharacterVector datasource, Rcpp::CharacterVector 
 		} else if (has_null_geometries) {
 			if (! quiet)
 				Rcpp::Rcout << "replacing null geometries with empty geometries" << std::endl; // #nocov
-			poGeom = replace_null_with_empty(poGeom);
+
+			// replace null's with empty:
+			OGRwkbGeometryType gt = wkbGeometryCollection;
+			for (size_t i = 0; i < poGeom.size(); i++) {
+				if (poGeom[i] != NULL) {
+					gt = poGeom[i]->getGeometryType(); // first non-NULL
+					break;
+				}
+			}
+			for (size_t i = 0; i < poGeom.size(); i++) {
+				if (poGeom[i] == NULL) {
+					poGeom[i] = OGRGeometryFactory::createGeometry(gt);
+					if (poGeom[i] == NULL)
+						Rcpp::stop("createGeometry returned NULL"); // #nocov
+					else
+						to_be_freed.push_back(poGeom[i]);
+				}
+			}
 		}
 		if (! quiet && toTypeU != 0 && n > 0)
 			Rcpp::Rcout << "converted into: " << poGeom[0]->getGeometryName() << std::endl; // #nocov
@@ -447,6 +483,8 @@ Rcpp::List CPL_read_ogr(Rcpp::CharacterVector datasource, Rcpp::CharacterVector 
 	// clean up:
 	for (size_t i = 0; i < n; i++)
 		OGRFeature::DestroyFeature(poFeatureV[i]);
+	for (size_t i = 0; i < to_be_freed.size(); i++)
+		OGRGeometryFactory::destroyGeometry(to_be_freed[i]);
 	GDALClose(poDS);
 
 	return out;

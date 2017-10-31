@@ -13,9 +13,9 @@ format.sfc = function(x, ..., digits = 30) {
 	vapply(x, format, "", ..., digits = digits)
 }
 
-#' Create simple feature collection object of class sfc from list
+#' Create simple feature geometry list column
 #'
-#' Create simple feature list column, set class, and add coordinate reference system
+#' Create simple feature geometry list column, set class, and add coordinate reference system and precision
 #'
 #' @name sfc
 #' @param ... zero or more simple feature geometries (objects of class \code{sfg}), or a single list of such objects; \code{NULL} values will get replaced by empty geometries.
@@ -23,8 +23,8 @@ format.sfc = function(x, ..., digits = 30) {
 #' @param precision numeric; see \link{st_as_binary}
 #' @return an object of class \code{sfc}, which is a classed list-column with simple feature geometries.
 #'
-#' @details A simple feature collection object is a list of class
-#' \code{c("stc_TYPE", "sfc")} which typically contains objects of identical type; 
+#' @details A simple feature geometry list-column is a list of class
+#' \code{c("stc_TYPE", "sfc")} which most often contains objects of identical type; 
 #' in case of a mix of types or an empty set, \code{TYPE} is set to the 
 #' superclass \code{GEOMETRY}.
 #' @examples
@@ -283,7 +283,7 @@ st_zm.sfg <- function(x, ..., drop = TRUE, what = "ZM") {
 		ret = if (is.list(x))
 			lapply(x, st_zm, drop = drop, what = what)
 		else if (is.matrix(x))
-			x[,1:2]
+			x[, 1:2, drop = FALSE]
 		else
 			x[1:2]
 		structure(ret, class = c("XY", class(x)[2:3]))
@@ -434,4 +434,9 @@ coord_3 = function(x) { # x is a list of lists with matrices
 coord_4 = function(x) { # x is a list of lists of lists with matrices
 	x = lapply(x, coord_3)
 	cbind(do.call(rbind, x), L3 = rep(seq_along(x), times = vapply(x, nrow, 0L)))
+}
+
+#' @export
+rep.sfc = function(x, ...) {
+	st_sfc(NextMethod(), crs = st_crs(x))
 }

@@ -504,6 +504,10 @@ Rcpp::List CPL_geos_op(std::string op, Rcpp::List sfc,
 		for (size_t i = 0; i < g.size(); i++) {
 			out[i] = chkNULL(GEOSGetCentroid_r(hGEOSCtxt, g[i]));
 		}
+	} else if (op == "node") {
+		for (size_t i = 0; i < g.size(); i++) {
+			out[i] = chkNULL(GEOSNode_r(hGEOSCtxt, g[i]));
+		}
 	} else if (op == "point_on_surface") {
 		for (size_t i = 0; i < g.size(); i++) {
 			out[i] = chkNULL(GEOSPointOnSurface_r(hGEOSCtxt, g[i]));
@@ -674,8 +678,8 @@ Rcpp::CharacterVector CPL_geos_relate(Rcpp::List sfc0, Rcpp::List sfc1) {
 }
 
 // [[Rcpp::export]]
-Rcpp::List CPL_invert_sparse_incidence(Rcpp::List m, int n) {
-// invert a sparse incidence matrix list m that has n columns
+Rcpp::List CPL_transpose_sparse_incidence(Rcpp::List m, int n) {
+// transpose a sparse incidence matrix list m that has n columns
 	std::vector<size_t> sizes(n);
 	for (int i = 0; i < n; i++)
 		sizes[i] = 0; // init
@@ -683,7 +687,7 @@ Rcpp::List CPL_invert_sparse_incidence(Rcpp::List m, int n) {
 		Rcpp::IntegerVector v = m[i];
 		for (int j = 0; j < v.size(); j++) {
 			if (v[j] > n || v[j] < 0)
-				Rcpp::stop("CPL_invert_sparse: index out of bounds"); // #nocov
+				Rcpp::stop("CPL_transpose_sparse_incidence: index out of bounds"); // #nocov
 			sizes[v[j] - 1] += 1; // count
 		}
 	}

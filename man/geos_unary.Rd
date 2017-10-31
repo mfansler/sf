@@ -22,8 +22,10 @@
 \alias{geos_unary}
 \alias{st_point_on_surface}
 \alias{geos_unary}
+\alias{st_node}
+\alias{geos_unary}
 \alias{st_segmentize}
-\title{Geometric unary operations on (pairs of) simple feature geometry sets}
+\title{Geometric unary operations on simple feature geometry sets}
 \usage{
 st_buffer(x, dist, nQuadSegs = 30)
 
@@ -45,6 +47,8 @@ st_centroid(x, ..., of_largest_polygon = FALSE)
 
 st_point_on_surface(x)
 
+st_node(x)
+
 st_segmentize(x, dfMaxLength, ...)
 }
 \arguments{
@@ -62,7 +66,7 @@ st_segmentize(x, dfMaxLength, ...)
 
 \item{bOnlyEdges}{logical; if TRUE, return lines, else return polygons}
 
-\item{envelope}{object of class \code{sfc} or \code{sfg} with the envelope for a voronoi diagram}
+\item{envelope}{object of class \code{sfc} or \code{sfg} containing a \code{POLYGON} with the envelope for a voronoi diagram; this only takes effect when it is larger than the default envelope, chosen when \code{envelope} is an empty polygon}
 
 \item{...}{ignored}
 
@@ -71,24 +75,23 @@ st_segmentize(x, dfMaxLength, ...)
 \item{dfMaxLength}{maximum length of a line segment. If \code{x} has geographical coordinates (long/lat), \code{dfMaxLength} is either a numeric expressed in meter, or an object of class \code{units} with length units or unit \code{rad}, and segmentation takes place along the great circle, using \link[geosphere]{gcIntermediate}.}
 }
 \value{
-\code{st_buffer}, \code{st_boundary}, \code{st_convex_hull}, \code{st_simplify},
-\code{st_triangulate}, \code{st_voronoi}, \code{st_polygonize}, \code{st_line_merge},
-\code{st_centroid} and \code{st_segmentize} return an \link{sfc} or an \link{sf}
-object with the same number of geometries as \code{x}
+an object of the same class of \code{x}, with manipulated geometry.
 }
 \description{
-Geometric unary operations on (pairs of) simple feature geometry sets
+Geometric unary operations on simple feature geometry sets. These are all generics, with methods for \code{sfg}, \code{sfc} and \code{sf} objects, returning an object of the same class.
 }
 \details{
 \code{st_triangulate} requires GEOS version 3.4 or above
 
-\code{st_voronoi} requires GEOS version 3.4 or above
+\code{st_voronoi} requires GEOS version 3.5 or above
 
 in case of \code{st_polygonize}, \code{x} must be an object of class \code{LINESTRING} or \code{MULTILINESTRING}, or an \code{sfc} geometry list-column object containing these
 
 in case of \code{st_line_merge}, \code{x} must be an object of class \code{MULTILINESTRING}, or an \code{sfc} geometry list-column object containing these
 
 \code{st_point_on_surface} returns a point guaranteed to be on the (multi)surface.
+
+\code{st_node} add nodes to linear geometries at intersections without node
 }
 \examples{
 nc = st_read(system.file("shape/nc.shp", package="sf"))
@@ -114,9 +117,11 @@ plot(st_centroid(nc), add = TRUE, pch = 3)
 mp = st_combine(st_buffer(st_sfc(lapply(1:3, function(x) st_point(c(x,x)))), 0.2 * 1:3))
 plot(mp)
 plot(st_centroid(mp), add = TRUE, col = 'red') # centroid of combined geometry
-plot(st_centroid(mp, of_largest_polygon = TRUE), add = TRUE, col = 'blue', pch = 3) 
+plot(st_centroid(mp, of_largest_polygon = TRUE), add = TRUE, col = 'blue', pch = 3)
 plot(nc, axes = TRUE)
 plot(st_point_on_surface(nc), add = TRUE, pch = 3)
+l = st_linestring(rbind(c(0,0), c(1,1), c(0,1), c(1,0), c(0,0)))
+st_polygonize(st_node(l))
 sf = st_sf(a=1, geom=st_sfc(st_linestring(rbind(c(0,0),c(1,1)))), crs = 4326)
 seg = st_segmentize(sf, units::set_units(100, km))
 seg = st_segmentize(sf, units::set_units(0.01, rad))

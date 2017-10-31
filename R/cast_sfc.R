@@ -49,9 +49,10 @@ close_polygon_or_multipolygon = function(x, to) {
 	to_col = which_sfc_col(to)
 	close_mat = function(m) {
 		if (any(m[1,] != m[nrow(m),]))
-			rbind(m, m[1,])
-		else
-			m
+			m = rbind(m, m[1,])
+		if (nrow(m) < 4)
+			stop("polygons require at least 4 points")
+		m
 	}
 	add_attributes(
 		if (to_col == 2)
@@ -200,7 +201,7 @@ st_cast.sf = function(x, to, ..., warn = TRUE, do_split = TRUE) {
 #' @export
 st_cast.sfc_CIRCULARSTRING <- function(x, to, ...) {
 	if (isTRUE(st_is_longlat(x)))
-		message("although coordinates are longitude/latitude, it is assumed that they are planar")
+		message_longlat("st_cast")
 	stopifnot(to == "LINESTRING")
 	st_sfc(CPL_circularstring_to_linestring(st_sfc(x)), crs = st_crs(x)) # should add attributes?
 }

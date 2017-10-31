@@ -5,6 +5,38 @@ CPL_get_bbox <- function(sf, depth = 0L) {
     .Call('_sf_CPL_get_bbox', PACKAGE = 'sf', sf, depth)
 }
 
+CPL_area <- function(sfc) {
+    .Call('_sf_CPL_area', PACKAGE = 'sf', sfc)
+}
+
+CPL_gdal_dimension <- function(sfc, NA_if_empty = TRUE) {
+    .Call('_sf_CPL_gdal_dimension', PACKAGE = 'sf', sfc, NA_if_empty)
+}
+
+CPL_length <- function(sfc) {
+    .Call('_sf_CPL_length', PACKAGE = 'sf', sfc)
+}
+
+CPL_gdal_segmentize <- function(sfc, dfMaxLength = 0.0) {
+    .Call('_sf_CPL_gdal_segmentize', PACKAGE = 'sf', sfc, dfMaxLength)
+}
+
+CPL_gdal_linestring_sample <- function(sfc, distLst) {
+    .Call('_sf_CPL_gdal_linestring_sample', PACKAGE = 'sf', sfc, distLst)
+}
+
+CPL_get_layers <- function(datasource, options, do_count = FALSE) {
+    .Call('_sf_CPL_get_layers', PACKAGE = 'sf', datasource, options, do_count)
+}
+
+CPL_read_ogr <- function(datasource, layer, options, quiet, toTypeUser, promote_to_multi = TRUE, int64_as_string = FALSE) {
+    .Call('_sf_CPL_read_ogr', PACKAGE = 'sf', datasource, layer, options, quiet, toTypeUser, promote_to_multi, int64_as_string)
+}
+
+CPL_write_ogr <- function(obj, dsn, layer, driver, dco, lco, geom, dim, quiet = FALSE, update = FALSE, delete_dsn = FALSE, delete_layer = FALSE) {
+    invisible(.Call('_sf_CPL_write_ogr', PACKAGE = 'sf', obj, dsn, layer, driver, dco, lco, geom, dim, quiet, update, delete_dsn, delete_layer))
+}
+
 CPL_gdal_init <- function() {
     invisible(.Call('_sf_CPL_gdal_init', PACKAGE = 'sf'))
 }
@@ -19,6 +51,10 @@ CPL_gdal_version <- function(what = "RELEASE_NAME") {
 
 CPL_crs_parameters <- function(p4s) {
     .Call('_sf_CPL_crs_parameters', PACKAGE = 'sf', p4s)
+}
+
+CPL_crs_equivalent <- function(crs1, crs2) {
+    .Call('_sf_CPL_crs_equivalent', PACKAGE = 'sf', crs1, crs2)
 }
 
 CPL_crs_from_epsg <- function(epsg) {
@@ -69,36 +105,8 @@ CPL_sfc_from_wkt <- function(wkt) {
     .Call('_sf_CPL_sfc_from_wkt', PACKAGE = 'sf', wkt)
 }
 
-CPL_area <- function(sfc) {
-    .Call('_sf_CPL_area', PACKAGE = 'sf', sfc)
-}
-
-CPL_gdal_dimension <- function(sfc, NA_if_empty = TRUE) {
-    .Call('_sf_CPL_gdal_dimension', PACKAGE = 'sf', sfc, NA_if_empty)
-}
-
-CPL_length <- function(sfc) {
-    .Call('_sf_CPL_length', PACKAGE = 'sf', sfc)
-}
-
-CPL_gdal_segmentize <- function(sfc, dfMaxLength = 0.0) {
-    .Call('_sf_CPL_gdal_segmentize', PACKAGE = 'sf', sfc, dfMaxLength)
-}
-
-CPL_gdal_linestring_sample <- function(sfc, distLst) {
-    .Call('_sf_CPL_gdal_linestring_sample', PACKAGE = 'sf', sfc, distLst)
-}
-
-CPL_get_layers <- function(datasource, options, do_count = FALSE) {
-    .Call('_sf_CPL_get_layers', PACKAGE = 'sf', datasource, options, do_count)
-}
-
-CPL_read_ogr <- function(datasource, layer, options, quiet, toTypeUser, promote_to_multi = TRUE, int64_as_string = FALSE) {
-    .Call('_sf_CPL_read_ogr', PACKAGE = 'sf', datasource, layer, options, quiet, toTypeUser, promote_to_multi, int64_as_string)
-}
-
-CPL_write_ogr <- function(obj, dsn, layer, driver, dco, lco, geom, dim, quiet = FALSE, update = FALSE, delete_dsn = FALSE, delete_layer = FALSE) {
-    invisible(.Call('_sf_CPL_write_ogr', PACKAGE = 'sf', obj, dsn, layer, driver, dco, lco, geom, dim, quiet, update, delete_dsn, delete_layer))
+CPL_gdal_with_geos <- function() {
+    .Call('_sf_CPL_gdal_with_geos', PACKAGE = 'sf')
 }
 
 CPL_geos_binop <- function(sfc0, sfc1, op, par = 0.0, pattern = "", sparse = TRUE, prepared = FALSE) {
@@ -145,8 +153,8 @@ CPL_geos_relate <- function(sfc0, sfc1) {
     .Call('_sf_CPL_geos_relate', PACKAGE = 'sf', sfc0, sfc1)
 }
 
-CPL_invert_sparse_incidence <- function(m, n) {
-    .Call('_sf_CPL_invert_sparse_incidence', PACKAGE = 'sf', m, n)
+CPL_transpose_sparse_incidence <- function(m, n) {
+    .Call('_sf_CPL_transpose_sparse_incidence', PACKAGE = 'sf', m, n)
 }
 
 CPL_lwgeom_version <- function(b = FALSE) {
@@ -163,6 +171,10 @@ CPL_split <- function(sfc, blade) {
 
 CPL_geohash <- function(sfc, prec) {
     .Call('_sf_CPL_geohash', PACKAGE = 'sf', sfc, prec)
+}
+
+CPL_lwgeom_transform <- function(sfc, p4s) {
+    .Call('_sf_CPL_lwgeom_transform', PACKAGE = 'sf', sfc, p4s)
 }
 
 CPL_proj_version <- function(b = FALSE) {

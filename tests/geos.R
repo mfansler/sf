@@ -82,9 +82,8 @@ if (sf_extSoftVersion()["GEOS"] >= "3.5.0") {
  print(class(v))
 }
 
-i = st_intersects(ncm, ncm)
-j = sf:::CPL_invert_sparse_incidence(i, 100)
-all.equal(i, sf:::CPL_invert_sparse_incidence(j, 100))
+i = st_intersects(ncm, ncm[1:88,])
+all.equal(i, t(t(i)))
 
 # check use of pattern in st_relate:
 sfc = st_sfc(st_point(c(0,0)), st_point(c(3,3)))
@@ -114,3 +113,12 @@ pol_df <- data.frame(id = 1)
 st_geometry(pol_df) <- st_sfc(pol)
 st_intersects(pts, pol_df[pol_df$id == 2,]) # with empty sf/sfc
 st_intersects(pts, pol_df[pol_df$id == 2,], sparse = FALSE) # with empty sf/sfc
+
+# st_node
+l = st_linestring(rbind(c(0,0), c(1,1), c(0,1), c(1,0), c(0,0)))
+st_node(l)
+st_node(st_sfc(l))
+st_node(st_sf(a = 1, st_sfc(l)))
+
+# print.sgbp:
+st_disjoint(nc, nc)

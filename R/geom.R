@@ -29,9 +29,15 @@ st_is_simple = function(x) CPL_geos_is_simple(st_geometry(x))
 
 #' @name geos_measures
 #' @export
-#' @return If the coordinate reference system of \code{x} was set, these functions return values with unit of measurement; see \link[units]{units}.
+#' @return If the coordinate reference system of \code{x} was set, these functions return values with unit of measurement; see \link[units]{set_units}.
 #'
 #' st_area returns the area of a geometry, in the coordinate reference system used; in case \code{x} is in degrees longitude/latitude, \link[geosphere]{areaPolygon} is used for area calculation.
+#' @examples
+#' b0 = st_polygon(list(rbind(c(-1,-1), c(1,-1), c(1,1), c(-1,1), c(-1,-1))))
+#' b1 = b0 + 2
+#' b2 = b0 + c(-0.2, 2)
+#' x = st_sfc(b0, b1, b2)
+#' st_area(x)
 st_area = function(x) {
 	if (isTRUE(st_is_longlat(x))) {
 		p = crs_parameters(st_crs(x))
@@ -94,6 +100,10 @@ st_length = function(x, dist_fun = geosphere::distGeo) {
 	}
 }
 
+message_longlat = function(caller) {
+	message(paste("although coordinates are longitude/latitude,",
+		caller, "assumes that they are planar"))
+}
 # binary, interfaced through GEOS:
 
 # returning matrix, distance or relation string -- the work horse is:
@@ -105,11 +115,14 @@ st_geos_binop = function(op = "intersects", x, y, par = 0.0, pattern = NA_charac
 	else if (!inherits(x, "sfg") && !inherits(y, "sfg"))
 		stopifnot(st_crs(x) == st_crs(y))
 	if (isTRUE(st_is_longlat(x)) && !(op %in% c("equals", "equals_exact", "polygonize")))
-		message("although coordinates are longitude/latitude, it is assumed that they are planar")
+		message_longlat(paste0("st_", op))
 	ret = CPL_geos_binop(st_geometry(x), st_geometry(y), op, par, pattern, sparse, prepared)
-	if (sparse)
-		ret
-	else
+	if (sparse) {
+		if (is.null(id <- row.names(x)))
+			id = as.character(1:length(ret))
+		structure(ret, predicate = op, region.id = id, ncol = length(st_geometry(y)),
+			class = "sgbp")
+	} else
 		ret[[1]]
 }
 
@@ -170,7 +183,7 @@ st_distance = function(x, y, dist_fun, by_element = FALSE) {
 #' @param y object of class \code{sf}, \code{sfc} or \code{sfg}
 #' @param pattern character; define the pattern to match to, see details.
 #' @param sparse logical; should a sparse matrix be returned (TRUE) or a dense matrix?
-#' @return In case \code{pattern} is not given, \code{st_relate} returns a dense \code{character} matrix; element [i,j] has nine characters, referring to the DE9-IM relationship between x[i] and y[j], encoded as IxIy,IxBy,IxEy,BxIy,BxBy,BxEy,ExIy,ExBy,ExEy where I refers to interior, B to boundary, and E to exterior, and e.g. BxIy the dimensionality of the intersection of the the boundary of x[i] and the interior of y[j], which is one of {0,1,2,F}, digits denoting dimensionality, F denoting not intersecting. When \code{pattern} is given, returns a dense logical matrix or sparse index list with matches to the given pattern; see \link{st_intersection} for a description of the returned matrix or list. See also \url{https://en.wikipedia.org/wiki/DE-9IM} for further explanation.
+#' @return In case \code{pattern} is not given, \code{st_relate} returns a dense \code{character} matrix; element [i,j] has nine characters, referring to the DE9-IM relationship between x[i] and y[j], encoded as IxIy,IxBy,IxEy,BxIy,BxBy,BxEy,ExIy,ExBy,ExEy where I refers to interior, B to boundary, and E to exterior, and e.g. BxIy the dimensionality of the intersection of the the boundary of x[i] and the interior of y[j], which is one of {0,1,2,F}, digits denoting dimensionality, F denoting not intersecting. When \code{pattern} is given, a dense logical matrix or sparse index list returned with matches to the given pattern; see \link{st_intersection} for a description of the returned matrix or list. See also \url{https://en.wikipedia.org/wiki/DE-9IM} for further explanation.
 #' @export
 #' @examples
 #' p1 = st_point(c(0,0))
@@ -203,9 +216,11 @@ st_relate	= function(x, y, pattern = NA_character_, sparse = !is.na(pattern)) {
 #' @param x object of class \code{sf}, \code{sfc} or \code{sfg}
 #' @param y object of class \code{sf}, \code{sfc} or \code{sfg}
 #' @param sparse logical; should a sparse index list be returned (TRUE) or a dense logical matrix? See below.
-#' @return If \code{sparse=FALSE}, \code{st_predicate} (with \code{predicate} e.g. "intersects") returns a dense logical matrix with element \code{i,j} \code{TRUE} when \code{predicate(x[i], y[j])} (e.g., when geometry i and j intersect); if \code{sparse=TRUE}, a sparse list representation of the same matrix, with list element \code{i} a numeric vector with the indices j for which \code{predicate(x[i],y[j])} is \code{TRUE} (and hence \code{integer(0)} if none of them is \code{TRUE}). From the dense matrix, one can find out if one or more elements intersect by \code{apply(mat, 1, any)}, and from the sparse list by \code{lengths(lst) > 0}, see examples below.
+#' @return If \code{sparse=FALSE}, \code{st_predicate} (with \code{predicate} e.g. "intersects") returns a dense logical matrix with element \code{i,j} \code{TRUE} when \code{predicate(x[i], y[j])} (e.g., when geometry i and j intersect); if \code{sparse=TRUE}, an object of class \code{sgbp} with a sparse list representation of the same matrix, with list element \code{i} a numeric vector with the indices j for which \code{predicate(x[i],y[j])} is \code{TRUE} (and hence \code{integer(0)} if none of them is \code{TRUE}). From the dense matrix, one can find out if one or more elements intersect by \code{apply(mat, 1, any)}, and from the sparse list by \code{lengths(lst) > 0}, see examples below.
 #' @details For most predicates, a spatial index is built on argument \code{x}; see \url{http://r-spatial.org/r/2017/06/22/spatial-index.html}.
 #' Specifically, \code{st_intersects}, \code{st_disjoint}, \code{st_touches} \code{st_crosses}, \code{st_within}, \code{st_contains}, \code{st_contains_properly}, \code{st_overlaps}, \code{st_equals}, \code{st_covers} and \code{st_covered_by} all build spatial indexes for more efficient geometry calculations. \code{st_relate}, \code{st_equals_exact}, and \code{st_is_within_distance} do not.
+#'
+#' Sparse geometry binary predicate (\code{sgbp}) lists have the following attributes: \code{region.id} with the \code{row.names} of \code{x} (if any, else \code{1:n}), and \code{predicate} with the name of the predicate used.
 #' @examples
 #' pts = st_sfc(st_point(c(.5,.5)), st_point(c(1.5, 1.5)), st_point(c(2.5, 2.5)))
 #' pol = st_polygon(list(rbind(c(0,0), c(2,0), c(2,2), c(0,2), c(0,0))))
@@ -227,7 +242,9 @@ st_disjoint		= function(x, y = x, sparse = TRUE, prepared = TRUE) {
 	int = st_geos_binop("intersects", x, y, sparse = sparse, prepared = prepared)
 	# disjoint = !intersects :
 	if (sparse)
-		lapply(int, function(g) setdiff(1:length(st_geometry(y)), g))
+		structure(
+			lapply(int, function(g) setdiff(1:length(st_geometry(y)), g)),
+			predicate = "disjoint", class = "sgbp")
 	else
 		!int
 }
@@ -315,19 +332,16 @@ st_is_within_distance = function(x, y, dist, sparse = TRUE, prepared = FALSE) {
 
 # unary, returning geometries
 
-#' Geometric unary operations on (pairs of) simple feature geometry sets
+#' Geometric unary operations on simple feature geometry sets
 #'
-#' Geometric unary operations on (pairs of) simple feature geometry sets
+#' Geometric unary operations on simple feature geometry sets. These are all generics, with methods for \code{sfg}, \code{sfc} and \code{sf} objects, returning an object of the same class.
 #' @name geos_unary
 #' @param x object of class \code{sfg}, \code{sfg} or \code{sf}
 #' @param dist numeric; buffer distance for all, or for each of the elements in \code{x}; in case
 #' \code{dist} is a \code{units} object, it should be convertible to \code{arc_degree} if
 #' \code{x} has geographic coordinates, and to \code{st_crs(x)$units} otherwise
 #' @param nQuadSegs integer; number of segments per quadrant (fourth of a circle)
-#' @return \code{st_buffer}, \code{st_boundary}, \code{st_convex_hull}, \code{st_simplify},
-#' \code{st_triangulate}, \code{st_voronoi}, \code{st_polygonize}, \code{st_line_merge},
-#' \code{st_centroid} and \code{st_segmentize} return an \link{sfc} or an \link{sf}
-#' object with the same number of geometries as \code{x}
+#' @return an object of the same class of \code{x}, with manipulated geometry.
 #' @export
 st_buffer = function(x, dist, nQuadSegs = 30)
 	UseMethod("st_buffer")
@@ -339,15 +353,17 @@ st_buffer.sfg = function(x, dist, nQuadSegs = 30)
 #' @export
 st_buffer.sfc = function(x, dist, nQuadSegs = 30) {
 	if (isTRUE(st_is_longlat(x))) {
-		warning("st_buffer does not correctly buffer longitude/latitude data, dist needs to be in decimal degrees.")
+		warning("st_buffer does not correctly buffer longitude/latitude data")
 		if (inherits(dist, "units"))
 			dist = units::set_units(dist, "arc_degrees")
+		else
+			message("dist is assumed to be in decimal degrees (arc_degrees).")
 	} else if (inherits(dist, "units")) {
 		if (is.na(st_crs(x)))
 			stop("x does not have a crs set: can't convert units")
 		if (is.null(st_crs(x)$units))
 			stop("x has a crs without units: can't convert units")
-		dist = units::set_units(dist, st_crs(x)$units)
+		units(dist) = units::set_units(dist, udunits_from_proj[st_crs(x)$units])
 	}
 	dist = rep(dist, length.out = length(x))
 	st_sfc(CPL_geos_op("buffer", x, dist, nQuadSegs))
@@ -454,8 +470,8 @@ st_triangulate.sf = function(x, dTolerance = 0.0, bOnlyEdges = FALSE) {
 
 #' @name geos_unary
 #' @export
-#' @param envelope object of class \code{sfc} or \code{sfg} with the envelope for a voronoi diagram
-#' @details \code{st_voronoi} requires GEOS version 3.4 or above
+#' @param envelope object of class \code{sfc} or \code{sfg} containing a \code{POLYGON} with the envelope for a voronoi diagram; this only takes effect when it is larger than the default envelope, chosen when \code{envelope} is an empty polygon
+#' @details \code{st_voronoi} requires GEOS version 3.5 or above
 #' @examples
 #' set.seed(1)
 #' x = st_multipoint(matrix(runif(10),,2))
@@ -472,11 +488,11 @@ st_voronoi = function(x, envelope, dTolerance = 0.0, bOnlyEdges = FALSE)
 	UseMethod("st_voronoi")
 
 #' @export
-st_voronoi.sfg = function(x, envelope = list(), dTolerance = 0.0, bOnlyEdges = FALSE)
+st_voronoi.sfg = function(x, envelope = st_polygon(), dTolerance = 0.0, bOnlyEdges = FALSE)
 	get_first_sfg(st_voronoi(st_sfc(x), st_sfc(envelope), dTolerance, bOnlyEdges = bOnlyEdges))
 
 #' @export
-st_voronoi.sfc = function(x, envelope = list(), dTolerance = 0.0, bOnlyEdges = FALSE) {
+st_voronoi.sfc = function(x, envelope = st_polygon(), dTolerance = 0.0, bOnlyEdges = FALSE) {
 	if (sf_extSoftVersion()["GEOS"] >= "3.5.0") {
 		if (isTRUE(st_is_longlat(x)))
 			warning("st_voronoi does not correctly triangulate longitude/latitude data")
@@ -486,7 +502,7 @@ st_voronoi.sfc = function(x, envelope = list(), dTolerance = 0.0, bOnlyEdges = F
 }
 
 #' @export
-st_voronoi.sf = function(x, envelope = list(), dTolerance = 0.0, bOnlyEdges = FALSE) {
+st_voronoi.sf = function(x, envelope = st_polygon(), dTolerance = 0.0, bOnlyEdges = FALSE) {
 	st_geometry(x) <- st_voronoi(st_geometry(x), st_sfc(envelope), dTolerance, bOnlyEdges)
 	x
 }
@@ -550,7 +566,7 @@ st_line_merge.sf = function(x) {
 #' mp = st_combine(st_buffer(st_sfc(lapply(1:3, function(x) st_point(c(x,x)))), 0.2 * 1:3))
 #' plot(mp)
 #' plot(st_centroid(mp), add = TRUE, col = 'red') # centroid of combined geometry
-#' plot(st_centroid(mp, of_largest_polygon = TRUE), add = TRUE, col = 'blue', pch = 3) 
+#' plot(st_centroid(mp, of_largest_polygon = TRUE), add = TRUE, col = 'blue', pch = 3)
 st_centroid = function(x, ..., of_largest_polygon = FALSE)
 	UseMethod("st_centroid")
 
@@ -561,15 +577,15 @@ st_centroid.sfg = function(x, ..., of_largest_polygon = FALSE)
 largest_ring = function(x) {
 	pols = st_cast(x, "POLYGON", warn = FALSE)
 	spl = split(pols, rep(1:length(x), attr(pols, "ids")))
-	st_sfc(lapply(spl, function(y) y[[which.max(st_area(y))]]))
+	st_sfc(lapply(spl, function(y) y[[which.max(st_area(y))]]), crs = st_crs(x))
 }
 
 #' @export
 st_centroid.sfc = function(x, ..., of_largest_polygon = FALSE) {
-	if (isTRUE(st_is_longlat(x)))
-		warning("st_centroid does not give correct centroids for longitude/latitude data")
 	if (of_largest_polygon)
 		x = largest_ring(x)
+	if (isTRUE(st_is_longlat(x)))
+		warning("st_centroid does not give correct centroids for longitude/latitude data")
 	st_sfc(CPL_geos_op("centroid", x, numeric(0)))
 }
 
@@ -603,6 +619,33 @@ st_point_on_surface.sfc = function(x) {
 st_point_on_surface.sf = function(x) {
 	st_geometry(x) <- st_point_on_surface(st_geometry(x))
 	x
+}
+
+#' @name geos_unary
+#' @export
+#' @details \code{st_node} add nodes to linear geometries at intersections without node
+#' @examples
+#' l = st_linestring(rbind(c(0,0), c(1,1), c(0,1), c(1,0), c(0,0)))
+#' st_polygonize(st_node(l))
+st_node = function(x) UseMethod("st_node")
+
+#' @export
+st_node.sfg = function(x)
+	get_first_sfg(st_node(st_sfc(x)))
+
+#' @export
+st_node.sfc = function(x) {
+	dims = st_dimension(x)
+	if (!all(is.na(dims) || dims == 1))
+		stop("st_node: all geometries should be linear")
+	if (isTRUE(st_is_longlat(x)))
+		warning("st_node may not give correct results for longitude/latitude data")
+	st_sfc(CPL_geos_op("node", x, numeric(0)))
+}
+
+#' @export
+st_node.sf = function(x) {
+	st_set_geometry(x, st_node(st_geometry(x)))
 }
 
 #' @name geos_unary
@@ -716,6 +759,8 @@ geos_op2_df = function(x, y, geoms) {
 # call geos_op2 function op on x and y:
 geos_op2_geom = function(op, x, y) {
 	stopifnot(st_crs(x) == st_crs(y))
+	if (isTRUE(st_is_longlat(x)))
+		message_longlat(paste0("st_", op))
 	st_sfc(CPL_geos_op2(op, st_geometry(x), st_geometry(y)), crs = st_crs(x))
 }
 

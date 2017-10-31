@@ -182,3 +182,24 @@ class(cbind(nc, nc))
 
 x = st_sfc(st_point(0:1), st_point(2:3))
 x[c(NA,1,NA,2,NA)]
+
+# jitter
+pts = st_centroid(st_geometry(nc))
+plot(pts)
+plot(st_jitter(pts, .05), add = TRUE, col = 'red')
+plot(st_geometry(nc))
+plot(st_jitter(st_geometry(nc), factor = .01), add = TRUE, col = '#ff8888')
+st_jitter(st_sfc(st_point(0:1)), amount = .1)
+
+# st_bbox:
+library(sp)
+demo(meuse, ask = FALSE, echo = FALSE)
+st_bbox(meuse)
+library(raster)
+st_bbox(raster(meuse.grid))
+
+# st_to_s2
+x = sf:::st_to_s2(nc)
+x1 = st_geometry(x)
+cc = st_coordinates(x1)
+summary(sqrt(cc[,1]^2+cc[,2]^2+cc[,3]^2))

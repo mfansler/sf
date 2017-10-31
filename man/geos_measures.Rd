@@ -25,7 +25,7 @@ st_distance(x, y, dist_fun, by_element = FALSE)
 \item{by_element}{logical; if \code{TRUE}, return a vector with distance between the first elements of \code{x} and \code{y}, the second, etc. if \code{FALSE}, return the dense matrix with all pairwise distances.}
 }
 \value{
-If the coordinate reference system of \code{x} was set, these functions return values with unit of measurement; see \link[units]{units}.
+If the coordinate reference system of \code{x} was set, these functions return values with unit of measurement; see \link[units]{set_units}.
 
 st_area returns the area of a geometry, in the coordinate reference system used; in case \code{x} is in degrees longitude/latitude, \link[geosphere]{areaPolygon} is used for area calculation.
 
@@ -40,6 +40,11 @@ Compute Euclidian or great circle distance between pairs of geometries, the area
 Function \code{dist_fun} should follow the pattern of the distance function \link[geosphere]{distGeo}: the first two arguments must be 2-column point matrices, the third the semi major axis (radius, in m), the third the ellipsoid flattening.
 }
 \examples{
+b0 = st_polygon(list(rbind(c(-1,-1), c(1,-1), c(1,1), c(-1,1), c(-1,-1))))
+b1 = b0 + 2
+b2 = b0 + c(-0.2, 2)
+x = st_sfc(b0, b1, b2)
+st_area(x)
 dist_vincenty = function(p1, p2, a, f) geosphere::distVincentyEllipsoid(p1, p2, a, a * (1-f), f)
 line = st_sfc(st_linestring(rbind(c(30,30), c(40,40))), crs = 4326)
 st_length(line)

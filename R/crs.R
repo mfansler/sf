@@ -1,9 +1,10 @@
-# from sp/R/CRS-methods.R, https://github.com/edzer/sp/pull/31 @hughjonesd
-identicalCRS1 = function(x, y) {
-  args_x <- strsplit(x, " +")[[1]]
-  args_y <- strsplit(y, " +")[[1]]
-  setequal(args_x, args_y)
-}
+#  alternative, but more limiting from sp/R/CRS-methods.R, https://github.com/edzer/sp/pull/31 @hughjonesd
+#  (no longer used)
+#identicalCRS1 = function(x, y) {
+#  args_x <- strsplit(x, " +")[[1]]
+#  args_y <- strsplit(y, " +")[[1]]
+#  setequal(args_x, args_y)
+#}
 
 # this function establishes whether two crs objects are semantically identical. This is
 # the case when: (1) they are completely identical, or (2) they have identical proj4string
@@ -23,12 +24,7 @@ Ops.crs <- function(e1, e2) {
 			TRUE
 		else if (is.na(e1) || is.na(e2)) # only one of them is NA_crs_
 			FALSE
-		else if (identicalCRS1(e1$proj4string, e2$proj4string) && (is.na(e1$epsg) || is.na(e2$epsg)))
-			TRUE
-		#else if (!is.na(e1$epsg) && !is.na(e2$epsg) && e1$epsg == e2$epsg) # epsg identical, proj4str different
-		#	TRUE
-		else
-			FALSE
+		else CPL_crs_equivalent(e1$proj4string, e2$proj4string) # use GDAL's srs1->IsSame(srs2)
 	}
 }
 
@@ -189,19 +185,20 @@ st_is_longlat = function(x) {
 
 # a = "b" => a is the proj.4 unit (try: cs2cs -lu); "b" is the udunits2 unit
 udunits_from_proj = c(
-	km =       "km",
-	m =        "m",
-	dm =       "dm",
-	cm =       "cm",
-	mm =       "mm",
-	kmi =      "nautical_mile",
+#   PROJ.4     UDUNITS
+	`km` =     "km",
+	`m` =      "m",
+	`dm` =     "dm",
+	`cm` =     "cm",
+	`mm` =     "mm",
+	`kmi` =    "nautical_mile",
 	`in` =     "in",
-	ft =       "ft",
-	yd =       "yd",
-	mi =       "mi",
-	fath =     "fathom",
-	ch =       "chain",
-	link =     "0.201168 m",
+	`ft` =     "ft",
+	`yd` =     "yd",
+	`mi` =     "mi",
+	`fath` =   "fathom",
+	`ch` =     "chain",
+	`link` =   "0.201168 m",
 	`us-in` =  "1./39.37 m",
 	`us-ft` =  "US_survey_foot",
 	`us-yd` =  "US_survey_yard",
@@ -216,21 +213,13 @@ crs_parameters = function(x) {
 	stopifnot(!is.na(x))
 	ret = structure(CPL_crs_parameters(x$proj4string),
 		names = c("SemiMajor", "InvFlattening", "units_gdal", "IsVertical", "WktPretty", "Wkt"))
-	ret$SemiMajor = set_units(ret$SemiMajor, make_unit("m"))
-#	ret$ud_unit = switch(ret$units_gdal,
-#		"Meter"                = make_unit("m"),
-#		"metre"                = make_unit("m"),
-#		"Foot_US"              = make_unit("US_survey_foot"),
-#		"Foot (International)" = make_unit("ft"),
-#		"degree"               = make_unit("arc_degree"),
-#		"kilometre"            = make_unit("km"),
-#		stop("unknown unit: please file an issue at http://github.com/r-spatial/sf/"))
+	ret$SemiMajor = set_units(ret$SemiMajor, "m")
 	ret$ud_unit = if (isTRUE(st_is_longlat(x)))
 			make_unit("arc_degree")
 		else if (is.null(x$units))
 			make_unit("m")
 		else
-			make_unit(udunits_from_proj[x$units])
+			set_units(1.0, udunits_from_proj[x$units])
 	ret
 }
 
@@ -278,4 +267,22 @@ is.na.crs = function(x) {
 		names(vals) = substring(sapply(p4s2, function(x) x[1]), 2)
 		vals[[name]]
 	}
+}
+
+#' @export
+print.crs = function(x, ...) {
+  cat("Coordinate Reference System:")
+  if (is.na(x)) {
+    cat(" NA\n")
+  } else {
+    cat("\n")
+    if (is.na(x$epsg))
+       cat("  No EPSG code\n")
+    else
+       cat("  EPSG:", x$epsg, "\n")
+    if (is.na(x$proj4string))
+      stop("  invalid crs: please report an issue") # nocov
+    else 
+      cat("  proj4string: \"", x$proj4string, "\"\n", sep = "")
+  }
 }

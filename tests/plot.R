@@ -66,9 +66,14 @@ nc = st_read(system.file("shape/nc.shp", package="sf"), quiet = TRUE)
 plot(nc)
 plot(nc, axes = TRUE)
 plot(nc, col="lightgrey") 
+plot(st_centroid(nc), add = TRUE, col = 1)
 nc %>% 
   select(geometry) %>% 
   plot()
+
+nc$f = cut(nc[[1]], 5)
+plot(nc["f"], key.pos = 1)
+plot(nc[1],   key.pos = 1)
 
 # test background map plotting:
 data(bgmap)
@@ -92,3 +97,9 @@ m = st_segmentize(m, 2e5)
 plot(m, axes = TRUE)
 g = st_transform(m, st_crs("+proj=ortho +lat_0=30 +lon_0=45"), check = TRUE)
 plot(g, axes = TRUE)
+
+nc[[1]] = NA
+nc[[10]] = 1
+plot(nc, pal = rainbow, nbreaks = 3)
+plot(nc, pal = rainbow, breaks = "jenks", nbreaks = 3)
+plot(nc, pal = rainbow, breaks = (0:10)/3)

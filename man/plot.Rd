@@ -29,7 +29,10 @@
 \alias{sf.colors}
 \title{Plot sf object}
 \usage{
-\method{plot}{sf}(x, y, ..., ncol = 10, col = NULL, max.plot = 9)
+\method{plot}{sf}(x, y, ..., col = NULL, main, pal = NULL, nbreaks = 10,
+  breaks = "pretty", max.plot = if (is.null(n <-
+  options("sf_max.plot")[[1]])) 9 else n, key.pos = if (ncol(x) > 2) NULL else
+  4, key.size = lcm(1.8))
 
 \method{plot}{sfc_POINT}(x, y, ..., pch = 1, cex = 1, col = 1, bg = 0,
   lwd = 1, lty = 1, type = "p", add = FALSE)
@@ -64,7 +67,7 @@ plot_sf(x, xlim = NULL, ylim = NULL, asp = NA, axes = FALSE,
   bgMap = NULL, expandBB = c(0, 0, 0, 0), graticule = NA_crs_,
   col_graticule = "grey")
 
-sf.colors(n = 10, xc, cutoff.tails = c(0.35, 0.2), alpha = 1,
+sf.colors(n = 10, cutoff.tails = c(0.35, 0.2), alpha = 1,
   categorical = FALSE)
 }
 \arguments{
@@ -74,11 +77,21 @@ sf.colors(n = 10, xc, cutoff.tails = c(0.35, 0.2), alpha = 1,
 
 \item{...}{further specifications, see \link{plot_sf} and \link{plot}}
 
-\item{ncol}{integer; default number of colors to be used}
-
 \item{col}{color}
 
-\item{max.plot}{integer; lower boundary to maximum number of attributes to plot (defaults to 9)}
+\item{main}{title for plot (\code{NULL} to remove)}
+
+\item{pal}{palette function, similar to \link[grDevices]{rainbow}; if omitted, \link{sf.colors} is used}
+
+\item{nbreaks}{number of colors breaks (ignored for \code{factor} or \code{character} variables)}
+
+\item{breaks}{either a numeric vector with the actual breaks, or a name of a method accepted by the \code{style} argument of \link[classInt]{classIntervals}}
+
+\item{max.plot}{integer; lower boundary to maximum number of attributes to plot; the default value (9) can be overriden by setting the global option \code{sf_max.plot}, e.g. \code{options(sf_max.plot=2)}}
+
+\item{key.pos}{integer; which side to plot a color key: 1 bottom, 2 left, 3 top, 4 right. Set to \code{NULL} for no key. Currently ignored if multiple columns are plotted.}
+
+\item{key.size}{amount of space reserved for the key (labels)}
 
 \item{pch}{plotting symbol}
 
@@ -128,13 +141,11 @@ or object returned by \link{st_graticule}}
 
 \item{n}{integer; number of colors}
 
-\item{xc}{factor or numeric vector, for which colors need to be returned}
-
 \item{cutoff.tails}{numeric, in [0,0.5] start and end values}
 
 \item{alpha}{numeric, in [0,1], transparency}
 
-\item{categorical}{logical; should a categorical color ramp be returned? if \code{x} is a factor, yes.}
+\item{categorical}{logical; do we want colors for a categorical variable? (see details)}
 }
 \description{
 Plot sf object
@@ -160,7 +171,8 @@ projected (coordinates are long/lat), the aspect is by default set to
 (the mean of \code{ylim}, which defaults to the y range of bounding box). This
 implies an \href{https://en.wikipedia.org/wiki/Equirectangular_projection}{Equirectangular projection}.
 
-\code{sf.colors} was taken from \link[sp]{bpy.colors}, with modified \code{cutoff.tails} defaults; for categorical, colors were taken from \url{http://www.colorbrewer2.org/} (if n < 9, Set2, else Set3).
+non-categorical colors from \code{sf.colors} were taken from \link[sp]{bpy.colors}, with modified \code{cutoff.tails} defaults
+If categorical is \code{TRUE}, default colors are from \url{http://www.colorbrewer2.org/} (if n < 9, Set2, else Set3).
 }
 \examples{
 # plot linestrings:

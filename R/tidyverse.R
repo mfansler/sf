@@ -2,7 +2,7 @@
 
 #' Dplyr verb methods for sf objects
 #' 
-#' Dplyr verb methods for sf objects. Geometries are sticky, use \link{as.data.frame} to let code{dplyr}'s own methods drop them.
+#' Dplyr verb methods for sf objects. Geometries are sticky, use \link{as.data.frame} to let \code{dplyr}'s own methods drop them.
 #' @param .data data object of class \link{sf}
 #' @param .dots see corresponding function in package \code{dplyr}
 #' @param ... other arguments
@@ -154,7 +154,7 @@ summarise.sf <- function(.data, ..., .dots, do_union = TRUE) {
 	}
 	ret[[ sf_column ]] = geom
 	ret$do_union = NULL
-	st_as_sf(ret, crs = crs)
+	st_as_sf(ret, crs = crs, precision = st_precision(.data))
 }
 
 ## tidyr methods:

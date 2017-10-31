@@ -48,10 +48,11 @@ set_utf8 = function(x) {
 #' \dontrun{
 #'   library(sp)
 #'   example(meuse, ask = FALSE, echo = FALSE)
-#'   st_write(st_as_sf(meuse), "PG:dbname=postgis", "meuse",
-#'        layer_options = "OVERWRITE=true")
-#'   st_meuse = st_read("PG:dbname=postgis", "meuse")
-#'   summary(st_meuse)
+#'   try(st_write(st_as_sf(meuse), "PG:dbname=postgis", "meuse",
+#'        layer_options = "OVERWRITE=true"))
+#'   try(st_meuse <- st_read("PG:dbname=postgis", "meuse"))
+#'   if (exists("st_meuse"))
+#'     summary(st_meuse)
 #' }
 
 #' @name st_read
@@ -142,6 +143,8 @@ clean_columns = function(obj, factorsAsCharacter) {
 			else if (is.numeric(obj[[i]]))
 				obj[[i]] = as.numeric(obj[[i]]) # strips class
 		}
+		if (is.character(obj[[i]]))
+			obj[[i]] = enc2utf8(obj[[i]])
 	}
 	ccls.ok = vapply(obj, function(x) inherits(x, permitted), TRUE)
 	if (any(!ccls.ok)) {
@@ -213,12 +216,13 @@ abbreviate_shapefile_names = function(x) {
 #' st_write(meuse_sf, "meuse.csv", layer_options = "GEOMETRY=AS_XY") # writes X and Y as columns
 #' st_write(meuse_sf, "meuse.csv", layer_options = "GEOMETRY=AS_WKT", delete_dsn=TRUE) # overwrites
 #' \dontrun{
-#' library(sp)
-#' example(meuse, ask = FALSE, echo = FALSE)
-#' st_write(st_as_sf(meuse), "PG:dbname=postgis", "meuse_sf",
-#'     layer_options = c("OVERWRITE=yes", "LAUNDER=true"))
-#' demo(nc, ask = FALSE)
-#' st_write(nc, "PG:dbname=postgis", "sids", layer_options = "OVERWRITE=true")}
+#'  library(sp)
+#'  example(meuse, ask = FALSE, echo = FALSE)
+#'  try(st_write(st_as_sf(meuse), "PG:dbname=postgis", "meuse_sf",
+#'      layer_options = c("OVERWRITE=yes", "LAUNDER=true")))
+#'  demo(nc, ask = FALSE)
+#'  try(st_write(nc, "PG:dbname=postgis", "sids", layer_options = "OVERWRITE=true"))
+#' }
 #' @name st_write
 #' @export
 st_write = function(obj, dsn, layer = file_path_sans_ext(basename(dsn)),
@@ -249,6 +253,8 @@ st_write = function(obj, dsn, layer = file_path_sans_ext(basename(dsn)),
 
 	obj = clean_columns(as.data.frame(obj), factorsAsCharacter)
 	# this attaches attr colclasses
+
+	names(obj) = enc2utf8(names(obj))
 
 	dim = if (length(geom) == 0)
 			"XY"
