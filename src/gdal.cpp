@@ -121,8 +121,7 @@ Rcpp::LogicalVector CPL_crs_equivalent(std::string crs1, std::string crs2) {
 }
 
 std::vector<OGRGeometry *> ogr_from_sfc(Rcpp::List sfc, OGRSpatialReference **sref) {
-	double precision = sfc.attr("precision");
-	Rcpp::List wkblst = CPL_write_wkb(sfc, false, native_endian(), get_dim_sfc(sfc, NULL), precision);
+	Rcpp::List wkblst = CPL_write_wkb(sfc, false);
 	std::vector<OGRGeometry *> g(sfc.length());
 	OGRGeometryFactory f;
 	OGRSpatialReference *local_srs = NULL;
@@ -224,7 +223,7 @@ Rcpp::List sfc_from_ogr(std::vector<OGRGeometry *> g, bool destroy = false) {
 		if (destroy)
 			OGRGeometryFactory::destroyGeometry(g[i]);
 	}
-	Rcpp::List ret = CPL_read_wkb(lst, false, false, native_endian());
+	Rcpp::List ret = CPL_read_wkb(lst, false, false);
 	ret.attr("crs") = crs;
 	ret.attr("class") = "sfc";
 	return ret;
@@ -418,21 +417,6 @@ Rcpp::List CPL_sfc_from_wkt(Rcpp::CharacterVector wkt) {
 
 // [[Rcpp::export]]
 Rcpp::LogicalVector CPL_gdal_with_geos() {
-
-	bool withGEOS;
-	CPLPushErrorHandler(CPLQuietErrorHandler);
-	OGRGeometry *poGeometry1, *poGeometry2;
-	char* pszWKT = (char *) "POINT (10 20)";
-	OGRGeometryFactory::createFromWkt( &pszWKT, NULL, &poGeometry1 );
-	pszWKT = (char *) "POINT (30 20)";
-	OGRGeometryFactory::createFromWkt( &pszWKT, NULL, &poGeometry2 );
-	withGEOS = 1;
-	if (poGeometry1->Union(poGeometry2) == NULL) 
-		withGEOS = false; // #nocov
-	else
-		withGEOS = true;
-	OGRGeometryFactory::destroyGeometry(poGeometry1);
-	OGRGeometryFactory::destroyGeometry(poGeometry2);
-	CPLPopErrorHandler();
+	bool withGEOS = OGRGeometryFactory::haveGEOS(); 
 	return Rcpp::LogicalVector::create(withGEOS);
 }

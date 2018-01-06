@@ -125,8 +125,20 @@ CPL_geos_is_simple <- function(sfc) {
     .Call('_sf_CPL_geos_is_simple', PACKAGE = 'sf', sfc)
 }
 
+CPL_geos_is_empty <- function(sfc) {
+    .Call('_sf_CPL_geos_is_empty', PACKAGE = 'sf', sfc)
+}
+
+CPL_geos_normalize <- function(sfc) {
+    .Call('_sf_CPL_geos_normalize', PACKAGE = 'sf', sfc)
+}
+
 CPL_geos_union <- function(sfc, by_feature = FALSE) {
     .Call('_sf_CPL_geos_union', PACKAGE = 'sf', sfc, by_feature)
+}
+
+CPL_geos_snap <- function(sfc0, sfc1, tolerance) {
+    .Call('_sf_CPL_geos_snap', PACKAGE = 'sf', sfc0, sfc1, tolerance)
 }
 
 CPL_geos_op <- function(op, sfc, bufferDist, nQuadSegs = 30L, dTolerance = 0.0, preserveTopology = FALSE, bOnlyEdges = 1L, dfMaxLength = 0.0) {
@@ -145,8 +157,8 @@ CPL_geos_version <- function(b = FALSE) {
     .Call('_sf_CPL_geos_version', PACKAGE = 'sf', b)
 }
 
-CPL_geos_dist <- function(sfc0, sfc1) {
-    .Call('_sf_CPL_geos_dist', PACKAGE = 'sf', sfc0, sfc1)
+CPL_geos_dist <- function(sfc0, sfc1, which, par) {
+    .Call('_sf_CPL_geos_dist', PACKAGE = 'sf', sfc0, sfc1, which, par)
 }
 
 CPL_geos_relate <- function(sfc0, sfc1) {
@@ -157,24 +169,20 @@ CPL_transpose_sparse_incidence <- function(m, n) {
     .Call('_sf_CPL_transpose_sparse_incidence', PACKAGE = 'sf', m, n)
 }
 
-CPL_lwgeom_version <- function(b = FALSE) {
-    .Call('_sf_CPL_lwgeom_version', PACKAGE = 'sf', b)
+CPL_nary_difference <- function(sfc) {
+    .Call('_sf_CPL_nary_difference', PACKAGE = 'sf', sfc)
 }
 
-CPL_make_valid <- function(sfc) {
-    .Call('_sf_CPL_make_valid', PACKAGE = 'sf', sfc)
+CPL_nary_intersection <- function(sfc) {
+    .Call('_sf_CPL_nary_intersection', PACKAGE = 'sf', sfc)
 }
 
-CPL_split <- function(sfc, blade) {
-    .Call('_sf_CPL_split', PACKAGE = 'sf', sfc, blade)
+CPL_hex_to_raw <- function(cx) {
+    .Call('_sf_CPL_hex_to_raw', PACKAGE = 'sf', cx)
 }
 
-CPL_geohash <- function(sfc, prec) {
-    .Call('_sf_CPL_geohash', PACKAGE = 'sf', sfc, prec)
-}
-
-CPL_lwgeom_transform <- function(sfc, p4s) {
-    .Call('_sf_CPL_lwgeom_transform', PACKAGE = 'sf', sfc, p4s)
+CPL_raw_to_hex <- function(raw) {
+    .Call('_sf_CPL_raw_to_hex', PACKAGE = 'sf', raw)
 }
 
 CPL_proj_version <- function(b = FALSE) {
@@ -189,19 +197,23 @@ CPL_proj_info <- function(type) {
     .Call('_sf_CPL_proj_info', PACKAGE = 'sf', type)
 }
 
-CPL_hex_to_raw <- function(cx) {
-    .Call('_sf_CPL_hex_to_raw', PACKAGE = 'sf', cx)
+CPL_proj_direct <- function(from_to, pts) {
+    .Call('_sf_CPL_proj_direct', PACKAGE = 'sf', from_to, pts)
 }
 
-CPL_raw_to_hex <- function(raw) {
-    .Call('_sf_CPL_raw_to_hex', PACKAGE = 'sf', raw)
+CPL_signed_area <- function(pts) {
+    .Call('_sf_CPL_signed_area', PACKAGE = 'sf', pts)
 }
 
-CPL_read_wkb <- function(wkb_list, EWKB = FALSE, spatialite = FALSE, endian = 0L) {
-    .Call('_sf_CPL_read_wkb', PACKAGE = 'sf', wkb_list, EWKB, spatialite, endian)
+CPL_read_wkb <- function(wkb_list, EWKB = FALSE, spatialite = FALSE) {
+    .Call('_sf_CPL_read_wkb', PACKAGE = 'sf', wkb_list, EWKB, spatialite)
 }
 
-CPL_write_wkb <- function(sfc, EWKB = FALSE, endian = 0L, dim = "XY", precision = 0.0) {
-    .Call('_sf_CPL_write_wkb', PACKAGE = 'sf', sfc, EWKB, endian, dim, precision)
+CPL_write_wkb <- function(sfc, EWKB = FALSE) {
+    .Call('_sf_CPL_write_wkb', PACKAGE = 'sf', sfc, EWKB)
 }
 
+# Register entry points for exported C++ functions
+methods::setLoadAction(function(ns) {
+    .Call('_sf_RcppExport_registerCCallable', PACKAGE = 'sf')
+})

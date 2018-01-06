@@ -1,7 +1,7 @@
 ## dplyr methods:
 
 #' Dplyr verb methods for sf objects
-#' 
+#'
 #' Dplyr verb methods for sf objects. Geometries are sticky, use \link{as.data.frame} to let \code{dplyr}'s own methods drop them.
 #' @param .data data object of class \link{sf}
 #' @param .dots see corresponding function in package \code{dplyr}
@@ -16,11 +16,11 @@ filter.sf <- function(.data, ..., .dots) {
 	#st_as_sf(NextMethod())
 	sf_column = attr(.data, "sf_column")
 	geom = .data[[sf_column]]
-	.data[[sf_column]] = 1:nrow(.data)
+	.data[[sf_column]] = seq_len(nrow(.data))
 	ret = NextMethod()
 	sel = ret[[sf_column]]
 	ret[[sf_column]] = geom[sel]
-	st_as_sf(ret)
+	st_as_sf(ret, sf_column_name = sf_column)
 }
 
 #' @name dplyr
@@ -31,7 +31,7 @@ filter.sf <- function(.data, ..., .dots) {
 #' nc %>% select(AREA) %>% arrange(AREA) %>% slice(1:10) %>% plot(add = TRUE, col = 'grey')
 #' title("the ten counties with smallest area")
 arrange.sf <- function(.data, ..., .dots) {
-	st_as_sf(NextMethod())
+	st_as_sf(NextMethod(), sf_column_name = attr(.data, "sf_column"))
 }
 
 #' @name dplyr
@@ -40,7 +40,7 @@ arrange.sf <- function(.data, ..., .dots) {
 #' @examples
 #' nc[c(1:100, 1:10), ] %>% distinct() %>% nrow()
 distinct.sf <- function(.data, ..., .dots, .keep_all = FALSE) {
-	st_as_sf(NextMethod())
+	st_as_sf(NextMethod(), sf_column_name = attr(.data, "sf_column"))
 }
 
 #' @name dplyr
@@ -51,14 +51,14 @@ distinct.sf <- function(.data, ..., .dots, .keep_all = FALSE) {
 #' nc %>% group_by(area_cl) %>% class()
 group_by.sf <- function(.data, ..., .dots, add = FALSE) {
 	class(.data) <- setdiff(class(.data), "sf")
-	st_as_sf(NextMethod())
+	st_as_sf(NextMethod(), sf_column_name = attr(.data, "sf_column"))
 }
 
 #' @name dplyr
 #' @export
 ungroup.sf <- function(x, ...) {
 	class(x) <- setdiff(class(x), "sf")
-	st_as_sf(NextMethod())
+	st_as_sf(NextMethod(), sf_column_name = attr(x, "sf_column"))
 }
 
 #' @name dplyr
@@ -66,7 +66,9 @@ ungroup.sf <- function(x, ...) {
 #' @examples
 #' nc2 <- nc %>% mutate(area10 = AREA/10)
 mutate.sf <- function(.data, ..., .dots) {
-	st_as_sf(NextMethod())
+	#st_as_sf(NextMethod(), sf_column_name = attr(.data, "sf_column"))
+	class(.data) <- setdiff(class(.data), "sf")
+	st_as_sf(NextMethod(), sf_column_name = attr(.data, "sf_column"))
 }
 
 #' @name dplyr
@@ -77,7 +79,7 @@ mutate.sf <- function(.data, ..., .dots) {
 transmute.sf <- function(.data, ..., .dots) {
 	ret = NextMethod()
 	if (attr(ret, "sf_column") %in% names(ret))
-		st_as_sf(NextMethod())
+		st_as_sf(NextMethod(), sf_column_name = attr(.data, "sf_column"))
 	else
 		ret
 }
@@ -92,8 +94,8 @@ transmute.sf <- function(.data, ..., .dots) {
 #' @details \code{select} keeps the geometry regardless whether it is selected or not; to deselect it, first pipe through \code{as.data.frame} to let dplyr's own \code{select} drop it.
 select.sf <- function(.data, ...) {
 
-	if (!requireNamespace("dplyr", quietly = TRUE) || utils::packageVersion("dplyr") <= "0.5.0")
-		stop("requires dplyr > 0.5.0: install that first") # nocov
+	if (!requireNamespace("dplyr", quietly = TRUE))
+		stop("dplyr required: install that first") # nocov
 
 	class(.data) <- setdiff(class(.data), "sf")
 	sf_column <- attr(.data, "sf_column")
@@ -103,15 +105,21 @@ select.sf <- function(.data, ...) {
 
 	ret <- dplyr::select(.data, ..., !! rlang::sym(sf_column))
 	st_as_sf(ret)
-} 
+}
 
 
 #' @name dplyr
 #' @export
 #' @examples
 #' nc2 <- nc %>% rename(area = AREA)
-rename.sf <- function(.data, ..., .dots) {
-	st_as_sf(NextMethod())
+rename.sf <- function(.data, ...) {
+
+	if (!requireNamespace("dplyr", quietly = TRUE))
+		stop("dplyr required: install that first") # nocov
+
+	class(.data) <- setdiff(class(.data), "sf")
+	st_as_sf(dplyr::rename(.data, ...))
+	#st_as_sf(NextMethod(), sf_column_name = attr(.data, "sf_column"))
 }
 
 #' @name dplyr
@@ -119,7 +127,7 @@ rename.sf <- function(.data, ..., .dots) {
 #' @examples
 #' nc %>% slice(1:2)
 slice.sf <- function(.data, ..., .dots) {
-	st_as_sf(NextMethod())
+	st_as_sf(NextMethod(), sf_column_name = attr(.data, "sf_column"))
 }
 
 #' @name dplyr
@@ -154,7 +162,8 @@ summarise.sf <- function(.data, ..., .dots, do_union = TRUE) {
 	}
 	ret[[ sf_column ]] = geom
 	ret$do_union = NULL
-	st_as_sf(ret, crs = crs, precision = st_precision(.data))
+	st_as_sf(ret, crs = crs, precision = st_precision(.data),
+		sf_column_name = attr(.data, "sf_column"))
 }
 
 ## tidyr methods:
@@ -166,7 +175,7 @@ summarise.sf <- function(.data, ..., .dots, do_union = TRUE) {
 #' @param value see original function docs
 #' @param na.rm see original function docs
 #' @param factor_key see original function docs
-#' @examples 
+#' @examples
 #' library(tidyr)
 #' nc %>% select(SID74, SID79, geometry) %>% gather(VAR, SID, -geometry) %>% summary()
 gather.sf <- function(data, key, value, ..., na.rm = FALSE, convert = FALSE, factor_key = FALSE) {
@@ -174,15 +183,16 @@ gather.sf <- function(data, key, value, ..., na.rm = FALSE, convert = FALSE, fac
 	if (! requireNamespace("rlang", quietly = TRUE))
 		stop("rlang required: install first?")
 
-    key = rlang::enquo(key)
-    value = rlang::enquo(value)
+	key = rlang::enquo(key)
+	value = rlang::enquo(value)
 
 	if (!requireNamespace("tidyr", quietly = TRUE))
 		stop("tidyr required: install first?")
 
 	class(data) <- setdiff(class(data), "sf")
-    st_as_sf(tidyr::gather(data, !!key, !!value, ..., 
-		na.rm = na.rm, convert = convert, factor_key = factor_key))
+    st_as_sf(tidyr::gather(data, !!key, !!value, ...,
+		na.rm = na.rm, convert = convert, factor_key = factor_key),
+		sf_column_name = attr(data, "sf_column"))
 }
 
 
@@ -195,20 +205,20 @@ gather.sf <- function(data, key, value, ..., na.rm = FALSE, convert = FALSE, fac
 #' @examples
 #' library(tidyr)
 #' nc$row = 1:100 # needed for spread to work
-#' nc %>% select(SID74, SID79, geometry, row) %>% 
-#'		gather(VAR, SID, -geometry, -row) %>% 
+#' nc %>% select(SID74, SID79, geometry, row) %>%
+#'		gather(VAR, SID, -geometry, -row) %>%
 #'		spread(VAR, SID) %>% head()
 spread.sf <- function(data, key, value, fill = NA, convert = FALSE, drop = TRUE,
 	        sep = NULL) {
 
 	if (!requireNamespace("rlang", quietly = TRUE))
 		stop("rlang required: install first?")
-    key = rlang::enquo(key)
-    value = rlang::enquo(value)
+  key = rlang::enquo(key)
+  value = rlang::enquo(value)
 
 	class(data) <- setdiff(class(data), "sf")
-    st_as_sf(tidyr::spread(data, !!key, !!value, fill = fill, convert = convert, 
-		drop = drop, sep = sep))
+    st_as_sf(tidyr::spread(data, !!key, !!value, fill = fill, convert = convert,
+		drop = drop, sep = sep), sf_column_name = attr(data, "sf_column"))
 }
 
 #' @name dplyr
@@ -219,13 +229,13 @@ spread.sf <- function(data, key, value, fill = NA, convert = FALSE, drop = TRUE,
 #' @param .env see original function docs
 #' @export
 sample_n.sf <- function(tbl, size, replace = FALSE, weight = NULL, .env = parent.frame()) {
-	st_sf(NextMethod())
+	st_sf(NextMethod(), sf_column_name = attr(tbl, "sf_column"))
 }
 
 #' @name dplyr
 #' @export
 sample_frac.sf <- function(tbl, size = 1, replace = FALSE, weight = NULL, .env = parent.frame()) {
-	st_sf(NextMethod())
+	st_sf(NextMethod(), sf_column_name = attr(tbl, "sf_column"))
 }
 
 #' @name dplyr
@@ -249,7 +259,7 @@ nest.sf = function (data, ..., .key = "data") {
 		stop("tidyr required: install first?")
 	ret = tidyr::nest(data, ..., .key = !! key)
 	# should find out first if geometry column was in ... !
-	ret[[.key]] = lapply(ret[[.key]], st_as_sf)
+	ret[[.key]] = lapply(ret[[.key]], st_as_sf, sf_column_name = attr(data, "sf_column"))
 	ret
 }
 
@@ -271,16 +281,56 @@ separate.sf = function(data, col, into, sep = "[^[:alnum:]]+", remove = TRUE,
 		stop("tidyr required: install first?")
 
 	class(data) <- setdiff(class(data), "sf")
-	st_as_sf(tidyr::separate(data, !!col, into = into, 
-		sep = sep, remove = remove, convert = convert, extra = extra, fill = fill, ...))
+	st_as_sf(tidyr::separate(data, !!col, into = into,
+		sep = sep, remove = remove, convert = convert, extra = extra, fill = fill, ...),
+			sf_column_name = attr(data, "sf_column"))
 }
 
 #' @name dplyr
 #' @export
 unite.sf <- function(data, col, ..., sep = "_", remove = TRUE) {
 	class(data) <- setdiff(class(data), "sf")
-	st_as_sf(NextMethod())
+	if (!requireNamespace("rlang", quietly = TRUE))
+		stop("rlang required: install first?")
+	col = rlang::enquo(col)
+	st_as_sf(tidyr::unite(data, !!col, ..., sep = sep, remove = remove),
+		sf_column_name = attr(data, "sf_column"))
 }
+
+#' @name dplyr
+#' @param .preserve see \link[tidyr]{unnest}
+#' @export
+unnest.sf = function(data, ..., .preserve = NULL) {
+	# nocov start
+	if (!requireNamespace("tidyr", quietly = TRUE) ||
+			utils::packageVersion("tidyr") <= "0.7.2")
+		stop("unnest requires tidyr > 0.7.2; install that first")
+	if (! requireNamespace("tidyselect", quietly = TRUE))
+		stop("unnest requires tidyselect; install that first")
+	if (! requireNamespace("rlang", quietly = TRUE))
+		stop("unnest requires rlang; install that first")
+
+	# The user might want to preserve other columns. Get these as a character
+	# vector of variable names, using any valid dplyr (i.e. rlang)
+	# variable selection syntax. By default, with .preserve = NULL, this will be
+	# empty. Note: the !!! is from rlang.
+	preserve = tidyselect::vars_select(names(data), !!! rlang::enquo(.preserve))
+	# Get the name of the geometry column(s)
+	sf_column_name = attr(data, "sf_column", exact = TRUE)
+	preserve_incl_sf = c(preserve, sf_column_name)
+
+	# Drop the "sf" class and call unnest again, providing the updated .preserve.
+	# (Normally it wouldn't be necessary to drop the class, but tidyr calls
+	# dplyr::transmute (not sf::transmute.sf), so the geometry column is
+	# inadvertantly included in some of the unnest.data.frame code.
+	# The .preserve argument will go through the vars_select/enquo
+	# process again in unnest.data.frame, but that's fine.
+	class(data) = setdiff(class(data), "sf")
+	ret = st_sf(NextMethod(.preserve = preserve_incl_sf),
+		sf_column_name = sf_column_name)
+	ret # nocov end
+}
+
 
 
 ## tibble methods:
@@ -293,7 +343,13 @@ unite.sf <- function(data, col, ..., sep = "_", remove = TRUE) {
 #' @name tibble
 #' @export
 type_sum.sfc <- function(x, ...) {
-   "simple_feature"
+	ll = st_is_longlat(x)
+	if (is.na(ll))
+		"sf_geometry"
+	else if (ll)
+		"sf_geometry [degree]"
+	else
+		paste0("sf_geometry [", as.character(units(st_crs(x, parameters = TRUE)$ud_unit)), "]")
 }
 
 #' Summarize simple feature item for tibble
@@ -302,5 +358,12 @@ type_sum.sfc <- function(x, ...) {
 #' @name tibble
 #' @export
 obj_sum.sfc <- function(x) {
-	vapply(x, function(sfg) format(sfg, digits = 15L), "")
+	vapply(x, function(sfg) format(sfg, width = 15L), "")
+}
+
+#' @importFrom pillar pillar_shaft
+#' @export
+pillar_shaft.sfc <- function(x, ...) {
+	out <- format(x, ...)
+	pillar::new_pillar_shaft_simple(out, align = "right", min_width = 25)
 }

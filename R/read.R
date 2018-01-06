@@ -9,7 +9,6 @@ set_utf8 = function(x) {
 	structure(lapply(x, to_utf8), names = n)
 }
 
-
 #' Read simple features or layers from file or database
 #'
 #' Read simple features from file or database, or retrieve layer names and their geometry type(s)
@@ -32,6 +31,7 @@ set_utf8 = function(x) {
 #' is \code{TRUE}, but this can be changed by setting \code{options(stringsAsFactors = FALSE)}.
 #' @param int64_as_string logical; if TRUE, Int64 attributes are returned as string; if FALSE, they are returned as double
 #' and a warning is given when precision is lost (i.e., values are larger than 2^53).
+#' @param check_ring_dir logical; if TRUE, polygon ring directions are checked and if necessary corrected (when seen from above: exterior ring counter clockwise, holes clockwise)
 #' @details for \code{geometry_column}, see also \url{https://trac.osgeo.org/gdal/wiki/rfc41_multiple_geometry_fields}; for \code{type}
 #' values see \url{https://en.wikipedia.org/wiki/Well-known_text#Well-known_binary}, but note that not every target value
 #' may lead to successful conversion. The typical conversion from POLYGON (3) to MULTIPOLYGON (6) should work; the other
@@ -54,6 +54,8 @@ set_utf8 = function(x) {
 #'   if (exists("st_meuse"))
 #'     summary(st_meuse)
 #' }
+#' @export
+st_read = function(dsn, layer, ...) UseMethod("st_read")
 
 #' @name st_read
 #' @note The use of \code{system.file} in examples make sure that examples run regardless where R is installed:
@@ -61,9 +63,9 @@ set_utf8 = function(x) {
 #' to the current working directory (see \link{getwd}). "Shapefiles" consist of several files with the same basename
 #' that reside in the same directory, only one of them having extension \code{.shp}.
 #' @export
-st_read = function(dsn, layer, ..., options = NULL, quiet = FALSE, geometry_column = 1L, type = 0,
+st_read.default = function(dsn, layer, ..., options = NULL, quiet = FALSE, geometry_column = 1L, type = 0,
 		promote_to_multi = TRUE, stringsAsFactors = default.stringsAsFactors(),
-		int64_as_string = FALSE) {
+		int64_as_string = FALSE, check_ring_dir = FALSE) {
 
 	if (missing(dsn))
 		stop("dsn should specify a data source or filename")
@@ -101,7 +103,8 @@ st_read = function(dsn, layer, ..., options = NULL, quiet = FALSE, geometry_colu
 		x[[ nm[i] ]] = st_sfc(geom[[i]], crs = attr(geom[[i]], "crs")) # computes bbox
 
 	x = st_as_sf(x, ...,
-		sf_column_name = if (is.character(geometry_column)) geometry_column else nm[geometry_column])
+		sf_column_name = if (is.character(geometry_column)) geometry_column else nm[geometry_column],
+		check_ring_dir = check_ring_dir)
 	if (! quiet)
 		print(x, n = 0)
 	else
@@ -223,19 +226,27 @@ abbreviate_shapefile_names = function(x) {
 #'  demo(nc, ask = FALSE)
 #'  try(st_write(nc, "PG:dbname=postgis", "sids", layer_options = "OVERWRITE=true"))
 #' }
+#' @export
+st_write = function(obj, dsn, layer, ...) UseMethod("st_write")
+
 #' @name st_write
 #' @export
-st_write = function(obj, dsn, layer = file_path_sans_ext(basename(dsn)),
-		driver = guess_driver_can_write(dsn), ...,
+st_write.sfc = function(obj, dsn, layer, ...) {
+	if (missing(layer))
+		st_write.sf(st_sf(geom = obj), dsn, ...)
+	else
+		st_write.sf(st_sf(geom = obj), dsn, layer, ...)
+}
+
+#' @name st_write
+#' @export
+st_write.sf = function(obj, dsn, layer = file_path_sans_ext(basename(dsn)), ...,
+		driver = guess_driver_can_write(dsn),
 		dataset_options = NULL, layer_options = NULL, quiet = FALSE, factorsAsCharacter = TRUE,
 		update = driver %in% db_drivers, delete_dsn = FALSE, delete_layer = FALSE) {
 
 	if (length(list(...)))
 		stop(paste("unrecognized argument(s)", unlist(list(...)), "\n"))
-
-	if (inherits(obj, "sfc"))
-		obj = st_sf(id = 1:length(obj), geom = obj)
-	stopifnot(inherits(obj, "sf"))
 
 	if (missing(dsn))
 		stop("dsn should specify a data source or filename")

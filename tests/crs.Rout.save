@@ -1,5 +1,5 @@
 
-R version 3.4.2 (2017-09-28) -- "Short Summer"
+R version 3.4.3 (2017-11-30) -- "Kite-Eating Tree"
 Copyright (C) 2017 The R Foundation for Statistical Computing
 Platform: x86_64-pc-linux-gnu (64-bit)
 
@@ -55,6 +55,60 @@ Coordinate Reference System:
   No EPSG code
   proj4string: "+proj=laea +lat_0=0 +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +units=m +no_defs"
 > 
+> x = st_sfc(st_point(0:1))
+> st_crs(x, parameters = TRUE)
+list()
+> st_crs(x) = 4326
+> st_crs(x, parameters = TRUE)
+$SemiMajor
+6378137 m
+
+$InvFlattening
+[1] 298.2572
+
+$units_gdal
+[1] "degree"
+
+$IsVertical
+[1] FALSE
+
+$WktPretty
+[1] "GEOGCS[\"WGS 84\",\n    DATUM[\"WGS_1984\",\n        SPHEROID[\"WGS 84\",6378137,298.257223563,\n            AUTHORITY[\"EPSG\",\"7030\"]],\n        AUTHORITY[\"EPSG\",\"6326\"]],\n    PRIMEM[\"Greenwich\",0,\n        AUTHORITY[\"EPSG\",\"8901\"]],\n    UNIT[\"degree\",0.0174532925199433,\n        AUTHORITY[\"EPSG\",\"9122\"]],\n    AUTHORITY[\"EPSG\",\"4326\"]]"
+
+$Wkt
+[1] "GEOGCS[\"WGS 84\",DATUM[\"WGS_1984\",SPHEROID[\"WGS 84\",6378137,298.257223563,AUTHORITY[\"EPSG\",\"7030\"]],AUTHORITY[\"EPSG\",\"6326\"]],PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9122\"]],AUTHORITY[\"EPSG\",\"4326\"]]"
+
+$ud_unit
+1 arc_degree
+
+> 
+> from = st_crs(4326)$proj4string
+> to = st_crs(3857)$proj4string
+> (ret = sf_project(from, to, rbind(c(0,0), c(1,1))))
+         [,1]          [,2]
+[1,]      0.0 -7.081155e-10
+[2,] 111319.5  1.113251e+05
+> sf_project(to, from, ret)
+     [,1] [,2]
+[1,]    0    0
+[2,]    1    1
+> st_transform(st_sfc(st_point(c(0,0)), st_point(c(1,1)), crs = 4326), 3857)
+Geometry set for 2 features 
+geometry type:  POINT
+dimension:      XY
+bbox:           xmin: 0 ymin: -7.081155e-10 xmax: 111319.5 ymax: 111325.1
+epsg (SRID):    3857
+proj4string:    +proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs
+POINT (0 -7.081155e-10)
+POINT (111319.5 111325.1)
+> try(sf_project("+proj=longlat", "+proj=bar", matrix(1:4,2)))
+Error in CPL_proj_direct(as.character(c(from[1], to[1])), as.matrix(pts)) : 
+  unknown projection id
+> try(sf_project("+proj=foo", "+proj=longlat", matrix(1:4,2)))
+Error in CPL_proj_direct(as.character(c(from[1], to[1])), as.matrix(pts)) : 
+  unknown projection id
+> 
+> 
 > proc.time()
    user  system elapsed 
-  0.304   0.012   0.312 
+   0.44    0.30    0.43 

@@ -50,6 +50,10 @@ if (Sys.getenv("USER") == "travis") {
 	try(st_write(x, "/x", driver = "ESRI Shapefile"))
 }
 
+geom = st_sfc(st_point(0:1), st_multipoint(matrix(1:4,2,2)))
+st_write(geom, "geom.gpkg")
+st_write(geom, "geom1.gpkg", layer = "foo")
+
 df <- data.frame(
     a = c(0, 1, NA, -Inf, Inf),
     b = c("a", "b", NA, "c", ""),

@@ -1,5 +1,5 @@
 
-R version 3.4.2 (2017-09-28) -- "Short Summer"
+R version 3.4.3 (2017-11-30) -- "Kite-Eating Tree"
 Copyright (C) 2017 The R Foundation for Statistical Computing
 Platform: x86_64-pc-linux-gnu (64-bit)
 
@@ -35,14 +35,18 @@ vdv
 xlsx 
 .nc 
 driver `foo' not available.
-Dataset /home/edzer/git/sf.Rcheck/tests/testthat/x.gpkg already exists: remove first, use update=TRUE to append,
+Dataset /tmp/RtmpmogAwc/file7cfb27055108.gpkg already exists: remove first, use update=TRUE to append,
 delete_layer=TRUE to delete layer, or delete_dsn=TRUE to remove the entire data source before writing.
 Creating layer . failed.
 Failed to create feature 1 in x
 Failed to create feature 1 in x
+Failed to create feature 1 in x
+Failed to create feature 1 in x
+Failed to create feature 1 in x
+Failed to create feature 1 in x
 testthat results ================================================================
-OK: 572 SKIPPED: 0 FAILED: 0
+OK: 597 SKIPPED: 1 FAILED: 0
 > 
 > proc.time()
    user  system elapsed 
-  4.296   0.348   5.101 
+  4.332   0.352   5.125 

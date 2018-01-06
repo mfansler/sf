@@ -1,3 +1,11 @@
+sgbp = function(x, predicate, region.id, ncol) {
+	structure(x,
+		predicate = predicate,
+		region.id = region.id,
+		ncol = ncol,
+		class = "sgbp")
+}
+
 #' Methods for dealing with sparse geometry binary predicate lists
 #' 
 #' Methods for dealing with sparse geometry binary predicate lists
@@ -31,10 +39,23 @@ print.sgbp = function(x, ..., n = 10, max_nb = 10) {
 #' @export
 t.sgbp = function(x) {
 	m = attr(x, "ncol")
-	structure(CPL_transpose_sparse_incidence(x, m),
-		dim = NULL,
+	structure(sgbp(CPL_transpose_sparse_incidence(x, m),
 		predicate = attr(x, "predicate"),
 		region.id = as.character(1:m),
-		ncol = length(x),
-		class = "sgbp")
+		ncol = length(x)),
+		dim = NULL)
+}
+
+#' @name sgbp
+#' @export
+as.matrix.sgbp = function(x, ...) {
+	nc = attr(x, "ncol")
+	get_vec = function(x, n) { v = rep(FALSE, n); v[x] = TRUE; v }
+	do.call(rbind, lapply(x, get_vec, n = nc))
+}
+
+#' @name sgbp
+#' @export
+dim.sgbp = function(x) {
+	c(length(x), attr(x, "ncol"))
 }

@@ -9,8 +9,8 @@ str.sfc <- function(object, ...) {
 }
 
 #' @export
-format.sfc = function(x, ..., digits = 30) {
-	vapply(x, format, "", ..., digits = digits)
+format.sfc = function(x, ..., width = 30) {
+	vapply(x, format, "", ..., width = width)
 }
 
 #' Create simple feature geometry list column
@@ -21,6 +21,7 @@ format.sfc = function(x, ..., digits = 30) {
 #' @param ... zero or more simple feature geometries (objects of class \code{sfg}), or a single list of such objects; \code{NULL} values will get replaced by empty geometries.
 #' @param crs coordinate reference system: integer with the EPSG code, or character with proj4string
 #' @param precision numeric; see \link{st_as_binary}
+#' @param check_ring_dir see \link{st_read}
 #' @return an object of class \code{sfc}, which is a classed list-column with simple feature geometries.
 #'
 #' @details A simple feature geometry list-column is a list of class
@@ -33,7 +34,7 @@ format.sfc = function(x, ..., digits = 30) {
 #' (sfc = st_sfc(pt1, pt2))
 #' d = st_sf(data.frame(a=1:2, geom=sfc))
 #' @export
-st_sfc = function(..., crs = NA_crs_, precision = 0.0) {
+st_sfc = function(..., crs = NA_crs_, precision = 0.0, check_ring_dir = FALSE) {
 	lst = list(...)
 	# if we have only one arg, which is already a list with sfg's, but NOT a geometrycollection:
 	# (this is the old form of calling st_sfc; it is way faster to call st_sfc(lst) if lst
@@ -83,6 +84,10 @@ st_sfc = function(..., crs = NA_crs_, precision = 0.0) {
 
 	# (re)compute & set bbox:
 	attr(lst, "bbox") = compute_bbox(lst)
+
+	# check ring directions:
+	if (check_ring_dir) # also GEOMETRYCOLLECTION?
+		lst = check_ring_dir(lst)
 
 	# get & set crs:
 	if (is.na(crs) && !is.null(attr(lst, "crs")))
@@ -180,7 +185,7 @@ print.sfc = function(x, ..., n = 5L, what = "Geometry set for", append = "") {
 		cat(paste0("First ", n, " geometries:\n"))
 	for (i in seq_len(min(n, length(x))))
 		if (inherits(x[[i]], "sfg"))
-			print(x[[i]], digits = 50)
+			print(x[[i]], width = 50)
 		else
 			print(x[[i]])
 	invisible(x)
@@ -338,7 +343,7 @@ st_precision.sfc <- function(x) {
 #'
 #' @name st_precision
 #' @param precision numeric; see \link{st_as_binary} for how to do this.
-#' @details Setting a \code{precision} has no direct effect on coordinates of geometries, but merely set an attribute tag to an \code{sfc} object. The effect takes place in \link{st_as_binary} or, more precise, in the C++ function \code{CPL_write_wkb}, where simple feature geometries are being serialized to well-known-binary (WKB). This happens always when routines are called in GEOS library (geometrical operations or predicates), for writing geometries using \link{st_write}, \link{write_sf} or \link{st_write_db}, and (if present) for liblwgeom (\link{st_make_valid}); also \link{aggregate} and \link{summarise} by default union geometries, which calls a GEOS library function. Routines in these libraries receive rounded coordinates, and possibly return results based on them. \link{st_as_binary} contains an example of a roundtrip of \code{sfc} geometries through WKB, in order to see the rounding happening to R data.
+#' @details Setting a \code{precision} has no direct effect on coordinates of geometries, but merely set an attribute tag to an \code{sfc} object. The effect takes place in \link{st_as_binary} or, more precise, in the C++ function \code{CPL_write_wkb}, where simple feature geometries are being serialized to well-known-binary (WKB). This happens always when routines are called in GEOS library (geometrical operations or predicates), for writing geometries using \link{st_write}, \link{write_sf} or \link{st_write_db}, \code{st_make_valid} in package \code{lwgeom}; also \link{aggregate} and \link{summarise} by default union geometries, which calls a GEOS library function. Routines in these libraries receive rounded coordinates, and possibly return results based on them. \link{st_as_binary} contains an example of a roundtrip of \code{sfc} geometries through WKB, in order to see the rounding happening to R data.
 #'
 #' The reason to support precision is that geometrical operations in GEOS or liblwgeom may work better at reduced precision. For writing data from R to external resources it is harder to think of a good reason to limiting precision.
 #' @examples
@@ -414,7 +419,7 @@ st_coordinates.sfc = function(x, ...) {
 		sfc_MULTILINESTRING = ,
 		sfc_POLYGON = coord_3(x),
 		sfc_MULTIPOLYGON = coord_4(x),
-		stop("not implemented")
+		stop(paste("not implemented for objects of class", class(x)[1]))
 	)
 	Dims = class(x[[1]])[1]
 	ncd = nchar(Dims)
@@ -439,4 +444,23 @@ coord_4 = function(x) { # x is a list of lists of lists with matrices
 #' @export
 rep.sfc = function(x, ...) {
 	st_sfc(NextMethod(), crs = st_crs(x))
+}
+
+check_ring_dir = function(x) {
+	check_polygon = function(pol) {
+		sa = sapply(pol, CPL_signed_area)
+		revert = if (length(sa))
+				c(sa[1] < 0, sa[-1] > 0)
+			else
+				logical(0)
+		pol[revert] = lapply(pol[revert], function(m) m[nrow(m):1,])
+		pol
+	}
+	ret = switch(class(x)[1],
+		sfc_POLYGON= lapply(x, check_polygon),
+		sfc_MULTIPOLYGON= lapply(x, function(y) structure(lapply(y, check_polygon), class = class(y))),
+		stop(paste("check_ring_dir: not supported for class", class(x)[1]))
+	)
+	attributes(ret) = attributes(x)
+	ret
 }

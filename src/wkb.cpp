@@ -13,12 +13,13 @@
 
 #include <Rcpp.h>
 
-#include "bbox.h"
 #include "wkb.h"
 
 #define EWKB_Z_BIT    0x80000000
 #define EWKB_M_BIT    0x40000000
 #define EWKB_SRID_BIT 0x20000000
+
+// [[Rcpp::interfaces(r, cpp)]] 
 
 typedef struct {
 	const unsigned char *pt;
@@ -54,56 +55,6 @@ T swap_endian(T u) {
     return dest.u;
 }
 
-inline unsigned char char2int(char c) {
-	if (c >= '0' && c <= '9')
-		return c - '0';
-	if (c >= 'a' && c <= 'f')
-		return c - 'a' + 10;
-	if (c >= 'A' && c <= 'F')
-		return c - 'A' + 10;
-	Rcpp::stop("char2int: false character in hex string");
-}
-
-// [[Rcpp::export]]
-Rcpp::List CPL_hex_to_raw(Rcpp::CharacterVector cx) {
-// HexToRaw modified from cmhh, see https://github.com/ianmcook/wkb/issues/10
-// @cmhh: if you make yourself known, I can add you to the contributors
-
-// convert a hexadecimal string into a raw vector
-// this version, dropping istringstream and std::hex, is 12 time faster than
-// the one in the wkb github issue. C rules.
-
-	Rcpp::List output(cx.size());
-	for (int j = 0; j < cx.size(); j++) {
-		Rcpp::RawVector raw(cx[j].size() / 2);
-		const char *cp = cx[j];
-		for (int i = 0; i < raw.size(); i++) {
-			raw[i] = (char2int(cp[0]) << 4) + char2int(cp[1]);
-			cp += 2;
-			if (i % 100000 == 0)
-				Rcpp::checkUserInterrupt();
-		}
-		output[j] = raw;
-		if (j % 1000 == 0)
-			Rcpp::checkUserInterrupt();
-	}
-	return output;
-}
-
-// [[Rcpp::export]]
-Rcpp::CharacterVector CPL_raw_to_hex(Rcpp::RawVector raw) {
-	std::ostringstream os;
-	char hex[16] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-		'a', 'b', 'c', 'd', 'e', 'f' };
-	unsigned char *cp = &(raw[0]);
-	for (int i = 0; i < raw.size(); i++) {
-		int high = ((int) cp[i]) / 16;
-		int low =  ((int) cp[i]) % 16;
-  		os.write(&hex[high], sizeof(char));
-  		os.write(&hex[low], sizeof(char));
-	}
-	return Rcpp::CharacterVector::create(os.str());
-}
 
 void read_spatialite_header(wkb_buf *wkb, uint32_t *srid, bool swap) {
 	// we're at byte 3 now:
@@ -437,11 +388,18 @@ Rcpp::List read_data(wkb_buf *wkb, bool EWKB = false, bool spatialite = false,
 	return output;
 }
 
+int native_endian(void) {
+	const int one = 1;
+	unsigned char *cp = (unsigned char *) &one;
+	return (int) *cp;
+}
+
 // [[Rcpp::export]]
-Rcpp::List CPL_read_wkb(Rcpp::List wkb_list, bool EWKB = false, bool spatialite = false, int endian = 0) {
+Rcpp::List CPL_read_wkb(Rcpp::List wkb_list, bool EWKB = false, bool spatialite = false) {
 	Rcpp::List output(wkb_list.size());
 
 	int type = 0, last_type = 0, n_types = 0, n_empty = 0;
+	int endian = native_endian();
 
 	uint32_t srid = 0;
 	for (int i = 0; i < wkb_list.size(); i++) {
@@ -684,19 +642,18 @@ void write_data(std::ostringstream& os, Rcpp::List sfc, int i = 0, bool EWKB = f
 	}
 }
 
-int native_endian(void) {
-	const int one = 1;
-	unsigned char *cp = (unsigned char *) &one;
-	return (int) *cp;
-}
-
 // [[Rcpp::export]]
-Rcpp::List CPL_write_wkb(Rcpp::List sfc, bool EWKB = false, int endian = 0, 
-		Rcpp::CharacterVector dim = "XY", double precision = 0.0) {
+Rcpp::List CPL_write_wkb(Rcpp::List sfc, bool EWKB = false) {
+
+	double precision = sfc.attr("precision");
+	Rcpp::CharacterVector cls_attr = sfc.attr("class");
+	Rcpp::List sfc_dim = get_dim_sfc(sfc);
+	Rcpp::CharacterVector dim = sfc_dim["_cls"];
+	const char *cls = cls_attr[0], *dm = dim[0];
 
 	Rcpp::List output(sfc.size()); // with raw vectors
-	Rcpp::CharacterVector cls_attr = sfc.attr("class");
-	const char *cls = cls_attr[0], *dm = dim[0];
+
+	int endian = native_endian();
 
 	// got the following from:
 	// http://stackoverflow.com/questions/24744802/rcpp-how-to-check-if-any-attribute-is-null
@@ -734,13 +691,14 @@ Rcpp::List CPL_write_wkb(Rcpp::List sfc, bool EWKB = false, int endian = 0,
 }
 
 // get dim, "XY", "XYZ", "XYZM" or "XYM" from an sfc object
-Rcpp::CharacterVector get_dim_sfc(Rcpp::List sfc, int *dim = NULL) {
 
-	if (sfc.length() == 0) {
-		if (dim != NULL)
-			*dim = 2; // #nocov -- revisit this one?
-		return "XY";
-	}
+Rcpp::List get_dim_sfc(Rcpp::List sfc) {
+
+	if (sfc.length() == 0)
+		return Rcpp::List::create(
+			Rcpp::Named("_cls") = Rcpp::CharacterVector::create("XY"),
+			Rcpp::Named("_dim") = Rcpp::IntegerVector::create(2)
+		);
 
 	// we have data:
 	Rcpp::CharacterVector cls = sfc.attr("class");
@@ -780,11 +738,11 @@ Rcpp::CharacterVector get_dim_sfc(Rcpp::List sfc, int *dim = NULL) {
 			cls = l.attr("class");
 		} break;
 	}
-	if (dim != NULL) {
-		if (strstr(cls[0], "Z") != NULL)
-			*dim = 3; // #nocov
-		else
-			*dim = 2;
-	}
-	return cls;
+
+	return Rcpp::List::create(
+		Rcpp::Named("_cls") = cls,
+		Rcpp::Named("_dim") = strstr(cls[0], "Z") != NULL ?
+			Rcpp::IntegerVector::create(3) :
+			Rcpp::IntegerVector::create(2));
 }
+

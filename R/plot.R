@@ -89,8 +89,10 @@
 plot.sf <- function(x, y, ..., col = NULL, main, pal = NULL, nbreaks = 10, breaks = "pretty", 
 		max.plot = if(is.null(n <- options("sf_max.plot")[[1]])) 9 else n, 
 		key.pos = if (ncol(x) > 2) NULL else 4, key.size = lcm(1.8)) {
+
 	stopifnot(missing(y))
-	breaks.missing = missing(breaks)
+	nbreaks.missing = missing(nbreaks)
+	key.pos.missing = missing(key.pos)
 	dots = list(...)
 
 	if (ncol(x) > 2 && !isTRUE(dots$add)) { # multiple maps to plot...
@@ -125,9 +127,11 @@ plot.sf <- function(x, y, ..., col = NULL, main, pal = NULL, nbreaks = 10, break
 				warning("ignoring all but the first attribute")
 				x = x[,1]
 			}
-
 			# store attribute in "values":
 			values = x[[setdiff(names(x), attr(x, "sf_column"))]]
+
+			if (is.list(values))
+				stop("plotting list-columns not supported") # nocov
 
 			if (inherits(values, "POSIXt"))
 				values = as.numeric(values)
@@ -142,16 +146,23 @@ plot.sf <- function(x, y, ..., col = NULL, main, pal = NULL, nbreaks = 10, break
 
 			if (is.null(col)) { # compute colors from values:
 				col = if (is.factor(values)) {
+						if (key.pos.missing && nlevels(values) > 30) # doesn't make sense:
+							key.pos = NULL
 						colors = if (is.function(pal))
 								pal(nlevels(values))
 							else
 								pal
 						colors[as.numeric(values)]
 					} else {
+						values = as.numeric(values) # drop units, if any
 						if (is.character(breaks)) { # compute breaks from values:
-							breaks = if (! all(is.na(values)) && length(unique(na.omit(values))) > 1)
-								classInt::classIntervals(values, nbreaks, breaks)$brks
-							else
+							n.unq = length(unique(na.omit(values)))
+							breaks = if (! all(is.na(values)) && n.unq > 1) {
+								if (utils::packageVersion("classInt") > "0.2-1")
+									classInt::classIntervals(na.omit(values), min(nbreaks, n.unq), breaks, warnSmallN = FALSE)$brks
+								else
+									classInt::classIntervals(na.omit(values), min(nbreaks, n.unq), breaks)$brks
+							} else
 								range(values, na.rm = TRUE) # lowest and highest!
 						}
 						# this is necessary if breaks were specified either as character or as numeric
@@ -162,7 +173,7 @@ plot.sf <- function(x, y, ..., col = NULL, main, pal = NULL, nbreaks = 10, break
 							else if (diff(range(values, na.rm = TRUE)) == 0)
 								values * 0 + 1  # preserves NA's
 							else
-								cut(as.numeric(values), breaks, include.lowest = TRUE)
+								cut(values, breaks, include.lowest = TRUE)
 						colors = if (is.function(pal))
 								pal(nbreaks)
 							else
@@ -174,6 +185,8 @@ plot.sf <- function(x, y, ..., col = NULL, main, pal = NULL, nbreaks = 10, break
 					which.first = function(x) which(x)[1]
 					fnum = as.numeric(values)
 					colors = col[ sapply(unique(fnum), function(i) which.first(i == fnum)) ]
+					if (key.pos.missing && nlevels(values) > 30) # doesn't make sense:
+						key.pos = NULL
 				} else # no key:
 					key.pos = NULL
 			}
@@ -201,10 +214,12 @@ plot.sf <- function(x, y, ..., col = NULL, main, pal = NULL, nbreaks = 10, break
 			plot(st_geometry(x), col = col, ...)
 		}
 		if (! isTRUE(dots$add)) { # title?
-			if (missing(main))
-				title(setdiff(names(x), attr(x, "sf_column")))
-			else
-				title(main)
+			if (missing(main)) {
+				main = setdiff(names(x), attr(x, "sf_column"))
+				if (length(main) && inherits(x[[main]], "units"))
+					main = make_unit_label(main, x[[main]])
+			}
+			title(main)
 		}
 	}
 }
@@ -246,7 +261,7 @@ plot.sfc_MULTIPOINT = function(x, y, ..., pch = 1, cex = 1, col = 1, bg = 0, lwd
 	cex = rep(cex, length.out = n)
 	lwd = rep(lwd, length.out = n)
 	lty = rep(lty, length.out = n)
-	non_empty = !is.na(st_dimension(x))
+	non_empty = ! st_is_empty(x)
 	lapply(seq_along(x), function(i)
 	  if (non_empty[i])
 		points(x[[i]], pch = pch[i], col = col[i], bg = bg[i],
@@ -267,7 +282,7 @@ plot.sfc_LINESTRING = function(x, y, ..., lty = 1, lwd = 1, col = 1, pch = 1, ty
 	lwd = rep(lwd, length.out = length(x))
 	col = rep(col, length.out = length(x))
 	pch  = rep(pch, length.out = length(x))
-	non_empty = !is.na(st_dimension(x))
+	non_empty = ! st_is_empty(x)
 	lapply(seq_along(x), function(i)
 	  if (non_empty[i])
 		lines(x[[i]], lty = lty[i], lwd = lwd[i], col = col[i], pch = pch[i], type = type))
@@ -294,7 +309,7 @@ plot.sfc_MULTILINESTRING = function(x, y, ..., lty = 1, lwd = 1, col = 1, pch = 
 	lwd = rep(lwd, length.out = length(x))
 	col = rep(col, length.out = length(x))
 	pch  = rep(pch, length.out = length(x))
-	non_empty = !is.na(st_dimension(x))
+	non_empty = ! st_is_empty(x)
 	lapply(seq_along(x), function(i)
 	  if (non_empty[i])
 		lapply(x[[i]], function(L)
@@ -315,10 +330,10 @@ p_bind = function(lst) {
 }
 
 #' @name plot
-#' @param rule see \link[graphics]{polypath}
+#' @param rule see \link[graphics]{polypath}; for \code{winding}, exterior ring direction should be opposite that of the holes; with \code{evenodd}, plotting is robust against misspecified ring directions 
 #' @export
 plot.sfc_POLYGON = function(x, y, ..., lty = 1, lwd = 1, col = NA, cex = 1, pch = NA, border = 1,
-		add = FALSE, rule = "winding") {
+		add = FALSE, rule = "evenodd") {
 # FIXME: take care of lend, ljoin, xpd, and lmitre
 	stopifnot(missing(y))
 	if (! add)
@@ -327,7 +342,7 @@ plot.sfc_POLYGON = function(x, y, ..., lty = 1, lwd = 1, col = NA, cex = 1, pch 
 	lwd = rep(lwd, length.out = length(x))
 	col = rep(col, length.out = length(x))
 	border = rep(border, length.out = length(x))
-	non_empty = !is.na(st_dimension(x))
+	non_empty = ! st_is_empty(x)
 	lapply(seq_along(x), function(i)
 	  if (non_empty[i])
 		polypath(p_bind(x[[i]]), border = border[i], lty = lty[i], lwd = lwd[i], col = col[i], rule = rule))
@@ -344,7 +359,7 @@ plot.sfc_POLYGON = function(x, y, ..., lty = 1, lwd = 1, col = NA, cex = 1, pch 
 #' @name plot
 #' @method plot sfc_MULTIPOLYGON
 #' @export
-plot.sfc_MULTIPOLYGON = function(x, y, ..., lty = 1, lwd = 1, col = NA, border = 1, add = FALSE, rule = "winding") {
+plot.sfc_MULTIPOLYGON = function(x, y, ..., lty = 1, lwd = 1, col = NA, border = 1, add = FALSE, rule = "evenodd") {
 # FIXME: take care of lend, ljoin, xpd, and lmitre
 	stopifnot(missing(y))
 	if (! add)
@@ -353,7 +368,7 @@ plot.sfc_MULTIPOLYGON = function(x, y, ..., lty = 1, lwd = 1, col = NA, border =
 	lwd = rep(lwd, length.out = length(x))
 	col = rep(col, length.out = length(x))
 	border = rep(border, length.out = length(x))
-	non_empty = !is.na(st_dimension(x))
+	non_empty = ! st_is_empty(x)
 	lapply(seq_along(x), function(i)
 	  if (non_empty[i])
 		lapply(x[[i]], function(L)
@@ -480,6 +495,9 @@ plot_sf = function(x, xlim = NULL, ylim = NULL, asp = NA, axes = FALSE, bgc = pa
 	if (is.na(asp))
 		asp <- ifelse(isTRUE(st_is_longlat(x)), 1/cos((mean(ylim) * pi)/180), 1.0)
 
+	if (any(is.na(bbox)))
+		stop("NA value(s) in bounding box. Trying to plot empty geometries?")
+
 	plot.new()
 
 	args = list(xlim = xlim, ylim = ylim, asp = asp)
@@ -561,6 +579,8 @@ sf.colors = function (n = 10, cutoff.tails = c(0.35, 0.2), alpha = 1, categorica
 		# 12-class Set3:
 		else c('#8dd3c7','#ffffb3','#bebada','#fb8072','#80b1d3','#fdb462','#b3de69','#fccde5','#d9d9d9','#bc80bd','#ccebc5','#ffed6f')
 		# TODO: deal with alpha
+		if (alpha != 1.0)
+			cb = paste0(cb, as.hexmode(ceiling(alpha * 255)))
 		rep(cb, length.out = n)
 	} else {
 		i = seq(0.5 * cutoff.tails[1], 1 - 0.5 * cutoff.tails[2], length = n)
@@ -693,3 +713,19 @@ image.scale.factor = function(z, col, breaks = NULL, key.pos, add.axis = TRUE,
 		par(opar)
 	}
 }
+
+# nocov start
+#' @export
+identify.sfc = function(x, ..., n = min(10, length(x)), type = "n") {
+	l = locator(n, type = type)
+	pts = st_as_sf(as.data.frame(do.call(cbind, l)), coords = c("x", "y"), crs = st_crs(x))
+	#i = st_intersects(x, pts) 
+	#which(lengths(i) > 0)
+	sapply(st_intersects(pts, x), function(x) if (length(x)) x[1] else NA_integer_)
+}
+
+#' @export
+identify.sf = function(x, ...) {
+	identify(st_geometry(x), ...)
+}
+# nocov end
