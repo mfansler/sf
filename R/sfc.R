@@ -82,8 +82,10 @@ st_sfc = function(..., crs = NA_crs_, precision = 0.0, check_ring_dir = FALSE) {
 	if (! missing(precision) || is.null(attr(lst, "precision")))
 		attr(lst, "precision") = precision
 
-	# (re)compute & set bbox:
-	attr(lst, "bbox") = compute_bbox(lst)
+	# compute bbox, if not set:
+	bb = attr(lst, "bbox")
+	if (is.null(bb) || any(is.na(bb)))
+		attr(lst, "bbox") = compute_bbox(lst)
 
 	# check ring directions:
 	if (check_ring_dir) # also GEOMETRYCOLLECTION?
@@ -168,7 +170,7 @@ print.sfc = function(x, ..., n = 5L, what = "Geometry set for", append = "") {
 		cat(paste0("dimension:      ", class(x[[1]])[1], "\n"))
 	}
 	cat(paste0("bbox:           "))
-	bb = signif(attr(x, "bbox"), 7)
+	bb = signif(attr(x, "bbox"), options("digits")$digits)
 	cat(paste(paste(names(bb), bb[], sep = ": "), collapse = " "))
 	cat("\n")
 	# attributes: epsg, proj4string, precision
@@ -463,4 +465,35 @@ check_ring_dir = function(x) {
 	)
 	attributes(ret) = attributes(x)
 	ret
+}
+
+#' @name st_as_sfc
+#' @export
+st_as_sfc.list = function(x, ..., crs = NA_crs_) {
+
+	if (length(x) == 0)
+		return(st_sfc(crs = crs))
+
+	if (is.raw(x[[1]]))
+		st_as_sfc(structure(x, class = "WKB"), ...)
+	else if (is.character(x[[1]])) { # hex wkb or wkt:
+		ch12 = substr(x[[1]], 1, 2)
+		if (ch12 == "0x" || ch12 == "00" || ch12 == "01") # hex wkb
+			st_as_sfc(structure(x, class = "WKB"), ...)
+		else
+			st_as_sfc(unlist(x), ...) # wkt
+	}
+}
+
+#' @name st_as_sfc
+#' @export
+st_as_sfc.blob = function(x, ...) {
+	st_as_sfc.list(x, ...)
+}
+
+#' @name st_as_sfc
+#' @export
+st_as_sfc.bbox = function(x, ...) {
+	box = st_polygon(list(matrix(x[c(1, 2, 3, 2, 3, 4, 1, 4, 1, 2)], ncol = 2, byrow = TRUE)))
+	st_sfc(box, crs = st_crs(x))
 }

@@ -105,6 +105,7 @@ ls = st_sfc(st_linestring(rbind(c(0,0),c(0,1))))
 ls * 2
 ls - 2
 (ls + 2) %% 3
+ls / ls
 
 str(x)
 nc = st_read(system.file("shape/nc.shp", package="sf"), quiet = TRUE)
@@ -256,3 +257,5 @@ geo <- c("{\"geodesic\":true,\"type\":\"Point\",\"coordinates\":[-118.6815256326
          "{\"geodesic\":true,\"type\":\"Point\",\"coordinates\":[-118.68089232041565,36.44173155205561]}")
 st_as_sfc(geo, GeoJSON = TRUE)
 st_as_sfc(geo, GeoJSON = TRUE, crs = 4326)
+
+st_as_sfc(st_as_binary(st_sfc(st_point(0:1)))[[1]], crs = 4326)

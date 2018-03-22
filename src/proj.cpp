@@ -1,6 +1,12 @@
 #include <iostream>
 #include <proj_api.h>
 
+#if PJ_VERSION == 480
+extern "C" {
+FILE *pj_open_lib(projCtx, const char *, const char *);
+}
+#endif
+
 #include "Rcpp.h"
 
 // [[Rcpp::export]]
@@ -27,6 +33,29 @@ Rcpp::List CPL_proj_is_valid(std::string proj4string) {
 	}
 	return out;
 }
+
+// [[Rcpp::export]]
+bool CPL_have_datum_files(SEXP foo) {
+
+#if PJ_VERSION <= 480
+    FILE *fp;
+#else
+    PAFile fp;
+#endif
+    projCtx ctx;
+    ctx = pj_get_default_ctx();
+    fp = pj_open_lib(ctx, "conus", "rb");
+	if (fp != NULL) {
+#if PJ_VERSION <= 480
+    	fclose(fp);
+#else
+    	pj_ctx_fclose(ctx, fp);
+#endif
+		return true;
+	} else
+		return false; // #nocov
+}
+
 
 extern "C" {
 // modified from: rgdal/pkg/src/projectit.cpp
@@ -58,6 +87,9 @@ struct PJ_UNITS {
 	char	*id;		/* units keyword */
 	char	*to_meter;	/* multiply by value to get meters */
 	char	*name;		/* comments */
+#if PJ_VERSION >= 500
+	double   factor;       /* to_meter factor in actual numbers */
+#endif
 };
 struct PJ_UNITS *pj_get_units_ref( void );
 
@@ -140,6 +172,32 @@ Rcpp::List CPL_proj_info(int type) {
 			ret = ans;
 		} break;
 		case 3: {
+#if PJ_VERSION >= 500
+			Rcpp::List ans(4);
+			ans.attr("names") = Rcpp::CharacterVector::create("id", "to_meter",
+				"name", "factor");
+			int n = 0;
+			struct PJ_UNITS *ld;
+			for (ld = pj_get_units_ref(); ld->id ; ++ld) 
+				n++;
+			Rcpp::CharacterVector ans0(n);
+			Rcpp::CharacterVector ans1(n);
+			Rcpp::CharacterVector ans2(n);
+			Rcpp::NumericVector ans3(n);
+			n = 0;
+			for (ld = pj_get_units_ref(); ld->id ; ++ld) {
+				ans0(n) = ld->id;
+				ans1(n) = ld->to_meter;
+				ans2(n) = ld->name;
+				ans3(n) = ld->factor;
+				n++;
+			}
+			ans(0) = ans0;
+			ans(1) = ans1;
+			ans(2) = ans2;
+			ans(3) = ans3;
+			ret = ans;
+#else
 			Rcpp::List ans(3);
 			ans.attr("names") = Rcpp::CharacterVector::create("id", "to_meter",
 				"name");
@@ -161,6 +219,7 @@ Rcpp::List CPL_proj_info(int type) {
 			ans(1) = ans1;
 			ans(2) = ans2;
 			ret = ans;
+#endif
 		} break;
 		default:
 			Rcpp::stop("unknown type"); // #nocov
@@ -224,7 +283,7 @@ Rcpp::NumericMatrix CPL_proj_direct(Rcpp::CharacterVector from_to, Rcpp::Numeric
 	pj_free(toPJ);
 	int nwarn = 0;
 	for (int i = 0; i < out.nrow(); i++) {
-		if (out[i,0] == HUGE_VAL || out[i,1] == HUGE_VAL )
+		if (out(i, 0) == HUGE_VAL || out(i, 1) == HUGE_VAL )
 		    // || ISNAN(pts[i,0]) || ISNAN(pts[i,1]))
                 	    nwarn++; // #nocov
 	}

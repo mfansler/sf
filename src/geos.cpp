@@ -450,12 +450,7 @@ Rcpp::LogicalVector CPL_geos_is_valid(Rcpp::List sfc, bool NA_on_exception = tru
 			(GEOSMessageHandler_r) __countErrorHandler, (void *) &notice); 
 #endif
 	}
-
 	std::vector<GEOSGeom> gmv = geometries_from_sfc(hGEOSCtxt, sfc, NULL); // where notice might be set!
-#ifdef HAVE350
-	GEOSContext_setNoticeHandler_r(hGEOSCtxt, __warningHandler);
-	GEOSContext_setErrorHandler_r(hGEOSCtxt, __errorHandler);
-#endif
 	Rcpp::LogicalVector out(gmv.size());
 	for (int i = 0; i < out.length(); i++) {
 		int ret = GEOSisValid_r(hGEOSCtxt, gmv[i]);
@@ -465,6 +460,10 @@ Rcpp::LogicalVector CPL_geos_is_valid(Rcpp::List sfc, bool NA_on_exception = tru
 			out[i] = chk_(ret);
 		GEOSGeom_destroy_r(hGEOSCtxt, gmv[i]);
 	}
+#ifdef HAVE350
+	GEOSContext_setNoticeHandler_r(hGEOSCtxt, __warningHandler);
+	GEOSContext_setErrorHandler_r(hGEOSCtxt, __errorHandler);
+#endif
 	CPL_geos_finish(hGEOSCtxt);
 	return out;
 }
@@ -817,7 +816,6 @@ Rcpp::List CPL_transpose_sparse_incidence(Rcpp::List m, int n) {
 Rcpp::List CPL_nary_difference(Rcpp::List sfc) {
 	// initialize objects
 	int dim = 2;
-	bool contained = false;
 	std::vector<size_t> index;
 	GEOSContextHandle_t hGEOSCtxt = CPL_geos_init();
 	std::vector<GEOSGeom> x = geometries_from_sfc(hGEOSCtxt, sfc, &dim);
@@ -826,6 +824,7 @@ Rcpp::List CPL_nary_difference(Rcpp::List sfc) {
 	for (size_t i = 0; i < x.size(); i++) {
 		// if i'th geometry in x is empty then skip it
 		if (! GEOSisEmpty_r(hGEOSCtxt, x[i])) {
+			bool contained = false;
 			GEOSSTRtree *tree = GEOSSTRtree_create_r(hGEOSCtxt, 10);
 			GEOSGeom geom = x[i];
 			// if out contains geometries than remove overlaps from geom
@@ -887,7 +886,6 @@ Rcpp::List CPL_nary_difference(Rcpp::List sfc) {
 Rcpp::List CPL_nary_intersection(Rcpp::List sfc) {
 	// initialize objects
 	int dim = 2;
-	bool contained = false;
 	std::vector< std::vector<size_t> > index;
 	GEOSContextHandle_t hGEOSCtxt = CPL_geos_init();
 	std::vector<GEOSGeom> x = geometries_from_sfc(hGEOSCtxt, sfc, &dim);
@@ -909,7 +907,6 @@ Rcpp::List CPL_nary_intersection(Rcpp::List sfc) {
 					}
 				}
 				// query which geometries in out overlap with geom
-				contained = false;
 				std::vector<size_t> tree_sel;
 				GEOSSTRtree_query_r(hGEOSCtxt, tree, geom, cb, &tree_sel);
 				// iterate over items in query and erase overlapping areas in geom
@@ -952,16 +949,16 @@ Rcpp::List CPL_nary_intersection(Rcpp::List sfc) {
 		}
 	} // for i
 	size_t j = 0;
-    for (size_t i = 0; i < out.size(); i++) {
-        if (GEOSisEmpty_r(hGEOSCtxt, out[i]))
+	for (size_t i = 0; i < out.size(); i++) {
+	if (GEOSisEmpty_r(hGEOSCtxt, out[i]))
 			GEOSGeom_destroy_r(hGEOSCtxt, out[i]); // discard
-        else {
+		else {
 			out[j] = out[i];
 			index[j] = index[i];
 			std::sort(index[j].begin(), index[j].end());
-            j++;
+			j++;
 		}
-    }
+	}
 	out.resize(j);
 	index.resize(j);
 	// prepare output

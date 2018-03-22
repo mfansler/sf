@@ -128,7 +128,7 @@ st_geos_binop = function(op, x, y, par = 0.0, pattern = NA_character_,
 #' @param x object of class \code{sf}, \code{sfc} or \code{sfg}
 #' @param y object of class \code{sf}, \code{sfc} or \code{sfg}, defaults to \code{x}
 #' @param ... ignored
-#' @param dist_fun deprecated 
+#' @param dist_fun deprecated
 #' @param by_element logical; if \code{TRUE}, return a vector with distance between the first elements of \code{x} and \code{y}, the second, etc. if \code{FALSE}, return the dense matrix with all pairwise distances.
 #' @param which character; if equal to \code{Haussdorf} or \code{Frechet}, Hausdorff resp. Frechet distances are returned
 #' @param par for \code{which} equal to \code{Haussdorf} or \code{Frechet}, use a positive value this to densify the geometry
@@ -146,25 +146,33 @@ st_distance = function(x, y, ..., dist_fun, by_element = FALSE, which = "distanc
 	else
 		stopifnot(st_crs(x) == st_crs(y))
 
-	if (by_element)
-		return(mapply(st_distance, x, y, by_element = FALSE))
-
 	if (! missing(dist_fun))
 		stop("dist_fun is deprecated: lwgeom is used for distance calculation")
 
 	x = st_geometry(x)
 	y = st_geometry(y)
-	if (!is.na(st_crs(x)))
-		p = crs_parameters(st_crs(x))
+
 	if (isTRUE(st_is_longlat(x))) {
 		if (! requireNamespace("lwgeom", quietly = TRUE))
 			stop("lwgeom required: install first?")
-		units(tolerance) = make_unit("m")
-		lwgeom::st_geod_distance(x, y, tolerance)
+		units(tolerance) = as_units("m")
+		if (by_element) {
+			crs = st_crs(x)
+			dist_ll = function(x, y, tolerance)
+				lwgeom::st_geod_distance(st_sfc(x, crs = crs), st_sfc(y, crs = crs),
+					tolerance = tolerance)
+			d = mapply(dist_ll, x, y, tolerance = tolerance)
+			units(d) = units(crs_parameters(st_crs(x))$SemiMajor)
+			d
+		} else
+			lwgeom::st_geod_distance(x, y, tolerance)
 	} else {
-		d = CPL_geos_dist(x, y, which, par)
+		d = if (by_element)
+				mapply(st_distance, x, y, by_element = FALSE, which = which, par = par)
+			else
+				CPL_geos_dist(x, y, which, par)
 		if (! is.na(st_crs(x)))
-			units(d) = p$ud_unit
+			units(d) = crs_parameters(st_crs(x))$ud_unit
 		d
 	}
 }
@@ -207,13 +215,15 @@ st_relate	= function(x, y, pattern = NA_character_, sparse = !is.na(pattern)) {
 #' Geometric binary predicates on pairs of simple feature geometry sets
 #' @name geos_binary_pred
 #' @param x object of class \code{sf}, \code{sfc} or \code{sfg}
-#' @param y object of class \code{sf}, \code{sfc} or \code{sfg}
+#' @param y object of class \code{sf}, \code{sfc} or \code{sfg}; if missing, \code{x} is used
 #' @param sparse logical; should a sparse index list be returned (TRUE) or a dense logical matrix? See below.
-#' @return If \code{sparse=FALSE}, \code{st_predicate} (with \code{predicate} e.g. "intersects") returns a dense logical matrix with element \code{i,j} \code{TRUE} when \code{predicate(x[i], y[j])} (e.g., when geometry i and j intersect); if \code{sparse=TRUE}, an object of class \code{sgbp} with a sparse list representation of the same matrix, with list element \code{i} an integer vector with all indices j for which \code{predicate(x[i],y[j])} is \code{TRUE} (and hence \code{integer(0)} if none of them is \code{TRUE}). From the dense matrix, one can find out if one or more elements intersect by \code{apply(mat, 1, any)}, and from the sparse list by \code{lengths(lst) > 0}, see examples below.
+#' @return If \code{sparse=FALSE}, \code{st_predicate} (with \code{predicate} e.g. "intersects") returns a dense logical matrix with element \code{i,j} \code{TRUE} when \code{predicate(x[i], y[j])} (e.g., when geometry of feature i and j intersect); if \code{sparse=TRUE}, an object of class \code{sgbp} with a sparse list representation of the same matrix, with list element \code{i} an integer vector with all indices j for which \code{predicate(x[i],y[j])} is \code{TRUE} (and hence \code{integer(0)} if none of them is \code{TRUE}). From the dense matrix, one can find out if one or more elements intersect by \code{apply(mat, 1, any)}, and from the sparse list by \code{lengths(lst) > 0}, see examples below.
 #' @details For most predicates, a spatial index is built on argument \code{x}; see \url{http://r-spatial.org/r/2017/06/22/spatial-index.html}.
 #' Specifically, \code{st_intersects}, \code{st_disjoint}, \code{st_touches} \code{st_crosses}, \code{st_within}, \code{st_contains}, \code{st_contains_properly}, \code{st_overlaps}, \code{st_equals}, \code{st_covers} and \code{st_covered_by} all build spatial indexes for more efficient geometry calculations. \code{st_relate}, \code{st_equals_exact}, and \code{st_is_within_distance} do not.
 #'
-#' Sparse geometry binary predicate (\code{sgbp}) lists have the following attributes: \code{region.id} with the \code{row.names} of \code{x} (if any, else \code{1:n}), and \code{predicate} with the name of the predicate used.
+#' If \code{y} is missing, `st_predicate(x, x)` is effectively called, and a square matrix is returned with diagonal elements `st_predicate(x[i], x[i])`.
+#'
+#' Sparse geometry binary predicate (\code{sgbp}) lists have the following attributes: \code{region.id} with the \code{row.names} of \code{x} (if any, else \code{1:n}), \code{ncol} with the number of features in \code{y}, and \code{predicate} with the name of the predicate used.
 #' @examples
 #' pts = st_sfc(st_point(c(.5,.5)), st_point(c(1.5, 1.5)), st_point(c(2.5, 2.5)))
 #' pol = st_polygon(list(rbind(c(0,0), c(2,0), c(2,2), c(0,2), c(0,0))))
@@ -236,7 +246,7 @@ st_disjoint		= function(x, y = x, sparse = TRUE, prepared = TRUE) {
 	# disjoint = !intersects :
 	if (sparse)
 		sgbp(lapply(int, function(g) setdiff(1:length(st_geometry(y)), g)),
-			predicate = "disjoint", 
+			predicate = "disjoint",
 			ncol = attr(int, "ncol"),
 			region.id = attr(int, "region.id"))
 	else
@@ -317,7 +327,7 @@ st_is_within_distance = function(x, y, dist, sparse = TRUE) {
 			y = x
 		gx = st_geometry(x)
 		gy = st_geometry(y)
-		units(dist) = make_unit("m")
+		units(dist) = as_units("m")
 		if (sparse) {
 			if (! requireNamespace("lwgeom", quietly = TRUE))
 				stop("lwgeom required: install first?")
@@ -363,7 +373,7 @@ st_buffer.sfc = function(x, dist, nQuadSegs = 30) {
 	if (isTRUE(st_is_longlat(x))) {
 		warning("st_buffer does not correctly buffer longitude/latitude data")
 		if (inherits(dist, "units"))
-			units(dist) = make_unit("arc_degrees")
+			units(dist) = as_units("arc_degrees")
 		else
 			message("dist is assumed to be in decimal degrees (arc_degrees).")
 	} else if (inherits(dist, "units")) {
@@ -371,7 +381,7 @@ st_buffer.sfc = function(x, dist, nQuadSegs = 30) {
 			stop("x does not have a crs set: can't convert units")
 		if (is.null(st_crs(x)$units))
 			stop("x has a crs without units: can't convert units")
-		units(dist) = make_unit(udunits_from_proj[st_crs(x)$units])
+		units(dist) = crs_parameters(st_crs(x))$ud_unit
 	}
 	dist = rep(dist, length.out = length(x))
 	st_sfc(CPL_geos_op("buffer", x, dist, nQuadSegs))
@@ -584,19 +594,23 @@ st_centroid.sfg = function(x, ..., of_largest_polygon = FALSE)
 
 largest_ring = function(x) {
 	pols = st_cast(x, "POLYGON", warn = FALSE)
-	if (! is.null(attr(pols, "ids"))) {
-		spl = split(pols, rep(1:length(x), attr(pols, "ids")))
-		st_sfc(lapply(spl, function(y) y[[which.max(st_area(y))]]), crs = st_crs(x))
-	} else # st_cast did nothing:
-		pols
+	stopifnot(! is.null(attr(pols, "ids")))
+	areas = st_area(pols)
+	spl = split(areas, rep(1:length(x), attr(pols, "ids"))) # group by x
+	l = c(0, head(cumsum(lengths(spl)), -1)) # 0-based indexes of first rings of a MULTIPOLYGON
+	i = l + sapply(spl, which.max)           # add relative index of largest ring
+	st_sfc(pols[i], crs = st_crs(x))
 }
 
 #' @export
 st_centroid.sfc = function(x, ..., of_largest_polygon = FALSE) {
-	if (of_largest_polygon)
-		x = largest_ring(x)
 	if (isTRUE(st_is_longlat(x)))
 		warning("st_centroid does not give correct centroids for longitude/latitude data")
+	if (of_largest_polygon) {
+		multi = which(st_dimension(x) == 2 & lengths(x) > 1)
+		if (length(multi))
+			x[multi] = largest_ring(x[multi])
+	}
 	st_sfc(CPL_geos_op("centroid", x, numeric(0)))
 }
 
@@ -682,7 +696,7 @@ st_segmentize.sfc	= function(x, dfMaxLength, ...) {
 		if (! requireNamespace("lwgeom", quietly = TRUE))
 			stop("package lwgeom required, please install it first")
 		if (! inherits(dfMaxLength, "units"))
-			units(dfMaxLength) = make_unit("m")
+			units(dfMaxLength) = as_units("m")
 		lwgeom::st_geod_segmentize(x, dfMaxLength) # takes care of rad or degree units
 	} else {
 		if (! is.na(st_crs(x)) && inherits(dfMaxLength, "units"))
@@ -725,15 +739,15 @@ geos_op2_df = function(x, y, geoms) {
 	if (inherits(y, "sf")) {
 		all_constant_y = all_constant(y)
 		st_geometry(y) = NULL
-		df = cbind(df, y[idx[,2], , drop = FALSE])
+		df = data.frame(df, y[idx[,2], , drop = FALSE])
 	}
 	if (! (all_constant_x && all_constant_y))
 		warning("attribute variables are assumed to be spatially constant throughout all geometries",
 			call. = FALSE)
 	if (inherits(x, "tbl_df")) {
-		if (!requireNamespace("dplyr", quietly = TRUE))
-			stop("package dplyr required: install first?")
-		df = dplyr::tbl_df(df)
+		if (!requireNamespace("tibble", quietly = TRUE))
+			stop("package tibble required: install first?")
+		df = tibble::as_tibble(df)
 	}
 	df[[ attr(x, "sf_column") ]] = geoms
 	st_sf(df, sf_column_name = attr(x, "sf_column"))
@@ -840,10 +854,10 @@ st_difference.sfg = function(x, y)
 
 #' @name geos_binary_ops
 #' @export
-#' @details When \code{st_difference} is called with a single argument, 
+#' @details When \code{st_difference} is called with a single argument,
 #' overlapping areas are erased from geometries that are indexed at greater
-#' numbers in the argument to \code{x}; geometries that are empty 
-#' or contained fully inside geometries with higher priority are removed entirely. 
+#' numbers in the argument to \code{x}; geometries that are empty
+#' or contained fully inside geometries with higher priority are removed entirely.
 #' The \code{st_difference.sfc} method with a single argument returns an object with
 #' an \code{"idx"} attribute with the orginal index for returned geometries.
 st_difference.sfc = function(x, y) {
@@ -1028,8 +1042,11 @@ st_make_grid = function(x,
 	} else
 		st_bbox(x)
 
-	if (! missing(cellsize))
+	cellsize_missing = if (! missing(cellsize)) {
 		cellsize = rep(cellsize, length.out = 2)
+		FALSE
+	} else
+		TRUE
 
 	if (missing(n)) {
 		nx = ceiling((bb[3] - offset[1])/cellsize[1])
@@ -1041,8 +1058,13 @@ st_make_grid = function(x,
 	}
 
 	# corner points:
-	xc = seq(offset[1], bb[3], length.out = nx + 1)
-	yc = seq(offset[2], bb[4], length.out = ny + 1)
+	if (cellsize_missing) {
+		xc = seq(offset[1], bb[3], length.out = nx + 1)
+		yc = seq(offset[2], bb[4], length.out = ny + 1)
+	} else {
+		xc = offset[1] + (0:nx) * cellsize[1]
+		yc = offset[2] + (0:ny) * cellsize[2]
+	}
 
 	if (what == "polygons") {
 		ret = vector("list", nx * ny)

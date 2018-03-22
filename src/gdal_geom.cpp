@@ -3,7 +3,7 @@
 
 #include <Rcpp.h>
 
-#include "gdal.h"
+#include "gdal_sf_pkg.h"
 
 // [[Rcpp::export]]
 Rcpp::NumericVector CPL_area(Rcpp::List sfc) { 
@@ -50,6 +50,8 @@ Rcpp::NumericVector CPL_length(Rcpp::List sfc) {
 		switch (gt) {
 			case wkbPoint: 
 			case wkbMultiPoint:
+			case wkbPolygon:
+			case wkbMultiPolygon:
 				out[i] = 0.0;
 				break;
 			case wkbLineString:

@@ -35,21 +35,12 @@ arrange.sf <- function(.data, ..., .dots) {
 }
 
 #' @name dplyr
-#' @param .keep_all see corresponding function in dplyr
-#' @export
-#' @examples
-#' nc[c(1:100, 1:10), ] %>% distinct() %>% nrow()
-distinct.sf <- function(.data, ..., .dots, .keep_all = FALSE) {
-	st_as_sf(NextMethod(), sf_column_name = attr(.data, "sf_column"))
-}
-
-#' @name dplyr
 #' @param add see corresponding function in dplyr
 #' @export
 #' @examples
 #' nc$area_cl = cut(nc$AREA, c(0, .1, .12, .15, .25))
 #' nc %>% group_by(area_cl) %>% class()
-group_by.sf <- function(.data, ..., .dots, add = FALSE) {
+group_by.sf <- function(.data, ..., add = FALSE) {
 	class(.data) <- setdiff(class(.data), "sf")
 	st_as_sf(NextMethod(), sf_column_name = attr(.data, "sf_column"))
 }
@@ -153,7 +144,10 @@ summarise.sf <- function(.data, ..., .dots, do_union = TRUE) {
 			unlist(lapply(i, function(x) st_union(geom[x])), recursive = FALSE)
 		else
 			unlist(lapply(i, function(x) st_combine(geom[x])), recursive = FALSE)
-		do.call(st_sfc, geom)
+		if (is.null(geom))
+			st_sfc() #676 #nocov
+		else
+			do.call(st_sfc, geom)
 	} else { # single group:
 		if (do_union)
 			st_union(st_geometry(.data))
@@ -164,6 +158,22 @@ summarise.sf <- function(.data, ..., .dots, do_union = TRUE) {
 	ret$do_union = NULL
 	st_as_sf(ret, crs = crs, precision = st_precision(.data),
 		sf_column_name = attr(.data, "sf_column"))
+}
+
+#' @name dplyr
+#' @param .keep_all see corresponding function in dplyr
+#' @export
+#' @examples
+#' nc[c(1:100, 1:10), ] %>% distinct() %>% nrow()
+#' @details \code{distinct.sf} gives distinct records for which all attributes and geometries are distinct; \link{st_equals} is used to find out which geometries are distinct.
+distinct.sf <- function(.data, ..., .keep_all = FALSE) {
+	sf_column = attr(.data, "sf_column")
+	geom = st_geometry(.data)
+	.data[[ sf_column ]] = vapply(st_equals(.data), head, NA_integer_, n = 1)
+	class(.data) = setdiff(class(.data), "sf")
+	.data = NextMethod()
+	.data[[ sf_column ]] = geom[ .data[[ sf_column ]] ]
+	st_as_sf(.data)
 }
 
 ## tidyr methods:
@@ -177,7 +187,7 @@ summarise.sf <- function(.data, ..., .dots, do_union = TRUE) {
 #' @param factor_key see original function docs
 #' @examples
 #' library(tidyr)
-#' nc %>% select(SID74, SID79, geometry) %>% gather(VAR, SID, -geometry) %>% summary()
+#' nc %>% select(SID74, SID79) %>% gather(VAR, SID, -geometry) %>% summary()
 gather.sf <- function(data, key, value, ..., na.rm = FALSE, convert = FALSE, factor_key = FALSE) {
 
 	if (! requireNamespace("rlang", quietly = TRUE))
@@ -213,8 +223,8 @@ spread.sf <- function(data, key, value, fill = NA, convert = FALSE, drop = TRUE,
 
 	if (!requireNamespace("rlang", quietly = TRUE))
 		stop("rlang required: install first?")
-  key = rlang::enquo(key)
-  value = rlang::enquo(value)
+	key = rlang::enquo(key)
+	value = rlang::enquo(value)
 
 	class(data) <- setdiff(class(data), "sf")
     st_as_sf(tidyr::spread(data, !!key, !!value, fill = fill, convert = convert,
@@ -341,15 +351,14 @@ unnest.sf = function(data, ..., .preserve = NULL) {
 #' @param x object of class sfc
 #' @param ... ignored
 #' @name tibble
+#' @details see \link[pillar]{type_sum}
 #' @export
 type_sum.sfc <- function(x, ...) {
-	ll = st_is_longlat(x)
-	if (is.na(ll))
-		"sf_geometry"
-	else if (ll)
-		"sf_geometry [degree]"
+	cls = substring(class(x)[1], 5)
+	if (is.na(st_is_longlat(x)))
+		cls
 	else
-		paste0("sf_geometry [", as.character(units(st_crs(x, parameters = TRUE)$ud_unit)), "]")
+		paste0(cls, " [", as.character(units(st_crs(x, parameters = TRUE)$ud_unit)), "]")
 }
 
 #' Summarize simple feature item for tibble
@@ -361,9 +370,14 @@ obj_sum.sfc <- function(x) {
 	vapply(x, function(sfg) format(sfg, width = 15L), "")
 }
 
-#' @importFrom pillar pillar_shaft
+#' @name tibble
 #' @export
 pillar_shaft.sfc <- function(x, ...) {
-	out <- format(x, ...)
+	digits = options("pillar.sigfig")$pillar.sigfig
+	if (is.null(digits))
+		digits = options("digits")$digits
+	out <- format(x, width = 100, digits = digits, ...)
+	if (!inherits(x, "sfc_GEOMETRY") && !inherits(x, "sfc_GEOMETRYCOLLECTION"))
+		out <- sub("[A-Z]+ ", "", out)
 	pillar::new_pillar_shaft_simple(out, align = "right", min_width = 25)
 }

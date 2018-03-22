@@ -6,8 +6,6 @@
 \alias{dplyr}
 \alias{arrange.sf}
 \alias{dplyr}
-\alias{distinct.sf}
-\alias{dplyr}
 \alias{group_by.sf}
 \alias{dplyr}
 \alias{ungroup.sf}
@@ -24,6 +22,8 @@
 \alias{dplyr}
 \alias{summarise.sf}
 \alias{summarise}
+\alias{dplyr}
+\alias{distinct.sf}
 \alias{dplyr}
 \alias{gather.sf}
 \alias{dplyr}
@@ -58,9 +58,7 @@ filter.sf(.data, ..., .dots)
 
 arrange.sf(.data, ..., .dots)
 
-distinct.sf(.data, ..., .dots, .keep_all = FALSE)
-
-group_by.sf(.data, ..., .dots, add = FALSE)
+group_by.sf(.data, ..., add = FALSE)
 
 ungroup.sf(x, ...)
 
@@ -75,6 +73,8 @@ rename.sf(.data, ...)
 slice.sf(.data, ..., .dots)
 
 summarise.sf(.data, ..., .dots, do_union = TRUE)
+
+distinct.sf(.data, ..., .keep_all = FALSE)
 
 gather.sf(data, key, value, ..., na.rm = FALSE, convert = FALSE,
   factor_key = FALSE)
@@ -116,13 +116,13 @@ anti_join.sf(x, y, by = NULL, copy = FALSE, ...)
 
 \item{.dots}{see corresponding function in package \code{dplyr}}
 
-\item{.keep_all}{see corresponding function in dplyr}
-
 \item{add}{see corresponding function in dplyr}
 
 \item{x}{see \link[dplyr]{left_join}}
 
 \item{do_union}{logical; should geometries be unioned by using \link{st_union}, or simply be combined using \link{st_combine}? Using \link{st_union} resolves internal boundaries, but in case of unioning points may also change the order of the points.}
+
+\item{.keep_all}{see corresponding function in dplyr}
 
 \item{data}{see original function docs}
 
@@ -178,6 +178,8 @@ Dplyr verb methods for sf objects. Geometries are sticky, use \link{as.data.fram
 \details{
 \code{select} keeps the geometry regardless whether it is selected or not; to deselect it, first pipe through \code{as.data.frame} to let dplyr's own \code{select} drop it.
 
+\code{distinct.sf} gives distinct records for which all attributes and geometries are distinct; \link{st_equals} is used to find out which geometries are distinct.
+
 \code{nest.sf} assumes that a simple feature geometry list-column was among the columns that were nested.
 }
 \examples{
@@ -188,7 +190,6 @@ nc \%>\% filter(AREA > .1) \%>\% plot()
 st_geometry(nc) \%>\% plot()
 nc \%>\% select(AREA) \%>\% arrange(AREA) \%>\% slice(1:10) \%>\% plot(add = TRUE, col = 'grey')
 title("the ten counties with smallest area")
-nc[c(1:100, 1:10), ] \%>\% distinct() \%>\% nrow()
 nc$area_cl = cut(nc$AREA, c(0, .1, .12, .15, .25))
 nc \%>\% group_by(area_cl) \%>\% class()
 nc2 <- nc \%>\% mutate(area10 = AREA/10)
@@ -205,8 +206,9 @@ nc.g <- nc \%>\% group_by(area_cl)
 nc.g \%>\% summarise(mean(AREA))
 nc.g \%>\% summarise(mean(AREA)) \%>\% plot(col = grey(3:6 / 7))
 nc \%>\% as.data.frame \%>\% summarise(mean(AREA))
+nc[c(1:100, 1:10), ] \%>\% distinct() \%>\% nrow()
 library(tidyr)
-nc \%>\% select(SID74, SID79, geometry) \%>\% gather(VAR, SID, -geometry) \%>\% summary()
+nc \%>\% select(SID74, SID79) \%>\% gather(VAR, SID, -geometry) \%>\% summary()
 library(tidyr)
 nc$row = 1:100 # needed for spread to work
 nc \%>\% select(SID74, SID79, geometry, row) \%>\%
