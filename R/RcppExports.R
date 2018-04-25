@@ -70,7 +70,7 @@ CPL_gdalgrid <- function(src, dst, options) {
 }
 
 CPL_write_ogr <- function(obj, dsn, layer, driver, dco, lco, geom, dim, quiet = FALSE, update = FALSE, delete_dsn = FALSE, delete_layer = FALSE) {
-    invisible(.Call('_sf_CPL_write_ogr', PACKAGE = 'sf', obj, dsn, layer, driver, dco, lco, geom, dim, quiet, update, delete_dsn, delete_layer))
+    .Call('_sf_CPL_write_ogr', PACKAGE = 'sf', obj, dsn, layer, driver, dco, lco, geom, dim, quiet, update, delete_dsn, delete_layer)
 }
 
 CPL_gdal_init <- function() {
@@ -243,6 +243,10 @@ CPL_proj_direct <- function(from_to, pts) {
 
 CPL_xy2sfc <- function(cc, dim, to_points, which) {
     .Call('_sf_CPL_xy2sfc', PACKAGE = 'sf', cc, dim, to_points, which)
+}
+
+points_cpp <- function(pts, gdim = "XY") {
+    .Call('_sf_points_cpp', PACKAGE = 'sf', pts, gdim)
 }
 
 CPL_signed_area <- function(pts) {
