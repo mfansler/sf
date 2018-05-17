@@ -145,8 +145,8 @@ CPL_gdal_with_geos <- function() {
     .Call('_sf_CPL_gdal_with_geos', PACKAGE = 'sf')
 }
 
-CPL_geos_binop <- function(sfc0, sfc1, op, par = 0.0, pattern = "", sparse = TRUE, prepared = FALSE) {
-    .Call('_sf_CPL_geos_binop', PACKAGE = 'sf', sfc0, sfc1, op, par, pattern, sparse, prepared)
+CPL_geos_binop <- function(sfc0, sfc1, op, par = 0.0, pattern = "", prepared = FALSE) {
+    .Call('_sf_CPL_geos_binop', PACKAGE = 'sf', sfc0, sfc1, op, par, pattern, prepared)
 }
 
 CPL_geos_is_valid_reason <- function(sfc) {
@@ -177,8 +177,8 @@ CPL_geos_snap <- function(sfc0, sfc1, tolerance) {
     .Call('_sf_CPL_geos_snap', PACKAGE = 'sf', sfc0, sfc1, tolerance)
 }
 
-CPL_geos_op <- function(op, sfc, bufferDist, nQuadSegs = 30L, dTolerance = 0.0, preserveTopology = FALSE, bOnlyEdges = 1L, dfMaxLength = 0.0) {
-    .Call('_sf_CPL_geos_op', PACKAGE = 'sf', op, sfc, bufferDist, nQuadSegs, dTolerance, preserveTopology, bOnlyEdges, dfMaxLength)
+CPL_geos_op <- function(op, sfc, bufferDist, nQuadSegs, dTolerance, preserveTopology, bOnlyEdges = 1L) {
+    .Call('_sf_CPL_geos_op', PACKAGE = 'sf', op, sfc, bufferDist, nQuadSegs, dTolerance, preserveTopology, bOnlyEdges)
 }
 
 CPL_geos_voronoi <- function(sfc, env, dTolerance = 0.0, bOnlyEdges = 1L) {
@@ -195,10 +195,6 @@ CPL_geos_version <- function(b = FALSE) {
 
 CPL_geos_dist <- function(sfc0, sfc1, which, par) {
     .Call('_sf_CPL_geos_dist', PACKAGE = 'sf', sfc0, sfc1, which, par)
-}
-
-CPL_geos_relate <- function(sfc0, sfc1) {
-    .Call('_sf_CPL_geos_relate', PACKAGE = 'sf', sfc0, sfc1)
 }
 
 CPL_transpose_sparse_incidence <- function(m, n) {

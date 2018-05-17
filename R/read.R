@@ -114,7 +114,8 @@ st_read.default = function(dsn, layer, ..., options = NULL, quiet = FALSE, geome
 
 	# in case no geometry is present:
 	if (length(which.geom) == 0) {
-		warning("no simple feature geometries present: returning a data.frame", call. = FALSE)
+		warning("no simple feature geometries present: returning a data.frame or tbl_df",
+			call. = FALSE)
 		return(as.data.frame(x , stringsAsFactors = stringsAsFactors))
 	}
 
@@ -286,15 +287,16 @@ st_write.sf = function(obj, dsn, layer = NULL, ...,
 		dataset_options = NULL, layer_options = NULL, quiet = FALSE, factorsAsCharacter = TRUE,
 		update = driver %in% db_drivers, delete_dsn = FALSE, delete_layer = FALSE) {
 	if (inherits(dsn, c("DBIObject", "PostgreSQLConnection"))) {
-		if(is.null(layer)) layer <- deparse(substitute(obj))
+		if (is.null(layer)) 
+			layer = deparse(substitute(obj))
 		return(dbWriteTable(dsn, name = layer, value = obj, ..., factorsAsCharacter = factorsAsCharacter))
 	}
 	if (length(list(...)))
 		stop(paste("unrecognized argument(s)", unlist(list(...)), "\n"))
-	if (is.null(layer))
-		layer <- file_path_sans_ext(basename(dsn))
 	if (missing(dsn))
 		stop("dsn should specify a data source or filename")
+	if (is.null(layer))
+		layer <- file_path_sans_ext(basename(dsn))
 
 	if (length(dsn) == 1 && file.exists(dsn))
 		dsn = enc2utf8(normalizePath(dsn))
@@ -321,7 +323,7 @@ st_write.sf = function(obj, dsn, layer = NULL, ...,
 		as.character(dataset_options), as.character(layer_options),
 		geom, dim, quiet, update, delete_dsn, delete_layer)
 	if (ret == 1) { # try through temp file:
-		tmp = tempfile() # nocov start
+		tmp = tempfile(fileext = paste0(".", tools::file_ext(dsn))) # nocov start
 		if (!quiet)
 			message(paste("writing first to temporary file", tmp))
 		if (CPL_write_ogr(obj, tmp, layer, driver,
