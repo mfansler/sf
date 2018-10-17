@@ -46,18 +46,27 @@ st_is_empty = function(x) CPL_geos_is_empty(st_geometry(x))
 #' b2 = b0 + c(-0.2, 2)
 #' x = st_sfc(b0, b1, b2)
 #' st_area(x)
-st_area = function(x) {
+st_area = function(x, ...) UseMethod("st_area")
+
+#' @export
+st_area.sfc = function(x, ...) {
 	if (isTRUE(st_is_longlat(x))) {
 		if (! requireNamespace("lwgeom", quietly = TRUE))
 			stop("package lwgeom required, please install it first")
 		lwgeom::st_geod_area(x)
 	} else {
-		a = CPL_area(st_geometry(x)) # ignores units: units of coordinates
+		a = CPL_area(x) # ignores units: units of coordinates
 		if (! is.na(st_crs(x)))
 			units(a) = crs_parameters(st_crs(x))$ud_unit^2 # coord units
 		a
 	}
 }
+
+#' @export
+st_area.sf = function(x, ...) st_area(st_geometry(x, ...))
+
+#' @export
+st_area.sfg = function(x, ...) st_area(st_geometry(x, ...))
 
 #' @name geos_measures
 #' @export
@@ -365,17 +374,79 @@ st_is_within_distance = function(x, y, dist, sparse = TRUE) {
 #' \code{dist} is a \code{units} object, it should be convertible to \code{arc_degree} if
 #' \code{x} has geographic coordinates, and to \code{st_crs(x)$units} otherwise
 #' @param nQuadSegs integer; number of segments per quadrant (fourth of a circle), for all or per-feature
+#' @param endCapStyle character; style of line ends, one of 'ROUND', 'FLAT', 'SQUARE'
+#' @param joinStyle character; style of line joins, one of 'ROUND', 'MITRE', 'BEVEL'
+#' @param mitreLimit numeric; limit of extension for a join if \code{joinStyle} 'MITRE' is used (default 1.0, minimum 0.0)
 #' @return an object of the same class of \code{x}, with manipulated geometry.
 #' @export
-st_buffer = function(x, dist, nQuadSegs = 30)
+#' @details \code{st_buffer} computes a buffer around this geometry/each geometry. If any of \code{endCapStyle},
+#' \code{joinStyle}, or \code{mitreLimit} are set to non-default values ('ROUND', 'ROUND', 1.0 respectively) then
+#' the underlying 'buffer with style' GEOS function is used.
+#' @examples
+#'
+#' ## st_buffer, style options (taken from rgeos gBuffer)
+#' l1 = st_as_sfc("LINESTRING(0 0,1 5,4 5,5 2,8 2,9 4,4 6.5)")
+#' op = par(mfrow=c(2,3))
+#' plot(st_buffer(l1, dist = 1, endCapStyle="ROUND"), reset = FALSE, main = "endCapStyle: ROUND")
+#' plot(l1,col='blue',add=TRUE)
+#' plot(st_buffer(l1, dist = 1, endCapStyle="FLAT"), reset = FALSE, main = "endCapStyle: FLAT")
+#' plot(l1,col='blue',add=TRUE)
+#' plot(st_buffer(l1, dist = 1, endCapStyle="SQUARE"), reset = FALSE, main = "endCapStyle: SQUARE")
+#' plot(l1,col='blue',add=TRUE)
+#' plot(st_buffer(l1, dist = 1, nQuadSegs=1), reset = FALSE, main = "nQuadSegs: 1")
+#' plot(l1,col='blue',add=TRUE)
+#' plot(st_buffer(l1, dist = 1, nQuadSegs=2), reset = FALSE, main = "nQuadSegs: 2")
+#' plot(l1,col='blue',add=TRUE)
+#' plot(st_buffer(l1, dist = 1, nQuadSegs= 5), reset = FALSE, main = "nQuadSegs: 5")
+#' plot(l1,col='blue',add=TRUE)
+#' par(op)
+#'
+#'
+#' l2 = st_as_sfc("LINESTRING(0 0,1 5,3 2)")
+#' op = par(mfrow = c(2, 3))
+#' plot(st_buffer(l2, dist = 1, joinStyle="ROUND"), reset = FALSE, main = "joinStyle: ROUND")
+#' plot(l2, col = 'blue', add = TRUE)
+#' plot(st_buffer(l2, dist = 1, joinStyle="MITRE"), reset = FALSE, main = "joinStyle: MITRE")
+#' plot(l2, col= 'blue', add = TRUE)
+#' plot(st_buffer(l2, dist = 1, joinStyle="BEVEL"), reset = FALSE, main = "joinStyle: BEVEL")
+#' plot(l2, col= 'blue', add=TRUE)
+#' plot(st_buffer(l2, dist = 1, joinStyle="MITRE" , mitreLimit=0.5), reset = FALSE, 
+#'    main = "mitreLimit: 0.5")
+#' plot(l2, col = 'blue', add = TRUE)
+#' plot(st_buffer(l2, dist = 1, joinStyle="MITRE",mitreLimit=1), reset = FALSE, 
+#'    main = "mitreLimit: 1")
+#' plot(l2, col = 'blue', add = TRUE)
+#' plot(st_buffer(l2, dist = 1, joinStyle="MITRE",mitreLimit=3), reset = FALSE, 
+#'    main = "mitreLimit: 3")
+#' plot(l2, col = 'blue', add = TRUE)
+#' par(op)
+st_buffer = function(x, dist, nQuadSegs = 30,
+					 endCapStyle = "ROUND", joinStyle = "ROUND", mitreLimit = 1.0)
 	UseMethod("st_buffer")
 
 #' @export
-st_buffer.sfg = function(x, dist, nQuadSegs = 30)
-	get_first_sfg(st_buffer(st_sfc(x), dist, nQuadSegs = nQuadSegs))
+st_buffer.sfg = function(x, dist, nQuadSegs = 30,
+						 endCapStyle = "ROUND", joinStyle = "ROUND", mitreLimit = 1.0)
+	get_first_sfg(st_buffer(st_sfc(x), dist, nQuadSegs = nQuadSegs,
+							endCapStyle = endCapStyle, joinStyle = joinStyle, mitreLimit = mitreLimit))
 
+.process_style_opts = function(endCapStyle, joinStyle, mitreLimit) {
+	styls = list(with_styles = FALSE, endCapStyle = NA, joinStyle = NA, mitreLimit = NA)
+	if (endCapStyle == "ROUND" && joinStyle == "ROUND" && mitreLimit == 1) return(styls)
+	ecs = match(endCapStyle, c("ROUND", "FLAT", "SQUARE"))
+	js = match(joinStyle, c("ROUND", "MITRE", "BEVEL"))
+	if (is.na(mitreLimit) || !mitreLimit > 0) stop("mitreLimit must be > 0")
+	if (is.na(ecs)) stop("endCapStyle must be 'ROUND', 'FLAT', or 'SQUARE'")
+	if (is.na(js))  stop("joinStyle must be 'ROUND', 'MITRE', or 'BEVEL'")
+	styls$with_styles = TRUE
+	styls$endCapStyle = ecs
+	styls$joinStyle = js
+	styls$mitreLimit = mitreLimit
+	styls
+}
 #' @export
-st_buffer.sfc = function(x, dist, nQuadSegs = 30) {
+st_buffer.sfc = function(x, dist, nQuadSegs = 30,
+						 endCapStyle = "ROUND", joinStyle = "ROUND", mitreLimit = 1.0) {
 	if (isTRUE(st_is_longlat(x))) {
 		warning("st_buffer does not correctly buffer longitude/latitude data")
 		if (inherits(dist, "units"))
@@ -391,17 +462,35 @@ st_buffer.sfc = function(x, dist, nQuadSegs = 30) {
 	}
 	dist = rep(dist, length.out = length(x))
 	nQ = rep(nQuadSegs, length.out = length(x))
-	st_sfc(CPL_geos_op("buffer", x, dist, nQ, numeric(0), logical(0)))
+	styles = .process_style_opts(endCapStyle, joinStyle, mitreLimit)
+	if (styles$with_styles) {
+		endCapStyle = rep(styles$endCapStyle, length.out = length(x))
+		joinStyle = rep(styles$joinStyle, length.out = length(x))
+		mitreLimit = rep(styles$mitreLimit, length.out = length(x))
+		if (any(endCapStyle == 2) && (st_geometry_type(x) == "POINT" || st_geometry_type(x) == "MULTIPOINT")) {
+			stop("Flat capstyle is incompatible with POINT/MULTIPOINT geometries") # nocov
+		}
+		if (dist < 0 && !st_geometry_type(x) %in% c("POLYGON", "MULTIPOLYGON")) {
+			stop("Negative width values may only be used with POLYGON or MULTIPOLYGON geometries") # nocov
+		}
+
+		st_sfc(CPL_geos_op("buffer_with_style", x, dist, nQ, numeric(0), logical(0), endCapStyle = endCapStyle, joinStyle = joinStyle, mitreLimit = mitreLimit))
+	} else {
+		st_sfc(CPL_geos_op("buffer", x, dist, nQ, numeric(0), logical(0)))
+	}
 }
 
 #' @export
-st_buffer.sf <- function(x, dist, nQuadSegs = 30) {
-	st_geometry(x) <- st_buffer(st_geometry(x), dist, nQuadSegs)
+st_buffer.sf = function(x, dist, nQuadSegs = 30,
+						endCapStyle = "ROUND", joinStyle = "ROUND", mitreLimit = 1.0) {
+	st_geometry(x) = st_buffer(st_geometry(x), dist, nQuadSegs,
+							   endCapStyle = endCapStyle, joinStyle = joinStyle, mitreLimit = mitreLimit)
 	x
 }
 
 #' @name geos_unary
 #' @export
+#' @details \code{st_boundary} returns the boundary of a geometry
 st_boundary = function(x)
 	UseMethod("st_boundary")
 
@@ -421,6 +510,7 @@ st_boundary.sf = function(x) {
 
 #' @name geos_unary
 #' @export
+#' @details \code{st_convex_hull} creates the convex hull of a set of points
 #' @examples
 #' nc = st_read(system.file("shape/nc.shp", package="sf"))
 #' plot(st_convex_hull(nc))
@@ -444,6 +534,7 @@ st_convex_hull.sf = function(x) {
 
 #' @name geos_unary
 #' @export
+#' @details \code{st_simplify} simplifies lines by removing vertices
 #' @param preserveTopology logical; carry out topology preserving simplification? May be specified for each, or for all feature geometries.
 #' @param dTolerance numeric; tolerance parameter, specified for all or for each feature geometry.
 st_simplify = function(x, preserveTopology = FALSE, dTolerance = 0.0)
@@ -471,7 +562,7 @@ st_simplify.sf = function(x, preserveTopology = FALSE, dTolerance = 0.0) {
 #' @name geos_unary
 #' @export
 #' @param bOnlyEdges logical; if TRUE, return lines, else return polygons
-#' @details \code{st_triangulate} requires GEOS version 3.4 or above
+#' @details \code{st_triangulate} triangulates set of points (not constrained). \code{st_triangulate} requires GEOS version 3.4 or above
 st_triangulate = function(x, dTolerance = 0.0, bOnlyEdges = FALSE)
 	UseMethod("st_triangulate")
 
@@ -499,7 +590,7 @@ st_triangulate.sf = function(x, dTolerance = 0.0, bOnlyEdges = FALSE) {
 #' @name geos_unary
 #' @export
 #' @param envelope object of class \code{sfc} or \code{sfg} containing a \code{POLYGON} with the envelope for a voronoi diagram; this only takes effect when it is larger than the default envelope, chosen when \code{envelope} is an empty polygon
-#' @details \code{st_voronoi} requires GEOS version 3.5 or above
+#' @details \code{st_voronoi} creates voronoi tesselation. \code{st_voronoi} requires GEOS version 3.5 or above
 #' @examples
 #' set.seed(1)
 #' x = st_multipoint(matrix(runif(10),,2))
@@ -536,7 +627,7 @@ st_voronoi.sf = function(x, envelope = st_polygon(), dTolerance = 0.0, bOnlyEdge
 }
 
 #' @name geos_unary
-#' @details in case of \code{st_polygonize}, \code{x} must be an object of class \code{LINESTRING} or \code{MULTILINESTRING}, or an \code{sfc} geometry list-column object containing these
+#' @details \code{st_polygonize} creates polygon from lines that form a closed ring. In case of \code{st_polygonize}, \code{x} must be an object of class \code{LINESTRING} or \code{MULTILINESTRING}, or an \code{sfc} geometry list-column object containing these
 #' @export
 #' @examples
 #' mls = st_multilinestring(list(matrix(c(0,0,0,1,1,1,0,0),,2,byrow=TRUE)))
@@ -562,7 +653,7 @@ st_polygonize.sf = function(x) {
 
 #' @name geos_unary
 #' @export
-#' @details in case of \code{st_line_merge}, \code{x} must be an object of class \code{MULTILINESTRING}, or an \code{sfc} geometry list-column object containing these
+#' @details \code{st_line_merge} merges lines. In case of \code{st_line_merge}, \code{x} must be an object of class \code{MULTILINESTRING}, or an \code{sfc} geometry list-column object containing these
 #' @examples
 #' mls = st_multilinestring(list(rbind(c(0,0), c(1,1)), rbind(c(2,0), c(1,1))))
 #' st_line_merge(st_sfc(mls))
@@ -588,6 +679,7 @@ st_line_merge.sf = function(x) {
 #' @name geos_unary
 #' @param of_largest_polygon logical; for \code{st_centroid}: if \code{TRUE}, return centroid of the largest (sub)polygon of a \code{MULTIPOLYGON} rather than of the whole \code{MULTIPOLYGON}
 #' @export
+#' @details \code{st_centroid} gives the centroid of a geometry
 #' @examples
 #' plot(nc, axes = TRUE)
 #' plot(st_centroid(nc), add = TRUE, pch = 3)
@@ -628,7 +720,7 @@ st_centroid.sfc = function(x, ..., of_largest_polygon = FALSE) {
 st_centroid.sf = function(x, ..., of_largest_polygon = FALSE) {
 	if (! all_constant(x))
 		warning("st_centroid assumes attributes are constant over geometries of x")
-	ret = st_set_geometry(x, 
+	ret = st_set_geometry(x,
 		st_centroid(st_geometry(x), of_largest_polygon = of_largest_polygon))
 	agr = st_agr(ret)
 	agr[ agr == "identity" ] = "constant"
@@ -692,6 +784,7 @@ st_node.sf = function(x) {
 }
 
 #' @name geos_unary
+#' @details \code{st_segmentize} adds points to straight lines
 #' @export
 #' @param dfMaxLength maximum length of a line segment. If \code{x} has geographical coordinates (long/lat), \code{dfMaxLength} is either a numeric expressed in meter, or an object of class \code{units} with length units or unit \code{rad} or \code{degree}; segmentation takes place along the great circle, using \link[lwgeom]{st_geod_segmentize}.
 #' @param ... ignored
@@ -1025,31 +1118,41 @@ st_line_sample = function(x, n, density, type = "regular", sample = NULL) {
 	st_sfc(CPL_gdal_linestring_sample(x, distList), crs = st_crs(x))
 }
 
-#' Make a rectangular grid over the bounding box of a sf or sfc object
+#' Create a regular tesselation over the bounding box of an sf or sfc object
 #'
-#' Make a rectangular grid over the bounding box of a sf or sfc object
+#' Create a square or hexagonal grid over the bounding box of an sf or sfc object
 #' @param x object of class \link{sf} or \link{sfc}
 #' @param cellsize target cellsize
 #' @param offset numeric of lengt 2; lower left corner coordinates (x, y) of the grid
 #' @param n integer of length 1 or 2, number of grid cells in x and y direction (columns, rows)
 #' @param crs object of class \code{crs}; coordinate reference system of the target of the target grid in case argument \code{x} is missing, if \code{x} is not missing, its crs is inherited.
 #' @param what character; one of: \code{"polygons"}, \code{"corners"}, or \code{"centers"}
-#' @return Object of class \code{sfc} (simple feature geometry list column) with, depending on \code{what},
-#' rectangular polygons, corner points of these polygons, or center points of these polygons.
+#' @param square logical; if \code{FALSE}, create hexagonal grid
+#' @return Object of class \code{sfc} (simple feature geometry list column) with, depending on \code{what} and \code{square},
+#' square or hexagonal polygons, corner points of these polygons, or center points of these polygons.
 #' @examples
 #' plot(st_make_grid(what = "centers"), axes = TRUE)
 #' plot(st_make_grid(what = "corners"), add = TRUE, col = 'green', pch=3)
+#' sfc = st_sfc(st_polygon(list(rbind(c(0,0), c(1,0), c(1,1), c(0,0)))))
+#' plot(st_make_grid(sfc, cellsize = .1, square = FALSE))
+#' plot(sfc, add = TRUE)
+#' # non-default offset:
+#' plot(st_make_grid(sfc, cellsize = .1, square = FALSE, offset = c(0, .05 / (sqrt(3)/2))))
+#' plot(sfc, add = TRUE)
 #' @export
 st_make_grid = function(x,
 		cellsize = c(diff(st_bbox(x)[c(1,3)]), diff(st_bbox(x)[c(2,4)]))/n,
-		offset = st_bbox(x)[1:2], n = c(10, 10),
+		offset = st_bbox(x)[c("xmin", "ymin")], n = c(10, 10),
 		crs = if (missing(x)) NA_crs_ else st_crs(x),
-		what = "polygons") {
+		what = "polygons", square = TRUE) {
 
 	if (missing(x) && missing(cellsize) && missing(offset)
 			&& missing(n) && missing(crs)) # create global 10 x 10 degree grid
 		return(st_make_grid(cellsize = c(10,10), offset = c(-180,-90), n = c(36,18),
 			crs = st_crs(4326), what = what))
+
+	if (! square)
+		return(hex_grid(x, dx = cellsize[1], pt = offset, points = what != "polygons", clip = TRUE))
 
 	bb = if (!missing(n) && !missing(offset) && !missing(cellsize)) {
 		cellsize = rep(cellsize, length.out = 2)

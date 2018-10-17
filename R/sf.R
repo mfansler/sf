@@ -42,10 +42,11 @@ st_as_sf.data.frame = function(x, ..., agr = NA_agr_, coords, wkt,
 		else
 			x$geometry = st_as_sfc(as.character(x[[wkt]]))
 	} else if (! missing(coords)) {
-		if (na.fail && any(is.na(x[coords])))
+		cc = as.data.frame(lapply(x[coords], as.numeric))
+		if (na.fail && any(is.na(cc)))
 			stop("missing values in coordinates not allowed")
 		classdim = getClassDim(rep(0, length(coords)), length(coords), dim, "POINT")
-		x$geometry = structure( points_rcpp(as.matrix(x[ , coords]), dim),
+		x$geometry = structure( points_rcpp(as.matrix(cc), dim),
 			n_empty = 0L, precision = 0, crs = NA_crs_,
 			bbox = structure(
 				c(xmin = min(x[[coords[1]]], na.rm = TRUE),
@@ -117,23 +118,22 @@ st_geometry.sfg = function(obj, ...) st_sfc(obj)
 	stopifnot(inherits(value, "sfc") || is.character(value))
 	if (inherits(value, "sfc"))
 		stopifnot(nrow(x) == length(value))
-	a = vapply(x, function(v) inherits(v, "sfc"), TRUE)
-
-	if (any(a)) {
-		w = which(a)
-		sf_col = attr(x, "sf_column")
-		if (! is.null(sf_col))
-			x[[ sf_col ]] = value
-		else {
-			if (length(w) > 1)
-				warning("overwriting first sfc column")
-			x[[ which(a)[1L] ]] = value
-		}
-		st_sf(x)
-	} else {
-		if (is.character(value))
-			x = st_sf(x, sf_column_name = value)
-		else
+	if (is.character(value))
+		st_sf(x, sf_column_name = value)
+	else {
+		a = vapply(x, function(v) inherits(v, "sfc"), TRUE)
+		if (any(a)) {
+			w = which(a)
+			sf_col = attr(x, "sf_column")
+			if (! is.null(sf_col))
+				x[[ sf_col ]] = value
+			else {
+				if (length(w) > 1)
+					warning("overwriting first sfc column")
+				x[[ which(a)[1L] ]] = value
+			}
+			st_sf(x)
+		} else
 			st_sf(x, geometry = value)
 	}
 }
@@ -254,8 +254,8 @@ st_sf = function(..., agr = NA_agr_, row.names,
 		else if (sfc_last && inherits(x, "data.frame"))
 			x[-all_sfc_columns]
 		else
-			data.frame(x[-all_sfc_columns], row.names = row.names,
-					stringsAsFactors = stringsAsFactors)
+			cbind(data.frame(row.names = row.names), 
+				data.frame(x[-all_sfc_columns], stringsAsFactors = stringsAsFactors))
 
 	for (i in seq_along(all_sfc_names))
 		df[[ all_sfc_names[i] ]] = st_sfc(x[[ all_sfc_columns[i] ]], check_ring_dir = check_ring_dir)

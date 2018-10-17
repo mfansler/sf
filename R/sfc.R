@@ -151,6 +151,7 @@ c.sfc = function(..., recursive = FALSE) {
 	attributes(ret) = attributes(lst[[1]]) # crs
 	class(ret) = cls
 	attr(ret, "bbox") = compute_bbox(ret) # dispatch on class
+	attr(ret, "n_empty") = sum(sapply(lst, attr, which = "n_empty"))
 	if (! eq)
 		attr(ret, "classes") = vapply(ret, class, rep("", 3))[2L,]
 	ret
@@ -350,6 +351,7 @@ st_precision.sfc <- function(x) {
 #' @details Setting a \code{precision} has no direct effect on coordinates of geometries, but merely set an attribute tag to an \code{sfc} object. The effect takes place in \link{st_as_binary} or, more precise, in the C++ function \code{CPL_write_wkb}, where simple feature geometries are being serialized to well-known-binary (WKB). This happens always when routines are called in GEOS library (geometrical operations or predicates), for writing geometries using \link{st_write} or \link{write_sf}, \code{st_make_valid} in package \code{lwgeom}; also \link{aggregate} and \link{summarise} by default union geometries, which calls a GEOS library function. Routines in these libraries receive rounded coordinates, and possibly return results based on them. \link{st_as_binary} contains an example of a roundtrip of \code{sfc} geometries through WKB, in order to see the rounding happening to R data.
 #'
 #' The reason to support precision is that geometrical operations in GEOS or liblwgeom may work better at reduced precision. For writing data from R to external resources it is harder to think of a good reason to limiting precision.
+#' @seealso \link{st_as_binary} for an explanation of what setting precision actually does.
 #' @examples
 #' x <- st_sfc(st_point(c(pi, pi)))
 #' st_precision(x)
@@ -461,8 +463,8 @@ check_ring_dir = function(x) {
 		pol
 	}
 	ret = switch(class(x)[1],
-		sfc_POLYGON= lapply(x, check_polygon),
-		sfc_MULTIPOLYGON= lapply(x, function(y) structure(lapply(y, check_polygon), class = class(y))),
+		sfc_POLYGON = lapply(x, check_polygon),
+		sfc_MULTIPOLYGON = lapply(x, function(y) structure(lapply(y, check_polygon), class = class(y))),
 		stop(paste("check_ring_dir: not supported for class", class(x)[1]))
 	)
 	attributes(ret) = attributes(x)

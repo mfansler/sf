@@ -29,8 +29,8 @@ CPL_get_layers <- function(datasource, options, do_count = FALSE) {
     .Call('_sf_CPL_get_layers', PACKAGE = 'sf', datasource, options, do_count)
 }
 
-CPL_read_ogr <- function(datasource, layer, options, quiet, toTypeUser, promote_to_multi = TRUE, int64_as_string = FALSE) {
-    .Call('_sf_CPL_read_ogr', PACKAGE = 'sf', datasource, layer, options, quiet, toTypeUser, promote_to_multi, int64_as_string)
+CPL_read_ogr <- function(datasource, layer, query, options, quiet, toTypeUser, promote_to_multi = TRUE, int64_as_string = FALSE) {
+    .Call('_sf_CPL_read_ogr', PACKAGE = 'sf', datasource, layer, query, options, quiet, toTypeUser, promote_to_multi, int64_as_string)
 }
 
 CPL_gdalinfo <- function(obj, options) {
@@ -177,8 +177,8 @@ CPL_geos_snap <- function(sfc0, sfc1, tolerance) {
     .Call('_sf_CPL_geos_snap', PACKAGE = 'sf', sfc0, sfc1, tolerance)
 }
 
-CPL_geos_op <- function(op, sfc, bufferDist, nQuadSegs, dTolerance, preserveTopology, bOnlyEdges = 1L) {
-    .Call('_sf_CPL_geos_op', PACKAGE = 'sf', op, sfc, bufferDist, nQuadSegs, dTolerance, preserveTopology, bOnlyEdges)
+CPL_geos_op <- function(op, sfc, bufferDist, nQuadSegs, dTolerance, preserveTopology, bOnlyEdges = 1L, endCapStyle = 0L, joinStyle = 0L, mitreLimit = 1L) {
+    .Call('_sf_CPL_geos_op', PACKAGE = 'sf', op, sfc, bufferDist, nQuadSegs, dTolerance, preserveTopology, bOnlyEdges, endCapStyle, joinStyle, mitreLimit)
 }
 
 CPL_geos_voronoi <- function(sfc, env, dTolerance = 0.0, bOnlyEdges = 1L) {
@@ -189,12 +189,20 @@ CPL_geos_op2 <- function(op, sfcx, sfcy) {
     .Call('_sf_CPL_geos_op2', PACKAGE = 'sf', op, sfcx, sfcy)
 }
 
-CPL_geos_version <- function(b = FALSE) {
-    .Call('_sf_CPL_geos_version', PACKAGE = 'sf', b)
+CPL_geos_version <- function(runtime = FALSE, capi = FALSE) {
+    .Call('_sf_CPL_geos_version', PACKAGE = 'sf', runtime, capi)
 }
 
 CPL_geos_dist <- function(sfc0, sfc1, which, par) {
     .Call('_sf_CPL_geos_dist', PACKAGE = 'sf', sfc0, sfc1, which, par)
+}
+
+CPL_geos_nearest_feature <- function(sfc0, sfc1) {
+    .Call('_sf_CPL_geos_nearest_feature', PACKAGE = 'sf', sfc0, sfc1)
+}
+
+CPL_geos_nearest_points <- function(sfc0, sfc1, pairwise) {
+    .Call('_sf_CPL_geos_nearest_points', PACKAGE = 'sf', sfc0, sfc1, pairwise)
 }
 
 CPL_transpose_sparse_incidence <- function(m, n) {
@@ -217,6 +225,14 @@ CPL_raw_to_hex <- function(raw) {
     .Call('_sf_CPL_raw_to_hex', PACKAGE = 'sf', raw)
 }
 
+CPL_polygonize <- function(raster, mask_name, raster_driver, vector_driver, vector_dsn, options, iPixValField, contour_options, use_contours = FALSE, use_integer = TRUE) {
+    .Call('_sf_CPL_polygonize', PACKAGE = 'sf', raster, mask_name, raster_driver, vector_driver, vector_dsn, options, iPixValField, contour_options, use_contours, use_integer)
+}
+
+CPL_rasterize <- function(raster, raster_driver, sfc, values, options, NA_value) {
+    .Call('_sf_CPL_rasterize', PACKAGE = 'sf', raster, raster_driver, sfc, values, options, NA_value)
+}
+
 CPL_proj_version <- function(b = FALSE) {
     .Call('_sf_CPL_proj_version', PACKAGE = 'sf', b)
 }
@@ -229,12 +245,12 @@ CPL_have_datum_files <- function(foo) {
     .Call('_sf_CPL_have_datum_files', PACKAGE = 'sf', foo)
 }
 
-CPL_proj_info <- function(type) {
-    .Call('_sf_CPL_proj_info', PACKAGE = 'sf', type)
-}
-
 CPL_proj_direct <- function(from_to, pts) {
     .Call('_sf_CPL_proj_direct', PACKAGE = 'sf', from_to, pts)
+}
+
+CPL_proj_info <- function(type) {
+    .Call('_sf_CPL_proj_info', PACKAGE = 'sf', type)
 }
 
 CPL_xy2sfc <- function(cc, dim, to_points, which) {
@@ -261,8 +277,8 @@ CPL_inv_geotransform <- function(gt_r) {
     .Call('_sf_CPL_inv_geotransform', PACKAGE = 'sf', gt_r)
 }
 
-CPL_read_gdal <- function(fname, options, driver, read_data, NA_value, resample = 1.0) {
-    .Call('_sf_CPL_read_gdal', PACKAGE = 'sf', fname, options, driver, read_data, NA_value, resample)
+CPL_read_gdal <- function(fname, options, driver, read_data, NA_value, RasterIO_parameters) {
+    .Call('_sf_CPL_read_gdal', PACKAGE = 'sf', fname, options, driver, read_data, NA_value, RasterIO_parameters)
 }
 
 CPL_write_gdal <- function(x, fname, driver, options, Type, dims, gt, p4s, na_val) {

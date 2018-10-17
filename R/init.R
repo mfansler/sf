@@ -7,7 +7,7 @@
 #' @importFrom grDevices rgb dev.size
 #' @importFrom Rcpp evalCpp
 #' @importFrom DBI dbConnect dbDisconnect dbWriteTable dbGetQuery dbSendQuery dbReadTable dbExecute
-#' @importFrom units as_units set_units make_unit_label
+#' @importFrom units as_units set_units make_unit_label drop_units
 #' @importFrom classInt classIntervals
 #' @useDynLib sf
 NULL
@@ -41,6 +41,16 @@ setOldClass("sfg")
 	}
 	CPL_gdal_init()
 	register_all_s3_methods() # dynamically registers non-imported pkgs (tidyverse)
+	if (inherits(try(units::as_units("link"), silent = TRUE), "try-error"))
+		units::install_conversion_constant("m", "link", 0.201168)
+	if (inherits(try(units::as_units("us_in"), silent = TRUE), "try-error"))
+		units::install_conversion_constant("m", "us_in", 1./39.37)
+	if (inherits(try(units::as_units("ind_yd"), silent = TRUE), "try-error"))
+		units::install_conversion_constant("m", "ind_yd", 0.91439523)
+	if (inherits(try(units::as_units("ind_ft"), silent = TRUE), "try-error"))
+		units::install_conversion_constant("m", "ind_ft", 0.30479841)
+	if (inherits(try(units::as_units("ind_ch"), silent = TRUE), "try-error"))
+		units::install_conversion_constant("m", "ind_ch", 20.11669506)
 }
 
 .onUnload = function(libname, pkgname) {
@@ -51,11 +61,23 @@ setOldClass("sfg")
 		Sys.setenv("GDAL_DATA"=get(".sf.GDAL_DATA", envir=.sf_cache))
 		# nocov end
 	}
+	units::remove_symbolic_unit("link")
+	units::remove_symbolic_unit("us_in")
+	units::remove_symbolic_unit("ind_yd")
+	units::remove_symbolic_unit("ind_ft")
+	units::remove_symbolic_unit("ind_ch")
 }
 
 .onAttach = function(libname, pkgname) {
-	m = paste0("Linking to GEOS ", CPL_geos_version(), ", GDAL ", CPL_gdal_version(), ", proj.4 ", CPL_proj_version())
+	m = paste0("Linking to GEOS ", strsplit(CPL_geos_version(TRUE), "-")[[1]][1],
+		", GDAL ", CPL_gdal_version(), ", PROJ ", CPL_proj_version())
 	packageStartupMessage(m)
+	if (length(grep(CPL_geos_version(FALSE, TRUE), CPL_geos_version(TRUE))) != 1) { # nocov start
+		packageStartupMessage("WARNING: different compile-time and runtime versions for GEOS found:")
+		packageStartupMessage(paste(
+			"Linked against:", CPL_geos_version(TRUE, TRUE), 
+			"compiled against:", CPL_geos_version(FALSE, TRUE)))
+	} # nocov end
 }
 
 #' Provide the external dependencies versions of the libraries linked to sf

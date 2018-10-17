@@ -63,6 +63,17 @@ set_utf8 = function(x) {
 #'
 #' In case of problems reading shapefiles from USB drives on OSX, please see
 #' \url{https://github.com/r-spatial/sf/issues/252}.
+#'
+#' For \code{query} with a character \code{dsn} the query text is handed to
+#' 'ExecuteSQL' on the GDAL/OGR data set and will result in the creation of a
+#' new layer (and \code{layer} is ignored). See 'OGRSQL'
+#' \url{https://www.gdal.org/ogr_sql.html} for details. Please note that the
+#' 'FID' special field is driver-dependent, and may be either 0-based (e.g. ESRI
+#' Shapefile), 1-based (e.g. MapInfo) or arbitrary (e.g. OSM). Other features of
+#' OGRSQL are also likely to be driver dependent. The available layer names may
+#' be obtained with
+#' \link{st_layers}. Care will be required to properly escape the use of some layer names.
+#'
 #' @return object of class \link{sf} when a layer was successfully read; in case
 #'   argument \code{layer} is missing and data source \code{dsn} does not
 #'   contain a single layer, an object of class \code{sf_layers} is returned
@@ -72,6 +83,10 @@ set_utf8 = function(x) {
 #' nc = st_read(system.file("shape/nc.shp", package="sf"))
 #' summary(nc) # note that AREA was computed using Euclidian area on lon/lat degrees
 #'
+#' ## only three fields by select clause
+#' ## only two features by where clause
+#' nc_sql = st_read(system.file("shape/nc.shp", package="sf"),
+#'                      query = "SELECT NAME, SID74, FIPS FROM \"nc\" WHERE BIR74 > 20000")
 #' \dontrun{
 #'   library(sp)
 #'   example(meuse, ask = FALSE, echo = FALSE)
@@ -81,42 +96,48 @@ set_utf8 = function(x) {
 #'   if (exists("st_meuse"))
 #'     summary(st_meuse)
 #' }
+#'
+#' \dontrun{
+#' ## note that we need special escaping of layer  within single quotes (nc.gpkg)
+#' ## and that geom needs to be included in the select, otherwise we don't detect it
+#' layer <- st_layers(system.file("gpkg/nc.gpkg", package = "sf"))$name[1]
+#' nc_gpkg_sql = st_read(system.file("gpkg/nc.gpkg", package = "sf"),
+#'    query = sprintf("SELECT NAME, SID74, FIPS, geom  FROM \"%s\" WHERE BIR74 > 20000", layer))
+#' }
 #' @export
 st_read = function(dsn, layer, ...) UseMethod("st_read")
 
-#' @name st_read
-#' @note The use of \code{system.file} in examples make sure that examples run regardless where R is installed:
-#' typical users will not use \code{system.file} but give the file name directly, either with full path or relative
-#' to the current working directory (see \link{getwd}). "Shapefiles" consist of several files with the same basename
-#' that reside in the same directory, only one of them having extension \code{.shp}.
 #' @export
-st_read.default = function(dsn, layer, ..., options = NULL, quiet = FALSE, geometry_column = 1L, type = 0,
-		promote_to_multi = TRUE, stringsAsFactors = default.stringsAsFactors(),
-		int64_as_string = FALSE, check_ring_dir = FALSE) {
-
+st_read.default = function(dsn, layer, ...) {
 	if (missing(dsn))
 		stop("dsn should specify a data source or filename")
+	else {
+		dsn_is_null = is.null(dsn)
+		class_dsn = class(dsn)
+		tr <- try(dsn <- as.character(dsn))
+		if (dsn_is_null || inherits(tr, "try-error"))
+			stop(paste("no st_read method available for objects of class", paste(class_dsn, collapse = ", ")))
+		else
+			st_read.character(dsn, layer, ...)
+	}
+}
 
-	layer = if (missing(layer))
-		character(0)
-	else
-		enc2utf8(layer)
-
-	if (length(dsn) == 1 && file.exists(dsn))
-		dsn = enc2utf8(normalizePath(dsn))
-
-	if (length(promote_to_multi) > 1)
-		stop("`promote_to_multi' should have length one, and applies to all geometry columns")
-
-	x = CPL_read_ogr(dsn, layer, as.character(options), quiet, type, promote_to_multi, int64_as_string)
+process_cpl_read_ogr = function(x, quiet = FALSE, ..., check_ring_dir = FALSE,
+		stringsAsFactors = default.stringsAsFactors(), geometry_column = 1, as_tibble = FALSE) {
 
 	which.geom = which(vapply(x, function(f) inherits(f, "sfc"), TRUE))
+
+	if (as_tibble && !requireNamespace("tibble", quietly = TRUE))
+		stop("package tibble not available: install first?")
 
 	# in case no geometry is present:
 	if (length(which.geom) == 0) {
 		warning("no simple feature geometries present: returning a data.frame or tbl_df",
 			call. = FALSE)
-		return(as.data.frame(x , stringsAsFactors = stringsAsFactors))
+		if (as_tibble)
+			return(tibble::as_tibble(x))
+		else
+			return(as.data.frame(x , stringsAsFactors = stringsAsFactors))
 	}
 
 	nm = names(x)[which.geom]
@@ -127,10 +148,17 @@ st_read.default = function(dsn, layer, ..., options = NULL, quiet = FALSE, geome
 	list.cols = x[lc.other]
 	nm.lc = names(x)[lc.other]
 
-	x = if (length(x) == length(geom)) # ONLY geometry column(s)
-		data.frame(row.names = seq_along(geom[[1]]))
-	else
-		as.data.frame(set_utf8(x[-c(lc.other, which.geom)]), stringsAsFactors = stringsAsFactors)
+	x = if (length(x) == length(geom)) { # ONLY geometry column(s)
+		if (as_tibble)
+			tibble::tibble(row.names = seq_along(geom[[1]]))[-1]
+		else
+			data.frame(row.names = seq_along(geom[[1]]))
+	} else {
+		if (as_tibble)
+			tibble::as_tibble(set_utf8(x[-c(lc.other, which.geom)]))
+		else
+			as.data.frame(set_utf8(x[-c(lc.other, which.geom)]), stringsAsFactors = stringsAsFactors)
+	}
 
 	for (i in seq_along(lc.other))
 		x[[ nm.lc[i] ]] = list.cols[[i]]
@@ -148,6 +176,33 @@ st_read.default = function(dsn, layer, ..., options = NULL, quiet = FALSE, geome
 }
 
 #' @name st_read
+#' @note The use of \code{system.file} in examples make sure that examples run regardless where R is installed:
+#' typical users will not use \code{system.file} but give the file name directly, either with full path or relative
+#' to the current working directory (see \link{getwd}). "Shapefiles" consist of several files with the same basename
+#' that reside in the same directory, only one of them having extension \code{.shp}.
+#' @export
+st_read.character = function(dsn, layer, ..., query = NA, options = NULL, quiet = FALSE, geometry_column = 1L, type = 0,
+		promote_to_multi = TRUE, stringsAsFactors = default.stringsAsFactors(),
+		int64_as_string = FALSE, check_ring_dir = FALSE) {
+
+	layer = if (missing(layer))
+		character(0)
+	else
+		enc2utf8(layer)
+
+	if (length(dsn) == 1 && file.exists(dsn))
+		dsn = enc2utf8(normalizePath(dsn))
+
+	if (length(promote_to_multi) > 1)
+		stop("`promote_to_multi' should have length one, and applies to all geometry columns")
+
+	x = CPL_read_ogr(dsn, layer, query, as.character(options), quiet, type, promote_to_multi, int64_as_string)
+	process_cpl_read_ogr(x, quiet, check_ring_dir = check_ring_dir,
+		stringsAsFactors = stringsAsFactors, geometry_column = geometry_column, ...)
+}
+
+
+#' @name st_read
 #' @export
 #' @details \code{read_sf} and \code{write_sf} are aliases for \code{st_read} and \code{st_write}, respectively, with some
 #' modified default arguments.
@@ -160,16 +215,8 @@ st_read.default = function(dsn, layer, ..., options = NULL, quiet = FALSE, geome
 #'    "[[3.2,4],[3,4.6],[3.8,4.4],[3.5,3.8],[3.4,3.6],[3.9,4.5]]}")
 #' x = read_sf(geojson_txt)
 #' x
-read_sf <- function(..., quiet = TRUE, stringsAsFactors = FALSE) {
-	if (! requireNamespace("tibble", quietly = TRUE))
-		stop("package tibble not available: install first?")
-	tbl = tibble::as_tibble(as.data.frame(
-		st_read(..., quiet = quiet, stringsAsFactors = stringsAsFactors)))
-	has_geom = any(vapply(tbl, function(f) inherits(f, "sfc"), TRUE))
-	if (has_geom) 
-		st_as_sf(tbl)
-	else
-		tbl
+read_sf <- function(..., quiet = TRUE, stringsAsFactors = FALSE, as_tibble = TRUE) {
+	st_read(..., quiet = quiet, stringsAsFactors = stringsAsFactors, as_tibble = as_tibble)
 }
 
 clean_columns = function(obj, factorsAsCharacter) {
@@ -286,20 +333,34 @@ st_write.sf = function(obj, dsn, layer = NULL, ...,
 		driver = guess_driver_can_write(dsn),
 		dataset_options = NULL, layer_options = NULL, quiet = FALSE, factorsAsCharacter = TRUE,
 		update = driver %in% db_drivers, delete_dsn = FALSE, delete_layer = FALSE) {
-	if (inherits(dsn, c("DBIObject", "PostgreSQLConnection"))) {
-		if (is.null(layer)) 
-			layer = deparse(substitute(obj))
-		return(dbWriteTable(dsn, name = layer, value = obj, ..., factorsAsCharacter = factorsAsCharacter))
-	}
-	if (length(list(...)))
-		stop(paste("unrecognized argument(s)", unlist(list(...)), "\n"))
+
 	if (missing(dsn))
 		stop("dsn should specify a data source or filename")
+	if (inherits(dsn, c("DBIObject", "PostgreSQLConnection", "Pool"))) {
+		if (inherits(dsn, "Pool")) {
+			if (! requireNamespace("pool", quietly = TRUE)) # nocov start
+				stop("package pool required, please install it first")
+			dsn = pool::poolCheckout(dsn)
+			on.exit(pool::poolReturn(dsn)) # nocov end
+		}
+		if (is.null(layer))
+			layer = deparse(substitute(obj))
+		return(dbWriteTable(dsn, name = layer, value = obj, ...,
+			factorsAsCharacter = factorsAsCharacter))
+	} else if (!inherits(dsn, "character")) { # add methods for other dsn classes here...
+		stop(paste("no st_write method available for dsn of class", class(dsn)[1]))
+	}
+
+	if (length(list(...)))
+		stop(paste("unrecognized argument(s)", unlist(list(...)), "\n"))
 	if (is.null(layer))
 		layer <- file_path_sans_ext(basename(dsn))
 
-	if (length(dsn) == 1 && file.exists(dsn))
-		dsn = enc2utf8(normalizePath(dsn))
+	if (length(dsn) == 1 && length(grep("~", dsn)) == 1) # resolve ~
+		dsn = normalizePath(dsn, mustWork = FALSE) # nocov
+
+	# this seems to be always a good idea:
+	dsn = enc2utf8(dsn)
 
 	geom = st_geometry(obj)
 	obj[[attr(obj, "sf_column")]] = NULL
@@ -336,6 +397,12 @@ st_write.sf = function(obj, dsn, layer = NULL, ...,
 			warning(paste("removing", tmp, "failed"))
 	} # nocov end
 	invisible(NULL)
+}
+
+#' @name st_write
+#' @export
+st_write.data.frame <- function(obj, dsn, layer = NULL, ...) {
+    st_write.sf(obj = st_as_sf(obj), dsn = dsn, layer = layer, ...)
 }
 
 #' @name st_write

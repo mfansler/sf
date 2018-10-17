@@ -207,6 +207,7 @@ st_sample(ls, 80)
 st_sample(nc[1:2,], size = c(10,20))
 # try with LINES, LongLat, should generate a warning:
 nc[1:2,] %>% st_transform(4326) %>% st_cast("MULTILINESTRING") %>% st_sample(size = c(10,20))
+st_sample(ls, 80, type = "regular")
 
 #class(st_bind_cols(nc, as.data.frame(nc)[1:3]))
 class(dplyr::bind_cols(nc, as.data.frame(nc)[1:3]))
@@ -233,10 +234,12 @@ st_bbox(raster(meuse.grid))
 st_bbox(extent(raster()))
 
 # st_to_s2
-x = sf:::st_to_s2(nc)
-x1 = st_geometry(x)
-cc = st_coordinates(x1)
-summary(sqrt(cc[,1]^2+cc[,2]^2+cc[,3]^2))
+if (FALSE) { # stops working with GDAL 2.3.0 / PROJ 5.0.1:
+ x = sf:::st_to_s2(nc)
+ x1 = st_geometry(x)
+ cc = st_coordinates(x1)
+ summary(sqrt(cc[,1]^2+cc[,2]^2+cc[,3]^2))
+}
 
 # check_ring_dir
 m = rbind(c(0,0), c(0,1), c(1,1), c(1,0), c(0,0))
@@ -288,3 +291,7 @@ st_crop(pol, st_bbox(box))
 st_crop(pol_sf, box)
 st_crop(pol_sf, st_bbox(box))
 
+# new sample methods:
+x = st_sfc(st_polygon(list(rbind(c(0,0),c(90,0),c(90,90),c(0,90),c(0,0))))) # NOT long/lat:
+p <- st_sample(x, 10, type = "regular")
+p <- st_sample(x, 10, type = "hexagonal")

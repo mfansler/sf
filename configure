@@ -1317,7 +1317,7 @@ Optional Packages:
                           the location of gdal-config
   --with-data-copy=yes/no local copy of data directories in package, default
                           no
-  --with-proj-data=DIR    location of PROJ.4 data directory
+  --with-proj-data=DIR    location of PROJ data directory
   --with-proj-include=DIR location of proj header files
   --with-proj-lib=LIB_PATH
                           the location of proj libraries
@@ -2057,9 +2057,26 @@ fi
 
 RBIN="${R_HOME}/bin/R"
 
+RVER=`"${RBIN}" --version | head -1 | cut -f3 -d" "`
+RVER_MAJOR=`echo ${RVER} | cut  -f1 -d"."`
+RVER_MINOR=`echo ${RVER} | cut  -f2 -d"."`
+RVER_PATCH=`echo ${RVER} | cut  -f3 -d"."`
+
+if test $RVER_MAJOR -lt 3 -o $RVER_MAJOR -eq 3 -a $RVER_MINOR -lt 3; then
+    as_fn_error $? "sf is not compatible with R versions before 3.3.0" "$LINENO" 5
+else
+    if test $RVER_MINOR -eq 3; then
+        CXX11=`"${RBIN}" CMD config CXX1X`
+        CXX11STD=`"${RBIN}" CMD config CXX1XSTD`
+    else
+        CXX11=`"${RBIN}" CMD config CXX11`
+        CXX11STD=`"${RBIN}" CMD config CXX11STD`
+    fi
+fi
+
 # pick all flags for testing from R
 : ${CC=`"${RBIN}" CMD config CC`}
-: ${CXX=`"${RBIN}" CMD config CXX`}
+: ${CXX=${CXX11} ${CXX11STD}}
 : ${CPP=`"${RBIN}" CMD config CPP`}
 : ${CFLAGS=`"${RBIN}" CMD config CFLAGS`}
 : ${CPPFLAGS=`"${RBIN}" CMD config CPPFLAGS`}
@@ -3522,13 +3539,13 @@ fi
   if test -n "${proj_lib}" ; then
     if test -d "${proj_lib}" ; then
       cp -r "${proj_lib}" "${R_PACKAGE_DIR}"
-      { $as_echo "$as_me:${as_lineno-$LINENO}:   PROJ.4: ${proj_lib}" >&5
-$as_echo "$as_me:   PROJ.4: ${proj_lib}" >&6;}
+      { $as_echo "$as_me:${as_lineno-$LINENO}:   PROJ: ${proj_lib}" >&5
+$as_echo "$as_me:   PROJ: ${proj_lib}" >&6;}
     else
-      as_fn_error $? "PROJ.4 data files not found; set environment variable PROJ_LIB=DIR or --with-proj-data=DIR." "$LINENO" 5
+      as_fn_error $? "PROJ data files not found; set environment variable PROJ_LIB=DIR or --with-proj-data=DIR." "$LINENO" 5
     fi
   else
-      as_fn_error $? "PROJ.4 data files not found; set environment variable PROJ_LIB=DIR or --with-proj-data=DIR." "$LINENO" 5
+      as_fn_error $? "PROJ data files not found; set environment variable PROJ_LIB=DIR or --with-proj-data=DIR." "$LINENO" 5
   fi
 
   if test -d "${GDAL_DATADIR}" ; then
@@ -3541,7 +3558,7 @@ $as_echo "$as_me:   GDAL: ${GDAL_DATADIR}" >&6;}
 fi
 
 #
-# test whether PROJ.4 is available to gdal:
+# test whether PROJ is available to gdal:
 #
 
 gdal_has_proj=no
@@ -3555,12 +3572,12 @@ int main(int argc, char *argv[]) {
     src->importFromEPSG(4326);
     dest->importFromEPSG(3857);
 	OGRCoordinateTransformation *ct = OGRCreateCoordinateTransformation(src, dest);
-	return(ct == NULL); // signals PROJ.4 is not available through gdal
+	return(ct == NULL); // signals PROJ is not available through gdal
 }
 _EOCONF
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking GDAL: checking whether PROJ.4 is available for linking:" >&5
-$as_echo_n "checking GDAL: checking whether PROJ.4 is available for linking:... " >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking GDAL: checking whether PROJ is available for linking:" >&5
+$as_echo_n "checking GDAL: checking whether PROJ is available for linking:... " >&6; }
 ${CXX} ${CPPFLAGS} -o gdal_proj gdal_proj.cpp ${LIBS} 2> errors.txt
 if test `echo $?` -ne 0 ; then
 gdal_has_proj=no
@@ -3579,8 +3596,8 @@ $as_echo "$as_me: Install failure: compilation and/or linkage problems." >&6;}
    as_fn_error $? "cannot link projection code" "$LINENO" 5
 fi
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking GDAL: checking whether PROJ.4 is available fur running:" >&5
-$as_echo_n "checking GDAL: checking whether PROJ.4 is available fur running:... " >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking GDAL: checking whether PROJ is available fur running:" >&5
+$as_echo_n "checking GDAL: checking whether PROJ is available fur running:... " >&6; }
 ./gdal_proj
 if test `echo $?` -ne 0 ; then
 gdal_has_proj=no
@@ -3592,13 +3609,13 @@ gdal_has_proj=yes
 $as_echo "yes" >&6; }
 fi
 if test "${gdal_has_proj}" = no; then
-   as_fn_error $? "OGRCoordinateTransformation() does not return a coord.trans: PROJ.4 not available?" "$LINENO" 5
+   as_fn_error $? "OGRCoordinateTransformation() does not return a coord.trans: PROJ not available?" "$LINENO" 5
 fi
 rm -fr errors.txt gdal_proj.cpp gdal_proj
 
 
 #
-# PROJ.4
+# PROJ
 #
 
 PROJ_CONFIG="pkg-config proj"
@@ -3792,8 +3809,8 @@ else
   proj_share=`echo $?`
 fi
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking PROJ.4: epsg found and readable" >&5
-$as_echo_n "checking PROJ.4: epsg found and readable... " >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking PROJ: epsg found and readable" >&5
+$as_echo_n "checking PROJ: epsg found and readable... " >&6; }
 if test ${proj_share} -eq 1 ; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
@@ -3851,8 +3868,8 @@ else
   proj_share=`echo $?`
 fi
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking PROJ.4: conus found and readable" >&5
-$as_echo_n "checking PROJ.4: conus found and readable... " >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking PROJ: conus found and readable" >&5
+$as_echo_n "checking PROJ: conus found and readable... " >&6; }
 if test ${proj_share} -eq 1 ; then
     WARN="warn"
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
@@ -3966,7 +3983,7 @@ fi
 $as_echo_n "checking geos-config usability... " >&6; }
 if test `${GEOS_CONFIG} --version`
 then
-  GEOS_CLIBS=`${GEOS_CONFIG} --clibs`
+  GEOS_CLIBS="`${GEOS_CONFIG} --clibs` `${GEOS_CONFIG} --libs`"
   #GEOS_DEP_CLIBS=`geos-config --static-clibs` -- this gives -m instead of -lm, which breaks clang
   # fixed in 3.7.0 at https://github.com/libgeos/libgeos/pull/73#issuecomment-262208677
   GEOS_DEP_CLIBS=`${GEOS_CONFIG} --static-clibs | sed 's/-m/-lm/g'`

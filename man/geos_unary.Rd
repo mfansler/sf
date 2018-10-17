@@ -3,31 +3,21 @@
 \name{geos_unary}
 \alias{geos_unary}
 \alias{st_buffer}
-\alias{geos_unary}
 \alias{st_boundary}
-\alias{geos_unary}
 \alias{st_convex_hull}
-\alias{geos_unary}
 \alias{st_simplify}
-\alias{geos_unary}
 \alias{st_triangulate}
-\alias{geos_unary}
 \alias{st_voronoi}
-\alias{geos_unary}
 \alias{st_polygonize}
-\alias{geos_unary}
 \alias{st_line_merge}
-\alias{geos_unary}
 \alias{st_centroid}
-\alias{geos_unary}
 \alias{st_point_on_surface}
-\alias{geos_unary}
 \alias{st_node}
-\alias{geos_unary}
 \alias{st_segmentize}
 \title{Geometric unary operations on simple feature geometry sets}
 \usage{
-st_buffer(x, dist, nQuadSegs = 30)
+st_buffer(x, dist, nQuadSegs = 30, endCapStyle = "ROUND",
+  joinStyle = "ROUND", mitreLimit = 1)
 
 st_boundary(x)
 
@@ -60,6 +50,12 @@ st_segmentize(x, dfMaxLength, ...)
 
 \item{nQuadSegs}{integer; number of segments per quadrant (fourth of a circle), for all or per-feature}
 
+\item{endCapStyle}{character; style of line ends, one of 'ROUND', 'FLAT', 'SQUARE'}
+
+\item{joinStyle}{character; style of line joins, one of 'ROUND', 'MITRE', 'BEVEL'}
+
+\item{mitreLimit}{numeric; limit of extension for a join if \code{joinStyle} 'MITRE' is used (default 1.0, minimum 0.0)}
+
 \item{preserveTopology}{logical; carry out topology preserving simplification? May be specified for each, or for all feature geometries.}
 
 \item{dTolerance}{numeric; tolerance parameter, specified for all or for each feature geometry.}
@@ -81,19 +77,70 @@ an object of the same class of \code{x}, with manipulated geometry.
 Geometric unary operations on simple feature geometry sets. These are all generics, with methods for \code{sfg}, \code{sfc} and \code{sf} objects, returning an object of the same class.
 }
 \details{
-\code{st_triangulate} requires GEOS version 3.4 or above
+\code{st_buffer} computes a buffer around this geometry/each geometry. If any of \code{endCapStyle},
+\code{joinStyle}, or \code{mitreLimit} are set to non-default values ('ROUND', 'ROUND', 1.0 respectively) then
+the underlying 'buffer with style' GEOS function is used.
 
-\code{st_voronoi} requires GEOS version 3.5 or above
+\code{st_boundary} returns the boundary of a geometry
 
-in case of \code{st_polygonize}, \code{x} must be an object of class \code{LINESTRING} or \code{MULTILINESTRING}, or an \code{sfc} geometry list-column object containing these
+\code{st_convex_hull} creates the convex hull of a set of points
 
-in case of \code{st_line_merge}, \code{x} must be an object of class \code{MULTILINESTRING}, or an \code{sfc} geometry list-column object containing these
+\code{st_simplify} simplifies lines by removing vertices
+
+\code{st_triangulate} triangulates set of points (not constrained). \code{st_triangulate} requires GEOS version 3.4 or above
+
+\code{st_voronoi} creates voronoi tesselation. \code{st_voronoi} requires GEOS version 3.5 or above
+
+\code{st_polygonize} creates polygon from lines that form a closed ring. In case of \code{st_polygonize}, \code{x} must be an object of class \code{LINESTRING} or \code{MULTILINESTRING}, or an \code{sfc} geometry list-column object containing these
+
+\code{st_line_merge} merges lines. In case of \code{st_line_merge}, \code{x} must be an object of class \code{MULTILINESTRING}, or an \code{sfc} geometry list-column object containing these
+
+\code{st_centroid} gives the centroid of a geometry
 
 \code{st_point_on_surface} returns a point guaranteed to be on the (multi)surface.
 
 \code{st_node} adds nodes to linear geometries at intersections without a node, and only works on individual linear geometries
+
+\code{st_segmentize} adds points to straight lines
 }
 \examples{
+
+## st_buffer, style options (taken from rgeos gBuffer)
+l1 = st_as_sfc("LINESTRING(0 0,1 5,4 5,5 2,8 2,9 4,4 6.5)")
+op = par(mfrow=c(2,3))
+plot(st_buffer(l1, dist = 1, endCapStyle="ROUND"), reset = FALSE, main = "endCapStyle: ROUND")
+plot(l1,col='blue',add=TRUE)
+plot(st_buffer(l1, dist = 1, endCapStyle="FLAT"), reset = FALSE, main = "endCapStyle: FLAT")
+plot(l1,col='blue',add=TRUE)
+plot(st_buffer(l1, dist = 1, endCapStyle="SQUARE"), reset = FALSE, main = "endCapStyle: SQUARE")
+plot(l1,col='blue',add=TRUE)
+plot(st_buffer(l1, dist = 1, nQuadSegs=1), reset = FALSE, main = "nQuadSegs: 1")
+plot(l1,col='blue',add=TRUE)
+plot(st_buffer(l1, dist = 1, nQuadSegs=2), reset = FALSE, main = "nQuadSegs: 2")
+plot(l1,col='blue',add=TRUE)
+plot(st_buffer(l1, dist = 1, nQuadSegs= 5), reset = FALSE, main = "nQuadSegs: 5")
+plot(l1,col='blue',add=TRUE)
+par(op)
+
+
+l2 = st_as_sfc("LINESTRING(0 0,1 5,3 2)")
+op = par(mfrow = c(2, 3))
+plot(st_buffer(l2, dist = 1, joinStyle="ROUND"), reset = FALSE, main = "joinStyle: ROUND")
+plot(l2, col = 'blue', add = TRUE)
+plot(st_buffer(l2, dist = 1, joinStyle="MITRE"), reset = FALSE, main = "joinStyle: MITRE")
+plot(l2, col= 'blue', add = TRUE)
+plot(st_buffer(l2, dist = 1, joinStyle="BEVEL"), reset = FALSE, main = "joinStyle: BEVEL")
+plot(l2, col= 'blue', add=TRUE)
+plot(st_buffer(l2, dist = 1, joinStyle="MITRE" , mitreLimit=0.5), reset = FALSE, 
+   main = "mitreLimit: 0.5")
+plot(l2, col = 'blue', add = TRUE)
+plot(st_buffer(l2, dist = 1, joinStyle="MITRE",mitreLimit=1), reset = FALSE, 
+   main = "mitreLimit: 1")
+plot(l2, col = 'blue', add = TRUE)
+plot(st_buffer(l2, dist = 1, joinStyle="MITRE",mitreLimit=3), reset = FALSE, 
+   main = "mitreLimit: 3")
+plot(l2, col = 'blue', add = TRUE)
+par(op)
 nc = st_read(system.file("shape/nc.shp", package="sf"))
 plot(st_convex_hull(nc))
 plot(nc, border = grey(.5))

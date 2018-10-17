@@ -159,7 +159,7 @@ std::vector<OGRGeometry *> ogr_from_sfc(Rcpp::List sfc, OGRSpatialReference **sr
 		Rcpp::CharacterVector cv = crs["proj4string"];
 		local_srs = new OGRSpatialReference;
 		OGRErr err = local_srs->importFromProj4(cv[0]);
-		if (err != 0) {
+		if (err != OGRERR_NONE) {
 			local_srs->Release(); // #nocov
 			handle_error(err);    // #nocov
 		}
@@ -168,10 +168,12 @@ std::vector<OGRGeometry *> ogr_from_sfc(Rcpp::List sfc, OGRSpatialReference **sr
 		Rcpp::RawVector r = wkblst[i];
 		OGRErr err = OGRGeometryFactory::createFromWkb(&(r[0]), local_srs, &(g[i]), 
 			r.length(), wkbVariantIso);
-		if (err != 0) {
-			if (local_srs != NULL)      // #nocov
-				local_srs->Release();   // #nocov
-			handle_error(err);          // #nocov
+		if (err != OGRERR_NONE) {
+			if (g[i] != NULL) // release: #nocov
+				OGRGeometryFactory::destroyGeometry(g[i]); // #nocov
+			if (local_srs != NULL)      // #nocov start
+				local_srs->Release();
+			handle_error(err);          // #nocov end
 		}
 	}
 	if (sref != NULL)
@@ -280,7 +282,11 @@ Rcpp::List CPL_crs_from_epsg(int epsg) {
 Rcpp::List CPL_crs_from_wkt(Rcpp::CharacterVector wkt) {
 	char *cp = wkt[0];
 	OGRSpatialReference ref;
+#if GDAL_VERSION_MAJOR <= 2 && GDAL_VERSION_MINOR <= 2
 	handle_error(ref.importFromWkt(&cp));
+#else
+	handle_error(ref.importFromWkt( (const char*) cp));
+#endif
 	return get_crs(&ref);
 }
 
@@ -450,7 +456,11 @@ Rcpp::List CPL_sfc_from_wkt(Rcpp::CharacterVector wkt) {
 	OGRGeometryFactory f;
 	for (int i = 0; i < wkt.size(); i++) {
 		char *wkt_str = wkt(i);
+#if GDAL_VERSION_MAJOR <= 2 && GDAL_VERSION_MINOR <= 2
 		handle_error(f.createFromWkt(&wkt_str, NULL, &(g[i])));
+#else
+		handle_error(f.createFromWkt( (const char*) wkt_str, NULL, &(g[i])));
+#endif
 	}
 	return sfc_from_ogr(g, true);
 }

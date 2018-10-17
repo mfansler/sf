@@ -2,9 +2,7 @@
 % Please edit documentation in R/sfc.R
 \name{st_precision}
 \alias{st_precision}
-\alias{st_precision}
 \alias{st_set_precision}
-\alias{st_precision}
 \alias{st_precision<-}
 \title{Get precision}
 \usage{
@@ -36,4 +34,7 @@ x <- st_sfc(st_point(c(pi, pi)))
 st_precision(x)
 st_precision(x) <- 0.01
 st_precision(x)
+}
+\seealso{
+\link{st_as_binary} for an explanation of what setting precision actually does.
 }

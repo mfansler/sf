@@ -56,7 +56,7 @@ sanity_check = function(x) {
 		else
 			stop(paste("no check implemented for", class(x)[1]))
     } else
-        x
+        x # nocov
 }
 
 #' @name st_transform
@@ -136,7 +136,8 @@ st_proj_info = function(type = "proj") {
 		return(CPL_have_datum_files(0))
 
     opts <- c("proj", "ellps", "datum", "units")
-    if (!(type %in% opts)) stop("unknown type")
+    if (!(type %in% opts))
+		stop("unknown type") # nocov
     t <- as.integer(match(type[1], opts) - 1)
 	res = CPL_proj_info(as.integer(t))
     if (type == "proj")
@@ -183,8 +184,7 @@ st_wrap_dateline.sfg = function(x, options = "WRAPDATELINE=YES", quiet = TRUE) {
 
 st_to_s2 = function(x) {
 	# to geocentric, spherical, unit sphere:
-	st_transform(x,
-		st_crs("+proj=geocent +a=1 +b=1 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs"))
+	st_transform(x, st_crs("+proj=geocent +a=1 +b=1 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs")) # nocov
 }
 
 #' directly transform a set of coordinates

@@ -2,25 +2,24 @@
 % Please edit documentation in R/read.R, R/db.R
 \name{st_read}
 \alias{st_read}
-\alias{st_read}
-\alias{st_read.default}
-\alias{st_read}
+\alias{st_read.character}
 \alias{read_sf}
-\alias{st_read}
 \alias{st_read.DBIObject}
 \title{Read simple features or layers from file or database}
 \usage{
 st_read(dsn, layer, ...)
 
-\method{st_read}{default}(dsn, layer, ..., options = NULL, quiet = FALSE,
-  geometry_column = 1L, type = 0, promote_to_multi = TRUE,
-  stringsAsFactors = default.stringsAsFactors(), int64_as_string = FALSE,
-  check_ring_dir = FALSE)
+\method{st_read}{character}(dsn, layer, ..., query = NA,
+  options = NULL, quiet = FALSE, geometry_column = 1L, type = 0,
+  promote_to_multi = TRUE,
+  stringsAsFactors = default.stringsAsFactors(),
+  int64_as_string = FALSE, check_ring_dir = FALSE)
 
-read_sf(..., quiet = TRUE, stringsAsFactors = FALSE)
+read_sf(..., quiet = TRUE, stringsAsFactors = FALSE,
+  as_tibble = TRUE)
 
 \method{st_read}{DBIObject}(dsn = NULL, layer = NULL, query = NULL,
-  geom_column = NULL, EWKB = TRUE, ...)
+  EWKB = TRUE, quiet = TRUE, as_tibble = FALSE, ...)
 }
 \arguments{
 \item{dsn}{data source name (interpretation varies by driver - for some
@@ -39,6 +38,8 @@ are no layers in \code{dsn}. If \code{dsn} is a database connection, then
 use the \code{query} argument.}
 
 \item{...}{parameter(s) passed on to \link{st_as_sf}}
+
+\item{query}{SQL query to select records; see details}
 
 \item{options}{character; driver dependent dataset open options, multiple
 options supported.}
@@ -71,11 +72,10 @@ precision is lost (i.e., values are larger than 2^53).}
 and if necessary corrected (when seen from above: exterior ring counter
 clockwise, holes clockwise)}
 
-\item{query}{SQL query to select records; see details}
+\item{as_tibble}{logical; should the returned table be of class tibble or data.frame?}
 
-\item{geom_column}{character or integer: indicator of name or position of the geometry column; if not provided, the last column of type character is chosen}
-
-\item{EWKB}{logical; is the WKB is of type EWKB? if missing, defaults to \code{TRUE}}
+\item{EWKB}{logical; is the WKB of type EWKB? if missing, defaults to
+\code{TRUE}}
 }
 \value{
 object of class \link{sf} when a layer was successfully read; in case
@@ -106,15 +106,30 @@ basis; \code{type} may be specified for each geometry column.
 In case of problems reading shapefiles from USB drives on OSX, please see
 \url{https://github.com/r-spatial/sf/issues/252}.
 
+For \code{query} with a character \code{dsn} the query text is handed to
+'ExecuteSQL' on the GDAL/OGR data set and will result in the creation of a
+new layer (and \code{layer} is ignored). See 'OGRSQL'
+\url{https://www.gdal.org/ogr_sql.html} for details. Please note that the
+'FID' special field is driver-dependent, and may be either 0-based (e.g. ESRI
+Shapefile), 1-based (e.g. MapInfo) or arbitrary (e.g. OSM). Other features of
+OGRSQL are also likely to be driver dependent. The available layer names may
+be obtained with
+\link{st_layers}. Care will be required to properly escape the use of some layer names.
+
 \code{read_sf} and \code{write_sf} are aliases for \code{st_read} and \code{st_write}, respectively, with some
 modified default arguments.
 \code{read_sf} and \code{write_sf} are quiet by default: they do not print information
 about the data source. \code{read_sf} returns an sf-tibble rather than an sf-data.frame.
 \code{write_sf} delete layers by default: it overwrites existing files without asking or warning.
 
-if \code{table} is not given but \code{query} is, the spatial reference system (crs) of the table queried is only available in case it has been stored into each geometry record (e.g., by PostGIS, when using EWKB)
+if \code{table} is not given but \code{query} is, the spatial
+  reference system (crs) of the table queried is only available in case it
+  has been stored into each geometry record (e.g., by PostGIS, when using
+  EWKB)
 
-in case geom_column is missing: if table is missing, this function will try to read the name of the geometry column from table \code{geometry_columns}, in other cases, or when this fails, the geom_column is assumed to be the last column of mode character. If table is missing, the SRID cannot be read and resolved into a proj4string by the database, and a warning will be given.
+The function will automatically find the `geometry` type columns for
+  drivers that support it. For the other drivers, it will try to cast all the
+  character columns, which can be slow for very wide tables.
 }
 \note{
 The use of \code{system.file} in examples make sure that examples run regardless where R is installed:
@@ -126,6 +141,10 @@ that reside in the same directory, only one of them having extension \code{.shp}
 nc = st_read(system.file("shape/nc.shp", package="sf"))
 summary(nc) # note that AREA was computed using Euclidian area on lon/lat degrees
 
+## only three fields by select clause
+## only two features by where clause
+nc_sql = st_read(system.file("shape/nc.shp", package="sf"),
+                     query = "SELECT NAME, SID74, FIPS FROM \\"nc\\" WHERE BIR74 > 20000")
 \dontrun{
   library(sp)
   example(meuse, ask = FALSE, echo = FALSE)
@@ -134,6 +153,14 @@ summary(nc) # note that AREA was computed using Euclidian area on lon/lat degree
   try(st_meuse <- st_read("PG:dbname=postgis", "meuse"))
   if (exists("st_meuse"))
     summary(st_meuse)
+}
+
+\dontrun{
+## note that we need special escaping of layer  within single quotes (nc.gpkg)
+## and that geom needs to be included in the select, otherwise we don't detect it
+layer <- st_layers(system.file("gpkg/nc.gpkg", package = "sf"))$name[1]
+nc_gpkg_sql = st_read(system.file("gpkg/nc.gpkg", package = "sf"),
+   query = sprintf("SELECT NAME, SID74, FIPS, geom  FROM \\"\%s\\" WHERE BIR74 > 20000", layer))
 }
 # read geojson from string:
 geojson_txt <- paste("{\\"type\\":\\"MultiPoint\\",\\"coordinates\\":",
