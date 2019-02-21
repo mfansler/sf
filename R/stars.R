@@ -114,13 +114,17 @@ st_as_sfc.dimensions = function(x, ..., as_points = NA, use_cpp = TRUE, which = 
 	xy_names = raster$dimensions
 	xd = x[[ xy_names[1] ]]
 	yd = x[[ xy_names[2] ]]
-	cc = if (! is.na(xd$offset) && !is.na(yd$offset)) {
+	cc = if (!is.na(xd$offset) && !is.na(yd$offset)) {
 		xy = if (as_points) # grid cell centres:
 			expand.grid(x = seq(xd$from, xd$to) - 0.5, y = seq(yd$from, yd$to) - 0.5)
 		else # grid corners: from 0 to n
 			expand.grid(x = seq(xd$from - 1, xd$to), y = seq(yd$from - 1, yd$to))
 		xy_from_colrow(as.matrix(xy), geotransform)
-	} else { # get from values:
+	} else if (is.null(xd$values) || is.null(yd$values)) { # only one of [xd|yd] has $values:
+		if (!requireNamespace("stars", quietly = TRUE)) # nocov start
+			stop("stars required: install that first")
+		as.matrix(st_coordinates(x)) # nocov end
+	} else { # both xd and yd have $values:
 		expand = function(x) { # might fail on the poles or dateline
 			d = diff(x)
 			c(x[1] - 0.5 * d[1], x + 0.5 * c(d, tail(d, 1)))
@@ -132,14 +136,25 @@ st_as_sfc.dimensions = function(x, ..., as_points = NA, use_cpp = TRUE, which = 
 			}
 			cbind(as.vector(xd$values), as.vector(yd$values))
 		} else { # rectlinear: expand independently
-			if (!as_points) {
-				xd$values = expand(xd$values)
-				yd$values = expand(yd$values)
+			if (! as_points) {
+				xd$values = if (inherits(xd$values, "intervals"))
+						c(xd$values$start, tail(xd$values$end, 1))
+					else
+						expand(xd$values)
+				yd$values = if (inherits(yd$values, "intervals"))
+						c(yd$values$start, tail(yd$values$end, 1))
+					else
+						expand(yd$values)
+			} else {
+				if (inherits(xd$values, "intervals"))
+					xd$values = 0.5 * (xd$values$start + xd$values$end)
+				if (inherits(yd$values, "intervals"))
+					yd$values = 0.5 * (yd$values$start + yd$values$end)
 			}
 			as.matrix(expand.grid(x = xd$values, y = yd$values))
 		}
 	}
-	dims = c(xd$to - xd$from, yd$to - yd$from) + 1 + !as_points
+	dims = dim(x) + !as_points
 	if (use_cpp)
 		structure(CPL_xy2sfc(cc, as.integer(dims), as_points, as.integer(which)), 
 			crs = st_crs(xd$refsys), n_empty = 0L, bbox = bbox.Mtrx(cc))
@@ -218,11 +233,12 @@ gdal_subdatasets = function(file, options = character(0), name = TRUE) {
 #' @param breaks numeric vector with break values for contour polygons (or lines)
 #' @param use_contours logical;
 #' @param contour_lines logical;
+#' @param connect8 logical; if \code{TRUE} use 8 connection algorithm, rather than 4
 #' @name gdal
 #' @export
 gdal_polygonize = function(x, mask = NULL, file = tempfile(), driver = "GTiff", use_integer = TRUE,
 		geotransform, breaks = classInt::classIntervals(na.omit(as.vector(x[[1]])))$brks, 
-		use_contours = FALSE, contour_lines = FALSE) {
+		use_contours = FALSE, contour_lines = FALSE, connect8 = FALSE, ...) {
 	gdal_write(x, file = file, driver = driver, geotransform = geotransform)
 	on.exit(unlink(file))
 	mask_name = if (!is.null(mask)) {
@@ -241,7 +257,13 @@ gdal_polygonize = function(x, mask = NULL, file = tempfile(), driver = "GTiff", 
 			paste0("POLYGONIZE=", ifelse(contour_lines, "NO", "YES")))
 		} else
 			character(0)
-	pol = CPL_polygonize(file, mask_name, "GTiff", "Memory", "foo", character(0), 0, contour_options, use_contours, use_integer)
+
+	options = if (connect8)
+			"8CONNECTED=8"
+		else
+			character(0)
+
+	pol = CPL_polygonize(file, mask_name, "GTiff", "Memory", "foo", options, 0, contour_options, use_contours, use_integer)
 	out = process_cpl_read_ogr(pol, quiet = TRUE)
 	names(out)[1] = names(x)[1]
 	if (use_contours) {
