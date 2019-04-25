@@ -47,7 +47,7 @@ test_that("geos ops give warnings and errors on longlat", {
 
 	expect_warning(st_buffer(x, .1))
 	expect_warning(st_buffer(x, .1, joinStyle = "BEVEL"))
-	expect_warning(st_simplify(x, .1))
+	expect_warning(st_simplify(x, dTolerance = .1))
 	expect_warning(st_centroid(x))
 	expect_silent(st_segmentize(l, 1e5))
 	expect_silent(st_segmentize(l, 1e5))
@@ -259,4 +259,9 @@ test_that("binary operations work on sf objects with common column names", {
 	sf1 <- st_as_sf(tibble::as_tibble(sf1))
 	sf2 <- st_as_sf(tibble::as_tibble(sf2))
 	expect_is(st_intersection(sf1, sf2), c("sf", "tbl_df"))
+})
+
+test_that("binary operations on empty sfg objects return NA", {
+  x = st_point() == st_linestring()
+  expect_true(is.na(x))
 })

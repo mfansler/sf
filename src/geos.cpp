@@ -296,12 +296,12 @@ Rcpp::List CPL_geos_binop(Rcpp::List sfc0, Rcpp::List sfc1, std::string op, doub
 		}
 		out.attr("dim") = get_dim(sfc0.length(), sfc1.length());
 		ret_list = Rcpp::List::create(out);
-	} else if (op == "distance" || op == "Hausdorff" || op == "Frechet") { // return double matrix:
+	} else if (op == "Euclidean" || op == "distance" || op == "Hausdorff" || op == "Frechet") { // return double matrix:
 		// dist_fn, dist_parfn
 		Rcpp::NumericMatrix out(sfc0.length(), sfc1.length());
 		if (par <= 0.0) {
 			dist_fn dist_function;
-			if (op == "distance")
+			if (op == "Euclidean" || op == "distance")
 				dist_function = GEOSDistance_r;
 			else if (op == "Hausdorff")
 				dist_function = GEOSHausdorffDistance_r;
@@ -560,8 +560,22 @@ Rcpp::List CPL_geos_union(Rcpp::List sfc, bool by_feature = false) {
 			gmv_out[i] = geos_ptr(GEOSUnaryUnion_r(hGEOSCtxt, gmv[i].get()), hGEOSCtxt);
 		}
 	} else {
-		GeomPtr gc = geos_ptr(GEOSGeom_createCollection_r(hGEOSCtxt, GEOS_GEOMETRYCOLLECTION, to_raw(gmv).data(), gmv.size()), hGEOSCtxt);
-		gmv_out[0] = geos_ptr(GEOSUnaryUnion_r(hGEOSCtxt, gc.get()), hGEOSCtxt);
+		bool all_inputs_same = true;
+
+		// check to see if all geometries are identical, as in a call to summarize(..., do_union=TRUE)
+		for (size_t i = 1; i < gmv.size(); i++) {
+			if (!GEOSEqualsExact_r(hGEOSCtxt, gmv[0].get(), gmv[i].get(), 0.0)) {
+				all_inputs_same = false;
+				break;
+			}
+		}
+
+		if (all_inputs_same) {
+			gmv_out[0] = std::move(gmv[0]);
+		} else {
+			GeomPtr gc = geos_ptr(GEOSGeom_createCollection_r(hGEOSCtxt, GEOS_GEOMETRYCOLLECTION, to_raw(gmv).data(), gmv.size()), hGEOSCtxt);
+			gmv_out[0] = geos_ptr(GEOSUnaryUnion_r(hGEOSCtxt, gc.get()), hGEOSCtxt);
+		}
 	}
 
 	Rcpp::List out(sfc_from_geometry(hGEOSCtxt, gmv_out, dim));
@@ -784,10 +798,15 @@ Rcpp::List CPL_geos_op2(std::string op, Rcpp::List sfcx, Rcpp::List sfcy) {
 	m(_, 0) = Rcpp::NumericVector(index_x.begin(), index_x.end());
 	m(_, 1) = Rcpp::NumericVector(index_y.begin(), index_y.end());
 
-	Rcpp::List ret(sfc_from_geometry(hGEOSCtxt, out, dim));
+	Rcpp::List ret;
+	if (y.size() == 0 && op != "intersection")
+		ret = sfcx;
+	else {
+		ret = sfc_from_geometry(hGEOSCtxt, out, dim);
+		ret.attr("crs") = sfcx.attr("crs");
+		ret.attr("idx") = m;
+	}
 	CPL_geos_finish(hGEOSCtxt);
-	ret.attr("crs") = sfcx.attr("crs");
-	ret.attr("idx") = m;
 	return ret;
 }
 

@@ -102,6 +102,10 @@ st_crs.bbox = function(x, ...) {
 
 #' @name st_crs
 #' @export
+st_crs.CRS = function(x, ...) st_crs(x@projargs)
+
+#' @name st_crs
+#' @export
 st_crs.crs = function(x, ...) x
 
 #' @export
@@ -140,6 +144,10 @@ valid_proj4string = function(p4s) {
 
 # return crs object from crs, integer, or character string
 make_crs = function(x, wkt = FALSE) {
+
+	if (inherits(x, "CRS"))
+		x = x@projargs
+
 	if (wkt)
 		CPL_crs_from_wkt(x)
 	else if (is.na(x))
@@ -210,8 +218,9 @@ st_is_longlat = function(x) {
 		if (ret && inherits(x, c("sf", "sfc", "stars"))) {
 			bb = st_bbox(x)
 			# check for potentially meaningless value range:
+			eps = sqrt(.Machine$double.eps)
 			if (all(!is.na(unclass(bb))) && 
-					(bb["xmin"] < -180 || bb["xmax"] > 360 || bb["ymin"] < -90 || bb["ymax"] > 90))
+					(bb["xmin"] < (-180-eps) || bb["xmax"] > (360+eps) || bb["ymin"] < (-90-eps) || bb["ymax"] > (90+eps)))
 				warning("bounding box has potentially an invalid value range for longlat data")
 		}
 		ret
@@ -294,8 +303,8 @@ is.na.crs = function(x) {
 #' @examples
 #' st_crs("+init=epsg:3857")$epsg
 #' st_crs("+init=epsg:3857")$proj4string
-#' st_crs("+init=epsg:3857 +units=km")$b     # numeric
-#' st_crs("+init=epsg:3857 +units=km")$units # character
+#' st_crs("+init=epsg:3857 +units=m")$b     # numeric
+#' st_crs("+init=epsg:3857 +units=m")$units # character
 #' @export
 `$.crs` = function(x, name) {
 	if (is.numeric(name) || name %in% names(x))

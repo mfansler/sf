@@ -8,6 +8,7 @@
 \alias{st_crs.character}
 \alias{st_crs.sfc}
 \alias{st_crs.bbox}
+\alias{st_crs.CRS}
 \alias{st_crs.crs}
 \alias{st_crs<-}
 \alias{st_crs<-.sf}
@@ -30,6 +31,8 @@ st_crs(x, ...)
 \method{st_crs}{sfc}(x, ..., parameters = FALSE)
 
 \method{st_crs}{bbox}(x, ...)
+
+\method{st_crs}{CRS}(x, ...)
 
 \method{st_crs}{crs}(x, ...)
 
@@ -110,7 +113,7 @@ x = sfc \%>\% st_set_crs(4326) \%>\% st_transform(3857)
 x
 st_crs("+init=epsg:3857")$epsg
 st_crs("+init=epsg:3857")$proj4string
-st_crs("+init=epsg:3857 +units=km")$b     # numeric
-st_crs("+init=epsg:3857 +units=km")$units # character
+st_crs("+init=epsg:3857 +units=m")$b     # numeric
+st_crs("+init=epsg:3857 +units=m")$units # character
 }
 \keyword{datasets}

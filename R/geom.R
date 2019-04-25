@@ -109,6 +109,15 @@ message_longlat = function(caller) {
 	message(paste("although coordinates are longitude/latitude,",
 		caller, "assumes that they are planar"))
 }
+
+is_symmetric = function(operation, pattern) {
+	if (!is.na(pattern)) {
+		m = matrix(sapply(1:9, function(i) substr(pattern, i, i)), 3, 3)
+		isTRUE(all(m == t(m)))
+	} else
+		isTRUE(operation %in% c("intersects", "touches", "overlaps", "disjoint", "equals"))
+}
+
 # binary, interfaced through GEOS:
 
 # returning matrix, distance or relation string -- the work horse is:
@@ -121,9 +130,11 @@ st_geos_binop = function(op, x, y, par = 0.0, pattern = NA_character_,
 		stopifnot(st_crs(x) == st_crs(y))
 	if (isTRUE(st_is_longlat(x)) && !(op %in% c("equals", "equals_exact", "polygonize")))
 		message_longlat(paste0("st_", op))
-	if (prepared && isTRUE(st_dimension(x) == 0) && isTRUE(st_dimension(y) == 2))
+	if (prepared && is_symmetric(op, pattern) &&
+			length(dx <- st_dimension(x)) && length(dy <- st_dimension(y)) &&
+			isTRUE(all(dx == 0)) && isTRUE(all(dy == 2))) {
 		t(st_geos_binop(op, y, x, par = par, pattern = pattern, sparse = sparse, prepared = prepared))
-	else {
+	} else {
 		ret = CPL_geos_binop(st_geometry(x), st_geometry(y), op, par, pattern, prepared)
 		if (length(ret) == 0 || is.null(dim(ret[[1]]))) {
 			id = if (is.null(row.names(x)))
@@ -149,17 +160,17 @@ st_geos_binop = function(op, x, y, par = 0.0, pattern = NA_character_,
 #' @param ... ignored
 #' @param dist_fun deprecated
 #' @param by_element logical; if \code{TRUE}, return a vector with distance between the first elements of \code{x} and \code{y}, the second, etc. if \code{FALSE}, return the dense matrix with all pairwise distances.
-#' @param which character; if equal to \code{Haussdorf} or \code{Frechet}, Hausdorff resp. Frechet distances are returned
-#' @param par for \code{which} equal to \code{Haussdorf} or \code{Frechet}, use a positive value this to densify the geometry
+#' @param which character; for Cartesian coordinates only: one of \code{Euclidian}, \code{Haussdorf} or \code{Frechet}; for geodetic coordinates, great circle distances are computed; see details
+#' @param par for \code{which} equal to \code{Haussdorf} or \code{Frechet}, optionally use a value between 0 and 1 to densify the geometry
 #' @param tolerance ignored if \code{st_is_longlat(x)} is \code{FALSE}; otherwise, if set to a positive value, the first distance smaller than \code{tolerance} will be returned, and true distance may be smaller; this may speed up computation. In meters, or a \code{units} object convertible to meters.
 #' @return If \code{by_element} is \code{FALSE} \code{st_distance} returns a dense numeric matrix of dimension length(x) by length(y); otherwise it returns a numeric vector of length \code{x} or \code{y}, the shorter one being recycled.
-#' @details great circle distance calculations use function \code{geod_inverse} from proj.4 if proj.4 is at version larger than 4.8.0, or else the Vincenty method implemented in liblwgeom (this should correspond to what PostGIS does).
+#' @details great circle distance calculations use function \code{geod_inverse} from PROJ; see Karney, Charles FF, 2013, Algorithms for geodesics, Journal of Geodesy 87(1), 43--55
 #' @examples
 #' p = st_sfc(st_point(c(0,0)), st_point(c(0,1)), st_point(c(0,2)))
 #' st_distance(p, p)
 #' st_distance(p, p, by_element = TRUE)
 #' @export
-st_distance = function(x, y, ..., dist_fun, by_element = FALSE, which = "distance", par = 0.0, tolerance = 0.0) {
+st_distance = function(x, y, ..., dist_fun, by_element = FALSE, which = "Euclidean", par = 0.0, tolerance = 0.0) {
 	if (missing(y))
 		y = x
 	else
@@ -236,6 +247,7 @@ st_relate	= function(x, y, pattern = NA_character_, sparse = !is.na(pattern)) {
 #' @param x object of class \code{sf}, \code{sfc} or \code{sfg}
 #' @param y object of class \code{sf}, \code{sfc} or \code{sfg}; if missing, \code{x} is used
 #' @param sparse logical; should a sparse index list be returned (TRUE) or a dense logical matrix? See below.
+#' @param ... ignored
 #' @param prepared logical; prepare geometry for x, before looping over y? See Details.
 #' @details If \code{prepared} is \code{TRUE}, and \code{x} contains POINT geometries and \code{y} contains polygons, then the polygon geometries are prepared, rather than the points.
 #' @return If \code{sparse=FALSE}, \code{st_predicate} (with \code{predicate} e.g. "intersects") returns a dense logical matrix with element \code{i,j} \code{TRUE} when \code{predicate(x[i], y[j])} (e.g., when geometry of feature i and j intersect); if \code{sparse=TRUE}, an object of class \code{\link{sgbp}} with a sparse list representation of the same matrix, with list element \code{i} an integer vector with all indices j for which \code{predicate(x[i],y[j])} is \code{TRUE} (and hence \code{integer(0)} if none of them is \code{TRUE}). From the dense matrix, one can find out if one or more elements intersect by \code{apply(mat, 1, any)}, and from the sparse list by \code{lengths(lst) > 0}, see examples below.
@@ -260,8 +272,20 @@ st_relate	= function(x, y, pattern = NA_character_, sparse = !is.na(pattern)) {
 #' # which points fall inside the first polygon?
 #' st_intersects(pol, pts)[[1]]
 #' @export
-st_intersects	= function(x, y, sparse = TRUE, prepared = TRUE)
+st_intersects	= function(x, y, sparse = TRUE, ...) UseMethod("st_intersects")
+
+#' @export
+st_intersects.sfc = function(x, y, sparse = TRUE, prepared = TRUE, ...)
 	st_geos_binop("intersects", x, y, sparse = sparse, prepared = prepared)
+
+#' @export
+st_intersects.sf = function(x, y, sparse = TRUE, prepared = TRUE, ...)
+	st_geos_binop("intersects", x, y, sparse = sparse, prepared = prepared)
+
+#' @export
+st_intersects.sfg = function(x, y, sparse = TRUE, prepared = TRUE, ...)
+	st_geos_binop("intersects", x, y, sparse = sparse, prepared = prepared)
+
 
 #' @name geos_binary_pred
 #' @export
@@ -391,6 +415,7 @@ st_is_within_distance = function(x, y, dist, sparse = TRUE) {
 #' @details \code{st_buffer} computes a buffer around this geometry/each geometry. If any of \code{endCapStyle},
 #' \code{joinStyle}, or \code{mitreLimit} are set to non-default values ('ROUND', 'ROUND', 1.0 respectively) then
 #' the underlying 'buffer with style' GEOS function is used.
+#' See \href{https://postgis.net/docs/ST_Buffer.html}{postgis.net/docs/ST_Buffer.html} for details.
 #' @examples
 #'
 #' ## st_buffer, style options (taken from rgeos gBuffer)
@@ -557,6 +582,8 @@ st_simplify.sfg = function(x, preserveTopology = FALSE, dTolerance = 0.0)
 st_simplify.sfc = function(x, preserveTopology = FALSE, dTolerance = 0.0) {
 	if (isTRUE(st_is_longlat(x)))
 		warning("st_simplify does not correctly simplify longitude/latitude data, dTolerance needs to be in decimal degrees")
+	stopifnot(mode(preserveTopology) == 'logical')
+
 	st_sfc(CPL_geos_op("simplify", x, numeric(0), integer(0),
 		preserveTopology = rep(preserveTopology, length.out = length(x)),
 		dTolerance = rep(dTolerance, length.out = length(x))))
@@ -612,6 +639,18 @@ st_triangulate.sf = function(x, dTolerance = 0.0, bOnlyEdges = FALSE) {
 #'  plot(x, add = TRUE, col = 'red', cex=2, pch=16)
 #'  plot(st_intersection(st_cast(v), box)) # clip to smaller box
 #'  plot(x, add = TRUE, col = 'red', cex=2, pch=16)
+#'  # matching Voronoi polygons to data points:
+#'  # https://github.com/r-spatial/sf/issues/1030
+#'  # generate 50 random unif points:
+#'  n = 100
+#'  pts = st_as_sf(data.frame(matrix(runif(n), , 2), id = 1:(n/2)), coords = c("X1", "X2"))
+#'  # compute Voronoi polygons:
+#'  pols = st_collection_extract(st_voronoi(do.call(c, st_geometry(pts))))
+#'  # match them to points:
+#'  pts$pols = pols[unlist(st_intersects(pts, pols))]
+#'  plot(pts["id"], pch = 16) # ID is color
+#'  plot(st_set_geometry(pts, "pols")["id"], xlim = c(0,1), ylim = c(0,1), reset = FALSE)
+#'  plot(st_geometry(pts), add = TRUE)
 #' }
 st_voronoi = function(x, envelope, dTolerance = 0.0, bOnlyEdges = FALSE)
 	UseMethod("st_voronoi")
@@ -720,7 +759,7 @@ st_centroid.sfc = function(x, ..., of_largest_polygon = FALSE) {
 	if (isTRUE(st_is_longlat(x)))
 		warning("st_centroid does not give correct centroids for longitude/latitude data")
 	if (of_largest_polygon) {
-		multi = which(st_dimension(x) == 2 & lengths(x) > 1)
+		multi = which(sapply(x, inherits, what = "MULTIPOLYGON") & lengths(x) > 1)
 		if (length(multi))
 			x[multi] = largest_ring(x[multi])
 	}

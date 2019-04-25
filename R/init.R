@@ -1,5 +1,5 @@
 #' @importFrom utils head tail object.size str
-#' @importFrom stats runif aggregate na.omit
+#' @importFrom stats runif aggregate na.omit setNames
 #' @importFrom tools file_ext file_path_sans_ext
 #' @importFrom methods as slotNames new slot
 #' @importFrom grid convertUnit current.viewport linesGrob pathGrob pointsGrob polylineGrob unit viewport nullGrob convertHeight convertWidth
@@ -30,16 +30,16 @@ setOldClass("sfg")
 
 pathGrob <- NULL
 .onLoad = function(libname, pkgname) {
-	if (getRversion() < 3.6) {
+	if (getRversion() < as.numeric_version("3.6")) { # nocov start
 		pathGrob <<- function(..., pathId.lengths) {
 			grid::pathGrob(...)
 		}
 	}
-	load_gdal()
+	load_gdal() # nocov end
 }
 
 .onUnload = function(libname, pkgname) {
-	unload_gdal()
+	unload_gdal() # nocov
 }
 
 .onAttach = function(libname, pkgname) {
@@ -89,6 +89,7 @@ load_gdal <- function() {
 	if (inherits(try(units::as_units("ind_ch"), silent = TRUE), "try-error"))
 		units::install_conversion_constant("m", "ind_ch", 20.11669506)
 }
+
 unload_gdal <- function() {
 	CPL_gdal_cleanup_all()
 	if (file.exists(system.file("proj/nad.lst", package = "sf")[1])) {

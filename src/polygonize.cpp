@@ -19,6 +19,7 @@
 #include "gdal_read.h"
 #include "gdal_sf_pkg.h"
 
+// # nocov start
 // [[Rcpp::export]]
 Rcpp::List CPL_polygonize(Rcpp::CharacterVector raster, Rcpp::CharacterVector mask_name,
 		Rcpp::CharacterVector raster_driver, 
@@ -75,6 +76,7 @@ Rcpp::List CPL_polygonize(Rcpp::CharacterVector raster, Rcpp::CharacterVector ma
 		Rcpp::stop("Creation failed.\n"); // #nocov
 	}
 	OGRSpatialReference *sr = new OGRSpatialReference;
+	sr = handle_axis_order(sr);
 	char **ppt = (char **) &wkt;
 #if GDAL_VERSION_MAJOR <= 2 && GDAL_VERSION_MINOR <= 2
 	sr->importFromWkt(ppt);
@@ -108,7 +110,7 @@ Rcpp::List CPL_polygonize(Rcpp::CharacterVector raster, Rcpp::CharacterVector ma
 				NULL, NULL) != OGRERR_NONE)
 					Rcpp::Rcout << "GDALFPolygonize returned an error" << std::endl; // #nocov
 		} else {
-#if ((GDAL_VERSION_MAJOR > 3) || (GDAL_VERSION_MAJOR == 2 && GDAL_VERSION_MINOR >= 4)) 
+#if ((GDAL_VERSION_MAJOR > 2) || (GDAL_VERSION_MAJOR == 2 && GDAL_VERSION_MINOR >= 4)) 
 			if (GDALContourGenerateEx((GDALRasterBandH) poBand, (void *) poLayer,
                        	create_options(contour_options).data(), NULL, NULL) != OGRERR_NONE)
 				Rcpp::stop("GDALContourGenerateEx returned an error");
@@ -126,8 +128,9 @@ Rcpp::List CPL_polygonize(Rcpp::CharacterVector raster, Rcpp::CharacterVector ma
 	GDALClose(poDS); // vector
 	if (maskDataset != NULL)
 		GDALClose(maskDataset); // mask
-	return lst;
-}
+	return lst; 
+} 
+// # nocov end
 
 // [[Rcpp::export]]
 Rcpp::List CPL_rasterize(Rcpp::CharacterVector raster, Rcpp::CharacterVector raster_driver,

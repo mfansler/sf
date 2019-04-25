@@ -43,7 +43,8 @@ x = st_intersection(g, nc)
 ls = st_sfc(st_linestring(rbind(c(0,0),c(0,1))),
 st_linestring(rbind(c(0,0),c(10,0))))
 
-set.seed(13531) # make reproducible
+suppressWarnings(RNGversion("3.5.3"))
+set.seed(13531)
 
 st_line_sample(ls, density = 1, type = "random")
 
@@ -237,3 +238,18 @@ if (!inherits(n, "try-error")) {
 
 # can do centroid of empty geom:
 st_centroid(st_polygon())
+
+#999:
+pt = data.frame(x=1:2, y=1:2,a=letters[1:2])
+pt = st_as_sf(pt, coords=c("x","y"))
+
+bf =st_buffer(pt, dist=0.3)
+
+st_within(pt,bf, sparse=FALSE)
+st_within(pt[1,], bf[1,], sparse = FALSE)
+st_relate(pt[1,], bf[1,], pattern = "T*F**F***", sparse = FALSE)
+
+sf:::is_symmetric(pattern = "010121010")
+sf:::is_symmetric(pattern = "010121021")
+
+st_intersects(st_point(0:1), st_point(2:3)) # sfg method
