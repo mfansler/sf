@@ -315,13 +315,20 @@ Rcpp::List CPL_geos_binop(Rcpp::List sfc0, Rcpp::List sfc1, std::string op, doub
 			}
 
 			for (size_t i = 0; i < gmv0.size(); i++) {
-				for (size_t j = 0; j < gmv1.size(); j++) {
-					double dist = -1.0;
-					if (dist_function(hGEOSCtxt, gmv0[i].get(), gmv1[j].get(), &dist) == 0) {
-						CPL_geos_finish(hGEOSCtxt); // #nocov
-						Rcpp::stop("GEOS error in GEOS_xx_Distance_r"); // #nocov
+				if (GEOSisEmpty_r(hGEOSCtxt, gmv0[i].get())) {
+					for (size_t j = 0; j < gmv1.size(); j++) // #nocov
+						out(i, j) = NA_REAL;                 // #nocov
+				} else for (size_t j = 0; j < gmv1.size(); j++) {
+					if (GEOSisEmpty_r(hGEOSCtxt, gmv1[j].get()))
+						out(i, j) = NA_REAL;
+					else {
+						double dist = -1.0;
+						if (dist_function(hGEOSCtxt, gmv0[i].get(), gmv1[j].get(), &dist) == 0) {
+							CPL_geos_finish(hGEOSCtxt); // #nocov
+							Rcpp::stop("GEOS error in GEOS_xx_Distance_r"); // #nocov
+						}
+						out(i, j) = dist;
 					}
-					out(i, j) = dist;
 				}
 				Rcpp::checkUserInterrupt();
 			}
@@ -339,13 +346,20 @@ Rcpp::List CPL_geos_binop(Rcpp::List sfc0, Rcpp::List sfc1, std::string op, doub
 			}
 
 			for (size_t i = 0; i < gmv0.size(); i++) {
-				for (size_t j = 0; j < gmv1.size(); j++) {
-					double dist = -1.0;
-					if (dist_function(hGEOSCtxt, gmv0[i].get(), gmv1[j].get(), par, &dist) == 0) {
-						CPL_geos_finish(hGEOSCtxt); // #nocov
-						Rcpp::stop("GEOS error in GEOS_xx_Distance_r"); // #nocov
+				if (GEOSisEmpty_r(hGEOSCtxt, gmv0[i].get())) {
+					for (size_t j = 0; j < gmv1.size(); j++)
+						out(i, j) = NA_REAL;
+				} else for (size_t j = 0; j < gmv1.size(); j++) {
+					if (GEOSisEmpty_r(hGEOSCtxt, gmv1[j].get()))
+						out(i, j) = NA_REAL;
+					else {
+						double dist = -1.0;
+						if (dist_function(hGEOSCtxt, gmv0[i].get(), gmv1[j].get(), par, &dist) == 0) {
+							CPL_geos_finish(hGEOSCtxt); // #nocov
+							Rcpp::stop("GEOS error in GEOS_xx_Distance_r"); // #nocov
+						}
+						out(i, j) = dist;
 					}
-					out(i, j) = dist;
 				}
 				Rcpp::checkUserInterrupt();
 			}
@@ -551,10 +565,15 @@ Rcpp::List CPL_geos_normalize(Rcpp::List sfc) { // #nocov start
 
 // [[Rcpp::export]]
 Rcpp::List CPL_geos_union(Rcpp::List sfc, bool by_feature = false) {
+
+	if (sfc.size() == 0)
+		return sfc; // #nocov
+
 	int dim = 2;
 	GEOSContextHandle_t hGEOSCtxt = CPL_geos_init();
 	std::vector<GeomPtr> gmv = geometries_from_sfc(hGEOSCtxt, sfc, &dim);
 	std::vector<GeomPtr> gmv_out(by_feature ? sfc.size() : 1);
+
 	if (by_feature) {
 		for (int i = 0; i < sfc.size(); i++) {
 			gmv_out[i] = geos_ptr(GEOSUnaryUnion_r(hGEOSCtxt, gmv[i].get()), hGEOSCtxt);
@@ -799,9 +818,15 @@ Rcpp::List CPL_geos_op2(std::string op, Rcpp::List sfcx, Rcpp::List sfcy) {
 	m(_, 1) = Rcpp::NumericVector(index_y.begin(), index_y.end());
 
 	Rcpp::List ret;
-	if (y.size() == 0 && op != "intersection")
-		ret = sfcx;
-	else {
+	if ((x.size() == 0 || y.size() == 0) && op != "intersection") {
+		if (op == "union" || op == "sym_difference") { // return "the other"
+			if (y.size() == 0)
+				ret = sfcx;
+			else
+				ret = sfcy;
+		} else // "difference" is asymmetric: x - 0 -> return x
+			ret = sfcx;
+	} else {
 		ret = sfc_from_geometry(hGEOSCtxt, out, dim);
 		ret.attr("crs") = sfcx.attr("crs");
 		ret.attr("idx") = m;

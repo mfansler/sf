@@ -67,7 +67,7 @@ set_utf8 = function(x) {
 #' For \code{query} with a character \code{dsn} the query text is handed to
 #' 'ExecuteSQL' on the GDAL/OGR data set and will result in the creation of a
 #' new layer (and \code{layer} is ignored). See 'OGRSQL'
-#' \url{https://www.gdal.org/ogr_sql.html} for details. Please note that the
+#' \url{https://gdal.org/user/ogr_sql_dialect.html} for details. Please note that the
 #' 'FID' special field is driver-dependent, and may be either 0-based (e.g. ESRI
 #' Shapefile), 1-based (e.g. MapInfo) or arbitrary (e.g. OSM). Other features of
 #' OGRSQL are also likely to be driver dependent. The available layer names may
@@ -123,7 +123,7 @@ st_read.default = function(dsn, layer, ...) {
 }
 
 process_cpl_read_ogr = function(x, quiet = FALSE, ..., check_ring_dir = FALSE,
-		stringsAsFactors = default.stringsAsFactors(), geometry_column = 1, as_tibble = FALSE) {
+		stringsAsFactors = ifelse(as_tibble, FALSE, default.stringsAsFactors()), geometry_column = 1, as_tibble = FALSE) {
 
 	which.geom = which(vapply(x, function(f) inherits(f, "sfc"), TRUE))
 
@@ -134,10 +134,13 @@ process_cpl_read_ogr = function(x, quiet = FALSE, ..., check_ring_dir = FALSE,
 	if (length(which.geom) == 0) {
 		warning("no simple feature geometries present: returning a data.frame or tbl_df",
 			call. = FALSE)
-		if (as_tibble)
-			return(tibble::as_tibble(x))
-		else
-			return(as.data.frame(x , stringsAsFactors = stringsAsFactors))
+		x = if (!as_tibble) {
+				if (any(sapply(x, is.list)))
+					warning("list-column(s) present: in case of failure, try read_sf or as_tibble=TRUE") # nocov
+				as.data.frame(x , stringsAsFactors = stringsAsFactors)
+			} else
+				tibble::as_tibble(x)
+		return(x)
 	}
 
 	nm = names(x)[which.geom]
@@ -148,16 +151,17 @@ process_cpl_read_ogr = function(x, quiet = FALSE, ..., check_ring_dir = FALSE,
 	list.cols = x[lc.other]
 	nm.lc = names(x)[lc.other]
 
-	x = if (length(x) == length(geom)) { # ONLY geometry column(s)
+	if (length(x) == length(geom)) { # ONLY geometry column(s)
 		if (as_tibble)
-			tibble::tibble(row.names = seq_along(geom[[1]]))[-1]
+			x <- tibble::tibble(row.names = seq_along(geom[[1]]))[-1]
 		else
-			data.frame(row.names = seq_along(geom[[1]]))
+			x <- data.frame(row.names = seq_along(geom[[1]]))
 	} else {
-		if (as_tibble)
-			tibble::as_tibble(set_utf8(x[-c(lc.other, which.geom)]))
-		else
-			as.data.frame(set_utf8(x[-c(lc.other, which.geom)]), stringsAsFactors = stringsAsFactors)
+		x <- as.data.frame(set_utf8(x[-c(lc.other, which.geom)]), stringsAsFactors = stringsAsFactors)
+		if (as_tibble) {
+			# "sf" class is added later by `st_as_sf` (and sets all the attributes)
+			x <- tibble::new_tibble(x, attributes(x), nrow = nrow(x))
+		}
 	}
 
 	for (i in seq_along(lc.other))
@@ -305,12 +309,14 @@ abbreviate_shapefile_names = function(x) {
 #' @return \code{obj}, invisibly; in case \code{obj} is of class \code{sfc}, it is returned as an  \code{sf} object.
 #' @examples
 #' nc = st_read(system.file("shape/nc.shp", package="sf"))
-#' st_write(nc, "nc.shp")
-#' st_write(nc, "nc.shp", delete_layer = TRUE) # overwrites
+#' st_write(nc, paste0(tempdir(), "nc.shp"))
+#' st_write(nc, paste0(tempdir(), "nc.shp"), delete_layer = TRUE) # overwrites
 #' data(meuse, package = "sp") # loads data.frame from sp
 #' meuse_sf = st_as_sf(meuse, coords = c("x", "y"), crs = 28992)
-#' st_write(meuse_sf, "meuse.csv", layer_options = "GEOMETRY=AS_XY") # writes X and Y as columns
-#' st_write(meuse_sf, "meuse.csv", layer_options = "GEOMETRY=AS_WKT", delete_dsn=TRUE) # overwrites
+#' # writes X and Y as columns:
+#' st_write(meuse_sf, paste0(tempdir(), "meuse.csv"), layer_options = "GEOMETRY=AS_XY") 
+#' st_write(meuse_sf, paste0(tempdir(), "meuse.csv"), layer_options = "GEOMETRY=AS_WKT",
+#'   delete_dsn=TRUE) # overwrites
 #' \dontrun{
 #'  library(sp)
 #'  example(meuse, ask = FALSE, echo = FALSE)

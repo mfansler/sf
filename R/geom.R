@@ -163,7 +163,7 @@ st_geos_binop = function(op, x, y, par = 0.0, pattern = NA_character_,
 #' @param which character; for Cartesian coordinates only: one of \code{Euclidian}, \code{Haussdorf} or \code{Frechet}; for geodetic coordinates, great circle distances are computed; see details
 #' @param par for \code{which} equal to \code{Haussdorf} or \code{Frechet}, optionally use a value between 0 and 1 to densify the geometry
 #' @param tolerance ignored if \code{st_is_longlat(x)} is \code{FALSE}; otherwise, if set to a positive value, the first distance smaller than \code{tolerance} will be returned, and true distance may be smaller; this may speed up computation. In meters, or a \code{units} object convertible to meters.
-#' @return If \code{by_element} is \code{FALSE} \code{st_distance} returns a dense numeric matrix of dimension length(x) by length(y); otherwise it returns a numeric vector of length \code{x} or \code{y}, the shorter one being recycled.
+#' @return If \code{by_element} is \code{FALSE} \code{st_distance} returns a dense numeric matrix of dimension length(x) by length(y); otherwise it returns a numeric vector of length \code{x} or \code{y}, the shorter one being recycled. Distances involving empty geometries are \code{NA}.
 #' @details great circle distance calculations use function \code{geod_inverse} from PROJ; see Karney, Charles FF, 2013, Algorithms for geodesics, Journal of Geodesy 87(1), 43--55
 #' @examples
 #' p = st_sfc(st_point(c(0,0)), st_point(c(0,1)), st_point(c(0,2)))
@@ -907,7 +907,7 @@ geos_op2_df = function(x, y, geoms) {
 	if (inherits(x, "tbl_df")) {
 		if (!requireNamespace("tibble", quietly = TRUE))
 			stop("package tibble required: install first?")
-		df = tibble::as_tibble(df)
+		df = tibble::new_tibble(df, nrow = nrow(df), class = "sf")
 	}
 	df[[ attr(x, "sf_column") ]] = geoms
 	st_sf(df, sf_column_name = attr(x, "sf_column"))
@@ -994,11 +994,13 @@ st_intersection.sf = function(x, y) {
 		geom = st_intersection(st_geometry(x))
 		idx = attr(geom, "idx")
 		i = sapply(idx, function(i) i[1])
+		sf_column = attr(x, "sf_column")
 		st_geometry(x) = NULL
-		ret = st_set_geometry(x[i, , drop = FALSE], structure(geom, idx = NULL))
-		ret$n.overlaps = lengths(idx)
-		ret$origins = idx
-		ret
+		x = x[i, , drop = FALSE]
+		x$n.overlaps = lengths(idx)
+		x$origins = idx
+		x[[ sf_column ]] = structure(geom, idx = NULL)
+		st_sf(x)
 	} else
 		geos_op2_df(x, y, geos_op2_geom("intersection", x, y))
 }
@@ -1034,8 +1036,11 @@ st_difference.sfc = function(x, y) {
 st_difference.sf = function(x, y) {
 	if (missing(y)) {
 		geom = st_difference(st_geometry(x))
+		sf_column = attr(x, "sf_column")
 		st_geometry(x) = NULL
-		st_set_geometry(x[attr(geom, "idx"), , drop=FALSE], structure(geom, idx = NULL))
+		x = x[attr(geom, "idx"), , drop=FALSE]
+		x[[ sf_column ]] = structure(geom, idx = NULL)
+		st_sf(x)
 	} else
 		geos_op2_df(x, y, geos_op2_geom("difference", x, y))
 }

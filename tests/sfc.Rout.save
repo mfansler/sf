@@ -1,5 +1,5 @@
 
-R version 3.5.3 (2019-03-11) -- "Great Truth"
+R version 3.6.0 (2019-04-26) -- "Planting of a Tree"
 Copyright (C) 2019 The R Foundation for Statistical Computing
 Platform: x86_64-pc-linux-gnu (64-bit)
 
@@ -675,6 +675,17 @@ epsg (SRID):    NA
 proj4string:    NA
   a b    geometry
 1 3 7 POINT (2 2)
+> left_join(a, data.frame(b, geometry = 1), by = "b")
+Simple feature collection with 3 features and 4 fields
+geometry type:  POINT
+dimension:      XY
+bbox:           xmin: 0 ymin: 0 xmax: 2 ymax: 2
+epsg (SRID):    NA
+proj4string:    NA
+  a b    x geometry.y  geometry.x
+1 1 5    b          1 POINT (0 0)
+2 2 6    c          1 POINT (1 1)
+3 3 7 <NA>         NA POINT (2 2)
 > 
 > # st_joins:
 > a = st_sf(a = 1:3,
@@ -1151,6 +1162,61 @@ attribute variables are assumed to be spatially constant throughout all geometri
 > all.equal(st_drop_geometry(pol_sf), st_set_geometry(pol_sf, NULL))
 [1] TRUE
 > 
+> # https://github.com/r-spatial/sf/issues/1024
+> shape1 <-st_sfc(st_polygon(list(rbind(c(0,0), c(1,0), c(3,2), c(2,4), c(1,4), c(0,0)))))
+> shape2 <- st_sfc(st_polygon())
+> shape3 <- st_sfc(st_polygon())
+> 
+> shape4 = st_intersection(shape2, shape3) # has zero features
+> 
+> st_difference(shape1, shape4)
+Geometry set for 1 feature 
+geometry type:  POLYGON
+dimension:      XY
+bbox:           xmin: 0 ymin: 0 xmax: 3 ymax: 4
+epsg (SRID):    NA
+proj4string:    NA
+POLYGON ((0 0, 1 0, 3 2, 2 4, 1 4, 0 0))
+> st_difference(shape4, shape1)
+Geometry set for 0 features 
+bbox:           xmin: NA ymin: NA xmax: NA ymax: NA
+epsg (SRID):    NA
+proj4string:    NA
+> st_sym_difference(shape1, shape4)
+Geometry set for 1 feature 
+geometry type:  POLYGON
+dimension:      XY
+bbox:           xmin: 0 ymin: 0 xmax: 3 ymax: 4
+epsg (SRID):    NA
+proj4string:    NA
+POLYGON ((0 0, 1 0, 3 2, 2 4, 1 4, 0 0))
+> st_union(shape1, shape4)
+Geometry set for 1 feature 
+geometry type:  POLYGON
+dimension:      XY
+bbox:           xmin: 0 ymin: 0 xmax: 3 ymax: 4
+epsg (SRID):    NA
+proj4string:    NA
+POLYGON ((0 0, 1 0, 3 2, 2 4, 1 4, 0 0))
+> st_union(shape4, shape1)
+Geometry set for 1 feature 
+geometry type:  POLYGON
+dimension:      XY
+bbox:           xmin: 0 ymin: 0 xmax: 3 ymax: 4
+epsg (SRID):    NA
+proj4string:    NA
+POLYGON ((0 0, 1 0, 3 2, 2 4, 1 4, 0 0))
+> 
+> # transform empty:
+> st_sf(geom=st_sfc()) %>% st_set_crs(3587) %>% st_transform(4326)
+Simple feature collection with 0 features and 0 fields
+bbox:           xmin: NA ymin: NA xmax: NA ymax: NA
+epsg (SRID):    4326
+proj4string:    +proj=longlat +datum=WGS84 +no_defs
+[1] geom
+<0 rows> (or 0-length row.names)
+> 
+> 
 > proc.time()
    user  system elapsed 
-  2.591   0.073   2.653 
+  2.407   0.091   2.489 
