@@ -7,7 +7,7 @@
 #include "gdal.h"
 #include "gdal_sf_pkg.h"
 
-std::vector<OGRFieldType> SetupFields(OGRLayer *poLayer, Rcpp::List obj) {
+std::vector<OGRFieldType> SetupFields(OGRLayer *poLayer, Rcpp::List obj, bool update_layer) {
 	std::vector<OGRFieldType> ret(obj.size());
 	Rcpp::CharacterVector cls = obj.attr("colclasses");
 	Rcpp::CharacterVector nm  = obj.attr("names");
@@ -29,7 +29,7 @@ std::vector<OGRFieldType> SetupFields(OGRLayer *poLayer, Rcpp::List obj) {
 		OGRFieldDefn oField(nm[i], ret[i]);
 		if (strcmp(cls[i], "logical") == 0)
 			oField.SetSubType(OFSTBoolean);
-		if (poLayer->CreateField(&oField) != OGRERR_NONE) { // #nocov start
+		if (!update_layer && poLayer->CreateField(&oField) != OGRERR_NONE) { // #nocov start
 			Rcpp::Rcout << "Creating field " << nm[i] << " failed." << std::endl;
 			Rcpp::stop("Layer creation failed.\n");
 		} // #nocov end
@@ -59,6 +59,11 @@ void SetNull(OGRFeature *poFeature, size_t field) {
 void SetFields(OGRFeature *poFeature, std::vector<OGRFieldType> tp, Rcpp::List obj, size_t i, bool shape) {
 	Rcpp::CharacterVector nm  = obj.attr("names");
 	for (size_t j = 0; j < tp.size(); j++) {
+		if (i == 0 && poFeature->GetFieldIndex(nm[j]) == -1) {
+			Rcpp::Rcout << "Unknown field name `" << nm[j] << 
+				"': updating a layer with improper field name(s)?" << std::endl;
+			Rcpp::stop("Write error\n");
+		}
 		if (j == (size_t) poFeature->GetFieldCount())
 			Rcpp::stop("Impossible: field count reached\n"); // #nocov
 		switch (tp[j]) {
@@ -205,8 +210,23 @@ int CPL_write_ogr(Rcpp::List obj, Rcpp::CharacterVector dsn, Rcpp::CharacterVect
 	}
 	
 	// update ds:
-	if (update && (poDS = (GDALDataset *) GDALOpenEx(dsn[0], GDAL_OF_VECTOR | GDAL_OF_UPDATE, 
-				drivers.data(), options.data(), NULL)) != NULL) {
+	if (update) { 
+		poDS = (GDALDataset *) GDALOpenEx(dsn[0], GDAL_OF_VECTOR | GDAL_OF_UPDATE, 
+				drivers.data(), options.data(), NULL);
+		if (poDS == NULL) {
+			if ((poDS = (GDALDataset *) GDALOpenEx(dsn[0], GDAL_OF_VECTOR | GDAL_OF_READONLY, NULL, 
+						options.data(), NULL)) != NULL) { // exists read-only:
+				GDALClose(poDS);
+				Rcpp::Rcout << "Dataset " <<  dsn[0] << 
+					" cannot be updated: do you have write permission?" << std::endl;
+				Rcpp::stop("Existing dataset cannot be updated.\n");
+			} else { // doesn't exist: create
+				if ((poDS = poDriver->Create(dsn[0], 0, 0, 0, GDT_Unknown, options.data())) == NULL) {
+					Rcpp::Rcout << "Creating dataset " <<  dsn[0] << " failed." << std::endl;
+					Rcpp::stop("Creation failed.\n");
+				}
+			}
+		}
 		if (! quiet)
 			Rcpp::Rcout << "Updating layer `" << layer[0] << "' to data source `" << dsn[0] <<
 			"' using driver `" << driver[0] << "'" << std::endl;
@@ -217,8 +237,8 @@ int CPL_write_ogr(Rcpp::List obj, Rcpp::CharacterVector dsn, Rcpp::CharacterVect
 			GDALClose(poDS);
 			Rcpp::Rcout << "Dataset " <<  dsn[0] << 
 				" already exists: remove first, use update=TRUE to append," << std::endl <<  
-				"delete_layer=TRUE to delete layer, or delete_dsn=TRUE to remove the entire data source before writing." 
-				<< std::endl;
+				"delete_layer=TRUE to delete layer, or delete_dsn=TRUE " <<
+				"to remove the entire data source before writing." << std::endl;
 			Rcpp::stop("Dataset already exists.\n");
 		}
 		// create:
@@ -252,22 +272,28 @@ int CPL_write_ogr(Rcpp::List obj, Rcpp::CharacterVector dsn, Rcpp::CharacterVect
 
 	// create layer:
 	options = create_options(lco, quiet);
-	OGRLayer *poLayer = poDS->CreateLayer(layer[0], sref, wkbType, options.data());
+	OGRLayer *poLayer = NULL;
+	bool update_layer = false;
+	if ((poLayer = poDS->GetLayerByName(layer[0])) != NULL) {
+		if (!quiet)
+			Rcpp::Rcout << "Updating existing layer " << layer[0] << std::endl;
+		update_layer = true;
+	} else
+		poLayer = poDS->CreateLayer(layer[0], sref, wkbType, options.data());
 	if (sref != NULL)
 		sref->Release();
 	if (poLayer == NULL)  {
-		Rcpp::Rcout << "Creating layer " << layer[0]  <<  " failed." << std::endl;
+		Rcpp::Rcout << "Creating or updating layer " << layer[0] << " failed." << std::endl;
 		GDALClose(poDS);
-		Rcpp::stop("Layer creation failed.\n");
+		Rcpp::stop("Write error.\n");
 	}
 
 	// write feature attribute fields & geometries:
-	std::vector<OGRFieldType> fieldTypes = SetupFields(poLayer, obj);
-	if (! quiet) {
-		Rcpp::Rcout << "features:       " << geomv.size() << std::endl;
-		Rcpp::Rcout << "fields:         " << fieldTypes.size() << std::endl;
-		Rcpp::Rcout << "geometry type:  " << OGRGeometryTypeToName(wkbType) << std::endl;
-	}
+	std::vector<OGRFieldType> fieldTypes = SetupFields(poLayer, obj, update_layer);
+	if (! quiet)
+		Rcpp::Rcout << "Writing " << geomv.size() << " features with " << 
+			fieldTypes.size() << " fields and geometry type " << 
+			OGRGeometryTypeToName(wkbType) << "." << std::endl;
 
 	for (size_t i = 0; i < geomv.size(); i++) { // create all features & add to layer:
 		OGRFeature *poFeature = OGRFeature::CreateFeature(poLayer->GetLayerDefn());

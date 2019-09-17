@@ -101,8 +101,8 @@ CPL_get_layers <- function(datasource, options, do_count = FALSE) {
     .Call('_sf_CPL_get_layers', PACKAGE = 'sf', datasource, options, do_count)
 }
 
-CPL_read_ogr <- function(datasource, layer, query, options, quiet, toTypeUser, fid_column_name, promote_to_multi = TRUE, int64_as_string = FALSE, dsn_exists = TRUE, dsn_isdb = FALSE) {
-    .Call('_sf_CPL_read_ogr', PACKAGE = 'sf', datasource, layer, query, options, quiet, toTypeUser, fid_column_name, promote_to_multi, int64_as_string, dsn_exists, dsn_isdb)
+CPL_read_ogr <- function(datasource, layer, query, options, quiet, toTypeUser, fid_column_name, drivers, promote_to_multi = TRUE, int64_as_string = FALSE, dsn_exists = TRUE, dsn_isdb = FALSE) {
+    .Call('_sf_CPL_read_ogr', PACKAGE = 'sf', datasource, layer, query, options, quiet, toTypeUser, fid_column_name, drivers, promote_to_multi, int64_as_string, dsn_exists, dsn_isdb)
 }
 
 CPL_gdalinfo <- function(obj, options) {
@@ -113,8 +113,8 @@ CPL_gdalwarp <- function(src, dst, options) {
     .Call('_sf_CPL_gdalwarp', PACKAGE = 'sf', src, dst, options)
 }
 
-CPL_gdalrasterize <- function(src, dst, options) {
-    .Call('_sf_CPL_gdalrasterize', PACKAGE = 'sf', src, dst, options)
+CPL_gdalrasterize <- function(src, dst, options, overwrite = FALSE) {
+    .Call('_sf_CPL_gdalrasterize', PACKAGE = 'sf', src, dst, options, overwrite)
 }
 
 CPL_gdaltranslate <- function(src, dst, options) {
@@ -245,8 +245,16 @@ CPL_rasterize <- function(raster, raster_driver, sfc, values, options, NA_value)
     .Call('_sf_CPL_rasterize', PACKAGE = 'sf', raster, raster_driver, sfc, values, options, NA_value)
 }
 
+CPL_proj_h <- function(b = FALSE) {
+    .Call('_sf_CPL_proj_h', PACKAGE = 'sf', b)
+}
+
 CPL_set_data_dir <- function(data_dir) {
     .Call('_sf_CPL_set_data_dir', PACKAGE = 'sf', data_dir)
+}
+
+CPL_use_proj4_init_rules <- function(v) {
+    .Call('_sf_CPL_use_proj4_init_rules', PACKAGE = 'sf', v)
 }
 
 CPL_proj_version <- function(b = FALSE) {

@@ -185,6 +185,7 @@ process_cpl_read_ogr = function(x, quiet = FALSE, ..., check_ring_dir = FALSE,
 
 #' @name st_read
 #' @param fid_column_name character; name of column to write feature IDs to; defaults to not doing this
+#' @param drivers character; limited set of driver short names to be tried (default: try all)
 #' @note The use of \code{system.file} in examples make sure that examples run regardless where R is installed:
 #' typical users will not use \code{system.file} but give the file name directly, either with full path or relative
 #' to the current working directory (see \link{getwd}). "Shapefiles" consist of several files with the same basename
@@ -192,7 +193,8 @@ process_cpl_read_ogr = function(x, quiet = FALSE, ..., check_ring_dir = FALSE,
 #' @export
 st_read.character = function(dsn, layer, ..., query = NA, options = NULL, quiet = FALSE, geometry_column = 1L, type = 0,
 		promote_to_multi = TRUE, stringsAsFactors = default.stringsAsFactors(),
-		int64_as_string = FALSE, check_ring_dir = FALSE, fid_column_name = character(0)) {
+		int64_as_string = FALSE, check_ring_dir = FALSE, fid_column_name = character(0),
+		drivers = character(0)) {
 
 	layer = if (missing(layer))
 		character(0)
@@ -210,7 +212,7 @@ st_read.character = function(dsn, layer, ..., query = NA, options = NULL, quiet 
 		stop("`promote_to_multi' should have length one, and applies to all geometry columns")
 
 	x = CPL_read_ogr(dsn, layer, query, as.character(options), quiet, type, fid_column_name,
-		promote_to_multi, int64_as_string, dsn_exists, dsn_isdb)
+		drivers, promote_to_multi, int64_as_string, dsn_exists, dsn_isdb)
 	process_cpl_read_ogr(x, quiet, check_ring_dir = check_ring_dir,
 		stringsAsFactors = stringsAsFactors, geometry_column = geometry_column, ...)
 }
@@ -297,23 +299,39 @@ abbreviate_shapefile_names = function(x) {
 #' are found at \url{http://www.gdal.org/ogr_formats.html}.
 #' @param ... other arguments passed to \link{dbWriteTable} when \code{dsn} is a
 #' Database Connection
-#' @param dataset_options character; driver dependent dataset creation options; multiple options supported.
-#' @param layer_options character; driver dependent layer creation options; multiple options supported.
+#' @param dataset_options character; driver dependent dataset creation options; 
+#' multiple options supported.
+#' @param layer_options character; driver dependent layer creation options; 
+#' multiple options supported.
 #' @param quiet logical; suppress info on name, driver, size and spatial reference
-#' @param factorsAsCharacter logical; convert \code{factor} objects into character strings (default), else into numbers by
-#' \code{as.numeric}.
-#' @param update logical; \code{FALSE} by default for single-layer drivers but \code{TRUE} by default for database drivers
-#' as defined by \code{db_drivers}.
-#' For database-type drivers (e.g. GPKG) \code{TRUE} values will make \code{GDAL} try
-#' to update (append to) the existing data source, e.g. adding a table to an existing database.
-#' @param delete_dsn logical; delete data source \code{dsn} before attempting to write?
-#' @param delete_layer logical; delete layer \code{layer} before attempting to write? (not yet implemented)
-#' @param fid_column_name character, name of column with feature IDs; if specified, this column is no longer written as feature attribute.
-#' @details columns (variables) of a class not supported are dropped with a warning. When deleting layers or
-#' data sources is not successful, no error is emitted. \code{delete_dsn} and \code{delete_layers} should be
+#' @param factorsAsCharacter logical; convert \code{factor} objects into 
+#' character strings (default), else into numbers by \code{as.numeric}.
+#' @param update logical; \code{FALSE} by default for single-layer drivers but 
+#' \code{TRUE} by default for database drivers as defined by \code{db_drivers}.
+#' For database-type drivers (e.g. GPKG) \code{TRUE} values will make 
+#' \code{GDAL} try to update (append to) the existing data source, e.g. adding
+#' a table to an existing database, or adding records to a layer. See also the
+#' next two arguments and Details.
+#' @param delete_dsn logical; delete data source \code{dsn} before attempting 
+#' to write?
+#' @param delete_layer logical; delete layer \code{layer} before attempting to
+#' write?
+#' @param fid_column_name character, name of column with feature IDs; if
+#' specified, this column is no longer written as feature attribute.
+#' @details 
+#' Columns (variables) of a class not supported are dropped with a warning. 
+#' 
+#' When updating an existing layer, records are appended to it if the updating
+#' object has the right variable names and types. If names don't match an 
+#' error is raised. If types don't match, behaviour is undefined: GDAL may
+#' raise warnings or errors or fail silently.
+#' 
+#' When deleting layers or data sources is not successful, no error is emitted. 
+#' \code{delete_dsn} and \code{delete_layers} should be
 #' handled with care; the former may erase complete directories or databases.
 #' @seealso \link{st_drivers}
-#' @return \code{obj}, invisibly; in case \code{obj} is of class \code{sfc}, it is returned as an  \code{sf} object.
+#' @return \code{obj}, invisibly; in case \code{obj} is of class \code{sfc}, 
+#' it is returned as an \code{sf} object.
 #' @examples
 #' nc = st_read(system.file("shape/nc.shp", package="sf"))
 #' st_write(nc, paste0(tempdir(), "/", "nc.shp"))
@@ -371,7 +389,7 @@ st_write.sf = function(obj, dsn, layer = NULL, ...,
 	}
 
 	if (length(list(...)))
-		stop(paste("unrecognized argument(s)", unlist(list(...)), "\n"))
+		stop(paste("unrecognized argument(s)", names(list(...)), "\n"))
 	if (is.null(layer))
 		layer <- file_path_sans_ext(basename(dsn))
 

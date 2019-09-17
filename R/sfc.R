@@ -46,7 +46,7 @@ st_sfc = function(..., crs = NA_crs_, precision = 0.0, check_ring_dir = FALSE) {
 
 	# check for NULLs:
 	a = attributes(lst)
-	is_null = vapply(lst, is.null, TRUE)
+	is_null = vapply(lst, function(x) is.null(x) || isTRUE(is.na(x)), NA)
 	lst = unclass(lst)
 	lst = lst[! is_null]
 	attributes(lst) = a
@@ -130,9 +130,9 @@ sfg_is_empty = function(x) {
 "[<-.sfc" = function (x, i, value) {
 	if (is.null(value) || inherits(value, "sfg"))
 		value = list(value)
-	#class(x) = setdiff(class(x), "sfc")
 	x = unclass(x) # becomes a list, but keeps attributes
-	st_sfc(NextMethod())
+	ret = st_sfc(NextMethod())
+	structure(ret, n_empty = sum(vapply(ret, sfg_is_empty, TRUE)))
 }
 
 #' @export
@@ -203,7 +203,7 @@ print.sfc = function(x, ..., n = 5L, what = "Geometry set for", append = "") {
 #' @param object object of class \code{sfc}
 #' @param ... ignored
 #' @param maxsum maximum number of classes to summarize the simple feature column to
-#' @param maxp4s maximum number of characters to print from the PROJ.4 string
+#' @param maxp4s maximum number of characters to print from the PROJ string
 #' @method summary sfc
 #' @export
 summary.sfc = function(object, ..., maxsum = 7L, maxp4s = 10L) {

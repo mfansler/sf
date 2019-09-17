@@ -31,9 +31,11 @@ test_that("sf can write units (#264)", {
     expect_equal(as.numeric(meuse[["length"]]), disc[["length"]])
 })
 
-test_that("delete and update work (#304) ", {
+test_that("delete and update work (#304)", {
   skip_if_not("GPKG" %in% st_drivers()$name)  # shapefiles can't write point+multipoint mix:
   skip_on_os("mac")
+  skip_if_not(Sys.getenv("USER") %in% c("edzer", "travis"))
+  # FIXME: conditional, because it caused memory leaks on CRAN testing
 
   gpkg <- tempfile(fileext = ".gpkg")
   shp <- tempfile(fileext = ".shp")
@@ -43,13 +45,13 @@ test_that("delete and update work (#304) ", {
   expect_error(st_write(x, gpkg,  driver = "foo", quiet = TRUE)) # error
   expect_output(st_write(x, gpkg, delete_dsn = TRUE), "Deleting source")
   expect_error(st_write(x, gpkg, update = FALSE, quiet = TRUE), "Dataset already exists")
-  expect_output(st_write(x, gpkg, delete_dsn = TRUE), "Writing layer ")
+  expect_output(st_write(x, gpkg, delete_dsn = TRUE), "Writing 2 features")
   expect_output(st_write(x, gpkg, layer = "foo", delete_layer = TRUE), "Deleting layer `foo' failed")
   expect_output(st_write(x, gpkg, layer = "foo", delete_layer = TRUE), "Deleting layer `foo' using")
   expect_output(st_write(x, gpkg, layer = "foo", delete_layer = TRUE), "Updating layer `foo' to data source")
   expect_warning(
   	expect_error(st_write(x, gpkg, layer = ".", quiet = TRUE),
-  				 "Layer creation failed"),
+  				 "Write error"),
   	"special characters")
   expect_silent(st_layers(gpkg))
   expect_output(st_write(x, gpkg, layer = "foo", delete_dsn = TRUE), "Deleting source")
@@ -97,4 +99,25 @@ test_that("FID feature ID gets written and read", {
   nc2 = read_sf(tf, fid_column_name = "f_id")
   if (sf_extSoftVersion()["GDAL"] >= "2.3.2")
   	expect_equal(nc$f_id, nc2$f_id)
+})
+
+test_that("update errors work", {
+  skip_if_not(Sys.getenv("USER") %in% c("edzer", "travis"))
+
+  # update to non-writable, non-existing file:
+  x = st_sf(a = 1, geom = st_sfc(st_point(0:1)))
+  expect_error(
+    expect_message(st_write(x, "/x.gpkg", update = TRUE), "Creating dataset /x.gpkg failed."),
+    "Creation failed.")
+
+  # update to non-writable, existing file:
+  f = paste0(tempfile(), ".gpkg")
+  st_write(x, f, update = FALSE)
+  system(paste("chmod -w", f))
+  expect_error(
+  expect_message(st_write(x, f, update = TRUE),
+    "cannot be updated: do you have write permission?"),
+    "Existing dataset cannot be updated.")
+  
+  system(paste("chmod +w", f))
 })

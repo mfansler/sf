@@ -13,7 +13,7 @@
 #' @param x object of class \code{sf} or \code{sfc}
 #' @param size sample size(s) requested; either total size, or a numeric vector with sample sizes for each feature geometry. When sampling polygons, the returned sampling size may differ from the requested size, as the bounding box is sampled, and sampled points intersecting the polygon are returned.
 #' @param ... ignored, or passed on to \link[base]{sample} for \code{multipoint} sampling
-#' @param type character; indicates the spatial sampling type; one of \code{regular}, \code{hexagonal} and \code{regular}.
+#' @param type character; indicates the spatial sampling type; one of \code{random}, \code{hexagonal} and \code{regular}.
 #' @param exact logical; should the length of output be exactly
 #' the same as specified by \code{size}? \code{TRUE} by default. Only applies to polygons, and
 #' when \code{type = "random"}.
@@ -141,6 +141,7 @@ st_multipoints_sample = function(x, size, ..., type = "random") {
 }
 
 st_ll_sample = function (x, size, ..., type = "random", offset = runif(1)) {
+	crs = st_crs(x)
 	if (isTRUE(st_is_longlat(x))) {
 		message_longlat("st_sample")
 		st_crs(x) = NA_crs_
@@ -163,7 +164,7 @@ st_ll_sample = function (x, size, ..., type = "random", offset = runif(1)) {
 		grp = split(d, cut(d, lcs, include.lowest = TRUE))
 		grp = lapply(seq_along(x), function(i) grp[[i]] - lcs[i])
 	}
-	st_sfc(CPL_gdal_linestring_sample(x, grp), crs = st_crs(x))
+	st_sfc(CPL_gdal_linestring_sample(x, grp), crs = crs)
 }
 
 ### hex grid that

@@ -2,12 +2,26 @@
 
 #include "Rcpp.h"
 
+// [[Rcpp::export]]
+Rcpp::LogicalVector CPL_proj_h(bool b = false) {
+#if defined(HAVE_PROJ_H) && !defined(ACCEPT_USE_OF_DEPRECATED_PROJ_API_H)
+	return true;
+#else
+	return false;
+#endif
+}
+
 #if defined(HAVE_PROJ_H) && !defined(ACCEPT_USE_OF_DEPRECATED_PROJ_API_H) // new api
 # include <proj.h>
 
 Rcpp::LogicalVector CPL_set_data_dir(std::string data_dir) {
 	const char *cp = data_dir.c_str();
 	proj_context_set_search_paths(PJ_DEFAULT_CTX, 1, &cp);
+	return true;
+}
+
+Rcpp::LogicalVector CPL_use_proj4_init_rules(Rcpp::IntegerVector v) {
+	proj_context_use_proj4_init_rules(PJ_DEFAULT_CTX, v[0]);
 	return true;
 }
 
@@ -120,6 +134,11 @@ Rcpp::NumericMatrix CPL_proj_direct(Rcpp::CharacterVector from_to, Rcpp::Numeric
 Rcpp::LogicalVector CPL_set_data_dir(std::string data_dir) { // #nocov start
   return false;
 }                                                            // #nocov end
+
+// [[Rcpp::export]]
+Rcpp::LogicalVector CPL_use_proj4_init_rules(Rcpp::IntegerVector v) {
+	return false;
+}
 
 #if PJ_VERSION == 480
 extern "C" {

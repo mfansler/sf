@@ -20,6 +20,7 @@
 \alias{sample_frac.sf}
 \alias{nest.sf}
 \alias{separate.sf}
+\alias{separate_rows.sf}
 \alias{unite.sf}
 \alias{unnest.sf}
 \alias{inner_join.sf}
@@ -64,10 +65,12 @@ sample_n.sf(tbl, size, replace = FALSE, weight = NULL,
 sample_frac.sf(tbl, size = 1, replace = FALSE, weight = NULL,
   .env = parent.frame())
 
-nest.sf(data, ..., .key = "data")
+nest.sf(.data, ...)
 
 separate.sf(data, col, into, sep = "[^[:alnum:]]+", remove = TRUE,
   convert = FALSE, extra = "warn", fill = "warn", ...)
+
+separate_rows.sf(data, ..., sep = "[^[:alnum:]]+", convert = FALSE)
 
 unite.sf(data, col, ..., sep = "_", remove = TRUE)
 
@@ -114,7 +117,7 @@ anti_join.sf(x, y, by = NULL, copy = FALSE, suffix = c(".x", ".y"),
 
 \item{na.rm}{see original function docs}
 
-\item{convert}{see original function docs}
+\item{convert}{see \link[tidyr]{separate_rows}}
 
 \item{factor_key}{see original function docs}
 
@@ -122,7 +125,7 @@ anti_join.sf(x, y, by = NULL, copy = FALSE, suffix = c(".x", ".y"),
 
 \item{drop}{see original function docs}
 
-\item{sep}{see original function docs}
+\item{sep}{see \link[tidyr]{separate_rows}}
 
 \item{tbl}{see original function docs}
 
@@ -133,8 +136,6 @@ anti_join.sf(x, y, by = NULL, copy = FALSE, suffix = c(".x", ".y"),
 \item{weight}{see original function docs}
 
 \item{.env}{see original function docs}
-
-\item{.key}{see \link[tidyr]{nest}}
 
 \item{col}{see \link[tidyr]{separate}}
 
@@ -218,7 +219,8 @@ nc \%>\% select(SID74, SID79, geometry, row) \%>\%
 	spread(VAR, SID) \%>\% head()
 storms.sf = st_as_sf(storms, coords = c("long", "lat"), crs = 4326)
 x <- storms.sf \%>\% group_by(name, year) \%>\% nest
-trs = lapply(x$data, function(tr) st_cast(st_combine(tr), "LINESTRING")[[1]]) \%>\% st_sfc(crs = 4326)
+trs = lapply(x$data, function(tr) st_cast(st_combine(tr), "LINESTRING")[[1]]) \%>\%
+    st_sfc(crs = 4326)
 trs.sf = st_sf(x[,1:2], trs)
 plot(trs.sf["year"], axes = TRUE)
 }

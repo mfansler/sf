@@ -61,8 +61,9 @@ pathGrob <- NULL
 #' @export
 sf_extSoftVersion = function() {
 	structure(c(CPL_geos_version(), CPL_gdal_version(), CPL_proj_version(),
-		ifelse(CPL_gdal_with_geos(), "true", "false")),
-		names = c("GEOS", "GDAL", "proj.4", "GDAL_with_GEOS"))
+		ifelse(CPL_gdal_with_geos(), "true", "false"),
+		ifelse(CPL_proj_h(), "true", "false")),
+		names = c("GEOS", "GDAL", "proj.4", "GDAL_with_GEOS", "USE_PROJ_H"))
 }
 
 load_gdal <- function() {
@@ -73,6 +74,7 @@ load_gdal <- function() {
 			assign(".sf.PROJ_LIB", Sys.getenv("PROJ_LIB"), envir=.sf_cache)
 			Sys.setenv("PROJ_LIB" = prj)
 		}
+		CPL_use_proj4_init_rules(1L)
 		assign(".sf.GDAL_DATA", Sys.getenv("GDAL_DATA"), envir=.sf_cache)
 		gdl = system.file("gdal", package = "sf")[1]
 		Sys.setenv("GDAL_DATA" = gdl)

@@ -168,8 +168,6 @@ b = st_sf(a = 11:14,
  geom = st_sfc(st_point(c(10,10)), st_point(c(2,2)), st_point(c(2,2)), st_point(c(3,3))))
 st_join(a, b)
 st_join(a, b, left = FALSE)
-# deprecated:
-try(x <- st_join(a, b, FUN = mean))
 # st_join, largest = TRUE:
 nc <- st_transform(st_read(system.file("shape/nc.shp", package="sf")), 2264)
 gr = st_sf(
@@ -325,3 +323,12 @@ st_union(shape4, shape1)
 # transform empty:
 st_sf(geom=st_sfc()) %>% st_set_crs(3587) %>% st_transform(4326)
 
+# NA values are converted to empty; #1114:
+x <- data.frame(name=LETTERS)
+y <- data.frame(name=LETTERS[1:13], letters[14:26])
+y$geometry <- st_sfc(st_point(c(0,0)))
+y <- st_sf(y)
+out = merge(x, y, all.x=TRUE)
+class(out)
+
+st_as_sf(st_sfc(st_point(0:1)))
