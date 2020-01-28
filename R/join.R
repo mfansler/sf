@@ -52,9 +52,9 @@ anti_join.sf = function(x, y, by = NULL, copy = FALSE, suffix = c(".x", ".y"), .
 }
 
 
-#' spatial join
+#' spatial join, spatial filter
 #'
-#' spatial join
+#' spatial join, spatial filter
 #' @name st_join
 #' @export
 st_join = function(x, y, join, ...) UseMethod("st_join")
@@ -64,7 +64,7 @@ st_join = function(x, y, join, ...) UseMethod("st_join")
 #' @param y object of class \code{sf}
 #' @param join geometry predicate function with the same profile as \link{st_intersects}; see details
 #' @param suffix length 2 character vector; see \link[base]{merge}
-#' @param ... arguments passed on to the \code{join} function (e.g. \code{prepared}, or a pattern for \link{st_relate})
+#' @param ... arguments passed on to the \code{join} or \code{.predicate} function, e.g. \code{prepared}, or a pattern for \link{st_relate}
 #' @param left logical; if \code{TRUE} return the left join, otherwise an inner join; see details.
 #' see also \link[dplyr]{left_join}
 #' @param largest logical; if \code{TRUE}, return \code{x} features augmented with the fields of \code{y} that have the largest overlap with each of the features of \code{x}; see https://github.com/r-spatial/sf/issues/578
@@ -163,4 +163,18 @@ st_join.sf = function(x, y, join = st_intersects, ..., suffix = c(".x", ".y"),
 		st_sf(dplyr::bind_cols(x[ix,], y[unlist(i), , drop = FALSE]))
   	else
 		st_sf(cbind(as.data.frame(x)[ix,], y[unlist(i), , drop = FALSE]))	
+}
+
+#' @export
+#' @name st_join
+st_filter = function(x, y, ...) UseMethod("st_filter")
+
+#' @export
+#' @name st_join
+#' @param .predicate geometry predicate function with the same profile as \link{st_intersects}; see details
+st_filter.sf = function(x, y, ..., .predicate = st_intersects) {
+	if (!requireNamespace("dplyr", quietly = TRUE))
+		stop("dplyr is not installed: install first?")
+
+    dplyr::filter(x, lengths(.predicate(x, y, ...)) > 0) # will call filter.sf
 }

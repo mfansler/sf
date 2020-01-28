@@ -43,11 +43,8 @@ Ops.crs <- function(e1, e2) {
 #' @details The *crs functions create, get, set or replace the \code{crs} attribute of a simple feature geometry
 #' list-column. This attribute is of class \code{crs}, and is a list consisting of \code{epsg} (integer EPSG
 #' code) and \code{proj4string} (character).
-#' Two objects of class \code{crs} are semantically identical when: (1) they are completely identical, or
-#' (2) they have identical proj4string but one of them has a missing EPSG ID. As a consequence, equivalent
-#' but different proj4strings, e.g. \code{ "+proj=longlat +datum=WGS84" } and \code{ "+datum=WGS84 +proj=longlat" },
-#' are considered different.
-#' The operators \code{==} and \code{!=} are overloaded for \code{crs} objects to establish semantical identity.
+#' Comparison of two objects of class \code{crs} uses the GDAL function 
+#' \code{OGRSpatialReference::IsSame}.
 #' @return Object of class \code{crs}, which is a list with elements \code{epsg} (length-1 integer) and
 #' \code{proj4string} (length-1 character).
 st_crs = function(x, ...) UseMethod("st_crs")
@@ -66,6 +63,7 @@ st_crs.numeric = function(x, proj4text = "", valid = TRUE, ...) {
                 "argument or set `valid = FALSE` to stop warning.")
     make_crs(x)
 }
+
 
 #' @name st_crs
 #' @export
@@ -157,14 +155,22 @@ make_crs = function(x, wkt = FALSE) {
 	else if (is.numeric(x))
 		CPL_crs_from_epsg(as.integer(x))
 	else if (is.character(x)) {
-		is_valid = valid_proj4string(x)
-		if (! is_valid$valid)
-			stop(paste0("invalid crs: ", x, ", reason: ", is_valid$result), call. = FALSE)
-		u = `$.crs`(list(proj4string = x), "units")
-		crs = CPL_crs_from_proj4string(x)
-		if (!is.na(crs) && !is.null(u) && crs$units != u) # gdal converts unrecognized units into m...
-			stop(paste0("units ", u, " not recognized: older GDAL version?"), call. = FALSE) # nocov
-		crs
+		if (grepl("+init=epsg:", x) && sf_extSoftVersion()[["proj.4"]] >= "6.0.0") {
+			x = strsplit(x, " ")[[1]]
+			if (length(x) > 1)
+				warning(paste("the following proj4string elements are going to be ignored:",
+					paste(x[-1], collapse = " "), "; remove the +init=epsg:XXXX to undo this"))
+			CPL_crs_from_epsg(as.integer(substr(x[1], 12, 20)))
+		} else {
+			is_valid = valid_proj4string(x)
+			if (! is_valid$valid)
+				stop(paste0("invalid crs: ", x, ", reason: ", is_valid$result), call. = FALSE)
+			u = `$.crs`(list(proj4string = x), "units")
+			crs = CPL_crs_from_proj4string(x)
+			if (!is.na(crs) && !is.null(u) && crs$units != u) # gdal converts unrecognized units into m...
+				stop(paste0("units ", u, " not recognized: older GDAL version?"), call. = FALSE) # nocov
+			crs
+		}
 	} else
 		stop(paste("cannot create a crs from an object of class", class(x)), call. = FALSE)
 }

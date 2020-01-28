@@ -377,10 +377,6 @@ pillar_shaft.sfc <- function(x, ...) {
 	pillar::new_pillar_shaft_simple(out, align = "right", min_width = 25)
 }
 
-vec_proxy.sfc <- function(x, ...) {
-	x
-}
-
 register_all_s3_methods = function() {
 	register_s3_method("dplyr", "anti_join", "sf")
 	register_s3_method("dplyr", "arrange", "sf")
@@ -413,7 +409,20 @@ register_all_s3_methods = function() {
 	register_s3_method("pillar", "obj_sum", "sfc")
 	register_s3_method("pillar", "type_sum", "sfc")
 	register_s3_method("pillar", "pillar_shaft", "sfc")
-	register_s3_method("vctrs", "vec_proxy", "sfc")
+	register_s3_method("spatstat", "as.ppp", "sfc")
+	register_s3_method("spatstat", "as.ppp", "sf")
+	register_s3_method("spatstat", "as.owin", "POLYGON")
+	register_s3_method("spatstat", "as.owin", "MULTIPOLYGON")
+	register_s3_method("spatstat", "as.owin", "sfc_POLYGON")
+	register_s3_method("spatstat", "as.owin", "sfc_MULTIPOLYGON")
+	register_s3_method("spatstat", "as.owin", "sfc")
+	register_s3_method("spatstat", "as.owin", "sf")
+	register_s3_method("spatstat", "as.psp", "LINESTRING")
+	register_s3_method("spatstat", "as.psp", "MULTILINESTRING")
+	register_s3_method("spatstat", "as.psp", "sfc_MULTILINESTRING")
+	register_s3_method("spatstat", "as.psp", "sfc")
+	register_s3_method("spatstat", "as.psp", "sf")
+	register_vctrs_methods()
 }
 
 # from: https://github.com/tidyverse/hms/blob/master/R/zzz.R

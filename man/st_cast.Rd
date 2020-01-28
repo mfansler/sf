@@ -12,6 +12,7 @@
 \alias{st_cast.CIRCULARSTRING}
 \alias{st_cast.MULTISURFACE}
 \alias{st_cast.COMPOUNDCURVE}
+\alias{st_cast.MULTICURVE}
 \alias{st_cast.CURVE}
 \alias{st_cast.sfc}
 \alias{st_cast.sf}
@@ -38,12 +39,13 @@
 
 \method{st_cast}{COMPOUNDCURVE}(x, to, ...)
 
+\method{st_cast}{MULTICURVE}(x, to, ...)
+
 \method{st_cast}{CURVE}(x, to, ...)
 
 st_cast(x, to, ...)
 
-\method{st_cast}{sfc}(x, to, ..., ids = seq_along(x),
-  group_or_split = TRUE)
+\method{st_cast}{sfc}(x, to, ..., ids = seq_along(x), group_or_split = TRUE)
 
 \method{st_cast}{sf}(x, to, ..., warn = TRUE, do_split = TRUE)
 
@@ -76,7 +78,8 @@ Cast geometry to another type: either simplify, or cast explicitly
 the \code{st_cast} method for \code{sf} objects can only split geometries, e.g. cast \code{MULTIPOINT} into multiple \code{POINT} features.  In case of splitting, attributes are repeated and a warning is issued when non-constant attributes are assigned to sub-geometries. To merge feature geometries and attribute values, use \link[sf]{aggregate} or \link[sf]{summarise}.
 }
 \examples{
-example(st_read)
+# example(st_read)
+nc = st_read(system.file("shape/nc.shp", package="sf"))
 mpl <- nc$geometry[[4]]
 #st_cast(x) ## error 'argument "to" is missing, with no default'
 cast_all <- function(xg) {

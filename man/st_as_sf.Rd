@@ -14,9 +14,17 @@
 \usage{
 st_as_sf(x, ...)
 
-\method{st_as_sf}{data.frame}(x, ..., agr = NA_agr_, coords, wkt,
-  dim = "XYZ", remove = TRUE, na.fail = TRUE,
-  sf_column_name = NULL)
+\method{st_as_sf}{data.frame}(
+  x,
+  ...,
+  agr = NA_agr_,
+  coords,
+  wkt,
+  dim = "XYZ",
+  remove = TRUE,
+  na.fail = TRUE,
+  sf_column_name = NULL
+)
 
 \method{st_as_sf}{sf}(x, ...)
 
@@ -24,7 +32,7 @@ st_as_sf(x, ...)
 
 \method{st_as_sf}{Spatial}(x, ...)
 
-\method{st_as_sf}{map}(x, ...)
+\method{st_as_sf}{map}(x, ..., fill = TRUE, group = TRUE)
 
 \method{st_as_sf}{ppp}(x, ...)
 
@@ -51,6 +59,10 @@ st_as_sf(x, ...)
 
 \item{sf_column_name}{character; name of the active list-column with simple feature geometries; in case
 there is more than one and \code{sf_column_name} is \code{NULL}, the first one is taken.}
+
+\item{fill}{logical; the value for \code{fill} that was used in the call to \link[maps]{map}.}
+
+\item{group}{logical; if \code{TRUE}, group id labels from \link[maps]{map} by their prefix before \code{:}}
 }
 \description{
 Convert foreign object to an sf object
@@ -108,17 +120,14 @@ summary(st_as_sf(as(meuse.riv, "SpatialLines")))
 pol.grd = as(meuse.grid, "SpatialPolygonsDataFrame")
 summary(st_as_sf(pol.grd))
 summary(st_as_sf(as(pol.grd, "SpatialLinesDataFrame")))
-\dontrun{
-  require(spatstat)
+if (require(spatstat)) {
   g = st_as_sf(gorillas)
   # select only the points:
   g[st_is(g, "POINT"),]
 }
-\dontrun{ # because of spatstat interfering with units
 if (require(spatstat)) {
  data(chicago)
  plot(st_as_sf(chicago)["label"])
  plot(st_as_sf(chicago)[-1,"label"])
-}
 }
 }

@@ -480,6 +480,7 @@ Rcpp::List CPL_read_ogr(Rcpp::CharacterVector datasource, Rcpp::CharacterVector 
 		Rcpp::CharacterVector query,
 		Rcpp::CharacterVector options, bool quiet, Rcpp::NumericVector toTypeUser,
 		Rcpp::CharacterVector fid_column_name, Rcpp::CharacterVector drivers,
+		Rcpp::CharacterVector wkt_filter,
 		bool promote_to_multi = true, bool int64_as_string = false,
 		bool dsn_exists = true,
 		bool dsn_isdb = false) {
@@ -539,6 +540,23 @@ Rcpp::List CPL_read_ogr(Rcpp::CharacterVector datasource, Rcpp::CharacterVector 
 	if (poLayer == NULL) {
 		Rcpp::Rcout << "Cannot open layer " << layer[0] << std::endl;
 		Rcpp::stop("Opening layer failed.\n");
+	}
+
+	// set spatial filter?
+	if (wkt_filter.size()) {
+		char *wkt = wkt_filter[0];
+		OGRGeometry *new_geom;
+#if GDAL_VERSION_MAJOR <= 2 && GDAL_VERSION_MINOR <= 2
+		OGRErr err = OGRGeometryFactory::createFromWkt(&wkt, poLayer->GetSpatialRef(), &new_geom);
+#else
+		OGRErr err = OGRGeometryFactory::createFromWkt((const char *) wkt, poLayer->GetSpatialRef(), &new_geom);
+#endif
+		if (err != OGRERR_NONE) {
+			Rcpp::Rcout << "Cannot create geometry from: " << wkt_filter[0] << std::endl;
+			Rcpp::stop("wkt parse error.\n");
+		}
+		poLayer->SetSpatialFilter(new_geom);
+		OGRGeometryFactory::destroyGeometry(new_geom);
 	}
 
 	if (! quiet)

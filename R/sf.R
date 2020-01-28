@@ -49,10 +49,10 @@ st_as_sf.data.frame = function(x, ..., agr = NA_agr_, coords, wkt,
 		x$geometry = structure( points_rcpp(as.matrix(cc), dim),
 			n_empty = 0L, precision = 0, crs = NA_crs_,
 			bbox = structure(
-				c(xmin = min(x[[coords[1]]], na.rm = TRUE),
-				ymin = min(x[[coords[2]]], na.rm = TRUE),
-				xmax = max(x[[coords[1]]], na.rm = TRUE),
-				ymax = max(x[[coords[2]]], na.rm = TRUE)), class = "bbox"),
+				c(xmin = min(cc[[1]], na.rm = TRUE),
+				ymin = min(cc[[2]], na.rm = TRUE),
+				xmax = max(cc[[1]], na.rm = TRUE),
+				ymax = max(cc[[2]], na.rm = TRUE)), class = "bbox"),
 			class =  c("sfc_POINT", "sfc" ), names = NULL)
 
 		if (is.character(coords))
@@ -430,11 +430,11 @@ merge.sf = function(x, y, ...) {
 	if (inherits(y, "sf"))
 		stop("merge on two sf objects not supported")
 	sf_column = attr(x, "sf_column")
-	ret = NextMethod()
+	ret = NextMethod() # if data.table, drops sf_column attribute;
+	class(ret) = setdiff(class(ret), "sf")
 	g = ret[[sf_column]] # may have NULL values in it
 	ret[[sf_column]] = NULL
-	st_geometry(ret) = st_sfc(g)
-	ret
+	st_set_geometry(ret, st_sfc(g)) # FIXME: set agr
 }
 
 #' @export
