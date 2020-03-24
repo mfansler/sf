@@ -29,7 +29,7 @@ set_utf8 = function(x) {
 #' @param ... parameter(s) passed on to \link{st_as_sf}
 #' @param options character; driver dependent dataset open options, multiple
 #'   options supported. For possible values, see the "Open options" section
-#'   of the GDAL documentation of the corresponding driver, and 
+#'   of the GDAL documentation of the corresponding driver, and
 #'   https://github.com/r-spatial/sf/issues/1157 for an example.
 #' @param quiet logical; suppress info on name, driver, size and spatial
 #'   reference, or signaling no or multiple layers
@@ -44,8 +44,8 @@ set_utf8 = function(x) {
 #'   of LineString and MultiLineString, or of Polygon and MultiPolygon, convert
 #'   all to the Multi variety; defaults to \code{TRUE}
 #' @param stringsAsFactors logical; logical: should character vectors be
-#'   converted to factors?  The `factory-fresh' default is \code{TRUE} for 
-#'   \code{st_read} and \code{FALSE} for \code{read_sf}, but this can be changed 
+#'   converted to factors?  The `factory-fresh' default is \code{TRUE} for
+#'   \code{st_read} and \code{FALSE} for \code{read_sf}, but this can be changed
 #'   globally by e.g. the R command \code{options(stringsAsFactors = FALSE)}.
 #' @param int64_as_string logical; if TRUE, Int64 attributes are returned as
 #'   string; if FALSE, they are returned as double and a warning is given when
@@ -112,7 +112,7 @@ set_utf8 = function(x) {
 #'    query = sprintf("SELECT NAME, SID74, FIPS, geom  FROM \"%s\" WHERE BIR74 > 20000", layer))
 #' }
 #' # spatial filter, as wkt:
-#' wkt = st_as_text(st_geometry(nc[1,])) 
+#' wkt = st_as_text(st_geometry(nc[1,]))
 #' # filter by (bbox overlaps of) first feature geometry:
 #' read_sf(system.file("gpkg/nc.gpkg", package="sf"), wkt_filter = wkt)
 #' @export
@@ -311,38 +311,35 @@ abbreviate_shapefile_names = function(x) {
 #' are found at \url{http://www.gdal.org/ogr_formats.html}.
 #' @param ... other arguments passed to \link{dbWriteTable} when \code{dsn} is a
 #' Database Connection
-#' @param dataset_options character; driver dependent dataset creation options; 
+#' @param dataset_options character; driver dependent dataset creation options;
 #' multiple options supported.
-#' @param layer_options character; driver dependent layer creation options; 
+#' @param layer_options character; driver dependent layer creation options;
 #' multiple options supported.
 #' @param quiet logical; suppress info on name, driver, size and spatial reference
-#' @param factorsAsCharacter logical; convert \code{factor} objects into 
+#' @param factorsAsCharacter logical; convert \code{factor} objects into
 #' character strings (default), else into numbers by \code{as.numeric}.
-#' @param update logical; \code{FALSE} by default for single-layer drivers but 
-#' \code{TRUE} by default for database drivers as defined by \code{db_drivers}.
-#' For database-type drivers (e.g. GPKG) \code{TRUE} values will make 
-#' \code{GDAL} try to update (append to) the existing data source, e.g. adding
-#' a table to an existing database, or adding records to a layer. See also the
-#' next two arguments and Details.
-#' @param delete_dsn logical; delete data source \code{dsn} before attempting 
+#' @param append logical; should we append to an existing layer, or replace it?
+#' if \code{TRUE} append, if \code{FALSE} replace; default \code{NA} will
+#' raise an error if the layer exists. See also next two arguments.
+#' @param delete_dsn logical; delete data source \code{dsn} before attempting
 #' to write?
 #' @param delete_layer logical; delete layer \code{layer} before attempting to
 #' write?
 #' @param fid_column_name character, name of column with feature IDs; if
 #' specified, this column is no longer written as feature attribute.
-#' @details 
-#' Columns (variables) of a class not supported are dropped with a warning. 
-#' 
+#' @details
+#' Columns (variables) of a class not supported are dropped with a warning.
+#'
 #' When updating an existing layer, records are appended to it if the updating
-#' object has the right variable names and types. If names don't match an 
+#' object has the right variable names and types. If names don't match an
 #' error is raised. If types don't match, behaviour is undefined: GDAL may
 #' raise warnings or errors or fail silently.
-#' 
-#' When deleting layers or data sources is not successful, no error is emitted. 
+#'
+#' When deleting layers or data sources is not successful, no error is emitted.
 #' \code{delete_dsn} and \code{delete_layer} should be
 #' handled with care; the former may erase complete directories or databases.
 #' @seealso \link{st_drivers}
-#' @return \code{obj}, invisibly; in case \code{obj} is of class \code{sfc}, 
+#' @return \code{obj}, invisibly; in case \code{obj} is of class \code{sfc},
 #' it is returned as an \code{sf} object.
 #' @examples
 #' nc = st_read(system.file("shape/nc.shp", package="sf"))
@@ -351,7 +348,7 @@ abbreviate_shapefile_names = function(x) {
 #' data(meuse, package = "sp") # loads data.frame from sp
 #' meuse_sf = st_as_sf(meuse, coords = c("x", "y"), crs = 28992)
 #' # writes X and Y as columns:
-#' st_write(meuse_sf, paste0(tempdir(), "/", "meuse.csv"), layer_options = "GEOMETRY=AS_XY") 
+#' st_write(meuse_sf, paste0(tempdir(), "/", "meuse.csv"), layer_options = "GEOMETRY=AS_XY")
 #' st_write(meuse_sf, paste0(tempdir(), "/", "meuse.csv"), layer_options = "GEOMETRY=AS_WKT",
 #'   delete_dsn=TRUE) # overwrites
 #' \dontrun{
@@ -379,9 +376,16 @@ st_write.sfc = function(obj, dsn, layer, ...) {
 st_write.sf = function(obj, dsn, layer = NULL, ...,
 		driver = guess_driver_can_write(dsn),
 		dataset_options = NULL, layer_options = NULL, quiet = FALSE, factorsAsCharacter = TRUE,
-		update = driver %in% db_drivers, delete_dsn = FALSE, delete_layer = FALSE,
+		append = NA, delete_dsn = FALSE, delete_layer = isFALSE(append),
 		fid_column_name = NULL) {
 
+	if (!is.null(list(...)$update)) {
+		.Deprecated("append", old = "update") # deprecated at 0.9-0
+		if (is.na(append))
+			append = list(...)$update
+	}
+#	else if (length(list(...)))
+#		stop(paste("unrecognized argument(s)", names(list(...)), "\n"))
 	if (missing(dsn))
 		stop("dsn should specify a data source or filename")
 	if (inherits(dsn, c("DBIObject", "PostgreSQLConnection", "Pool"))) {
@@ -391,17 +395,26 @@ st_write.sf = function(obj, dsn, layer = NULL, ...,
 			dsn = pool::poolCheckout(dsn)
 			on.exit(pool::poolReturn(dsn)) # nocov end
 		}
-		if (is.null(layer))
+
+		if (is.null(layer)) {
 			layer = deparse(substitute(obj))
-		dbWriteTable(dsn, name = layer, value = obj, ...,
-			factorsAsCharacter = factorsAsCharacter)
+		}
+
+		if (is.na(append)) {
+			append = FALSE
+		}
+
+		dbWriteTable(dsn, name = layer, value = obj,
+					 append = append, overwrite = delete_layer,
+					 factorsAsCharacter = factorsAsCharacter, ...)
 		return(invisible(obj))
 	} else if (!inherits(dsn, "character")) { # add methods for other dsn classes here...
 		stop(paste("no st_write method available for dsn of class", class(dsn)[1]))
 	}
 
-	if (length(list(...)))
-		stop(paste("unrecognized argument(s)", names(list(...)), "\n"))
+	if (!is.na(append) && append == FALSE && delete_layer == FALSE)
+		stop("cannot replace a layer if delete_layer is FALSE")
+
 	if (is.null(layer))
 		layer <- file_path_sans_ext(basename(dsn))
 
@@ -438,16 +451,16 @@ st_write.sf = function(obj, dsn, layer = NULL, ...,
 
 	ret = CPL_write_ogr(obj, dsn, layer, driver,
 		as.character(dataset_options), as.character(layer_options),
-		geom, dim, fids, quiet, update, delete_dsn, delete_layer)
+		geom, dim, fids, quiet, append, delete_dsn, delete_layer)
 	if (ret == 1) { # try through temp file:
 		tmp = tempfile(fileext = paste0(".", tools::file_ext(dsn))) # nocov start
 		if (!quiet)
 			message(paste("writing first to temporary file", tmp))
 		if (CPL_write_ogr(obj, tmp, layer, driver,
 				as.character(dataset_options), as.character(layer_options),
-				geom, dim, fids, quiet, update, delete_dsn, delete_layer) == 1)
+				geom, dim, fids, quiet, append, delete_dsn, delete_layer) == 1)
 			stop(paste("failed writing to temporary file", tmp))
-		if (!file.copy(tmp, dsn, overwrite = update || delete_dsn || delete_layer))
+		if (!file.copy(tmp, dsn, overwrite = append || delete_dsn || delete_layer))
 			stop(paste("copying", tmp, "to", dsn, "failed"))
 		if (!file.remove(tmp))
 			warning(paste("removing", tmp, "failed"))
@@ -463,8 +476,8 @@ st_write.data.frame <- function(obj, dsn, layer = NULL, ...) {
 
 #' @name st_write
 #' @export
-write_sf <- function(..., quiet = TRUE, delete_layer = TRUE) {
-	st_write(..., quiet = quiet, delete_layer = delete_layer)
+write_sf <- function(..., quiet = TRUE, append = FALSE, delete_layer = TRUE) {
+	st_write(..., quiet = quiet, append = append, delete_layer = TRUE)
 }
 
 #' Get GDAL drivers

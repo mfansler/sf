@@ -50,47 +50,36 @@ BEGIN_RCPP
 END_RCPP
 }
 // CPL_crs_parameters
-Rcpp::List CPL_crs_parameters(std::string p4s);
-RcppExport SEXP _sf_CPL_crs_parameters(SEXP p4sSEXP) {
+Rcpp::List CPL_crs_parameters(Rcpp::List crs);
+RcppExport SEXP _sf_CPL_crs_parameters(SEXP crsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< std::string >::type p4s(p4sSEXP);
-    rcpp_result_gen = Rcpp::wrap(CPL_crs_parameters(p4s));
+    Rcpp::traits::input_parameter< Rcpp::List >::type crs(crsSEXP);
+    rcpp_result_gen = Rcpp::wrap(CPL_crs_parameters(crs));
     return rcpp_result_gen;
 END_RCPP
 }
 // CPL_crs_equivalent
-Rcpp::LogicalVector CPL_crs_equivalent(std::string crs1, std::string crs2);
+Rcpp::LogicalVector CPL_crs_equivalent(Rcpp::List crs1, Rcpp::List crs2);
 RcppExport SEXP _sf_CPL_crs_equivalent(SEXP crs1SEXP, SEXP crs2SEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< std::string >::type crs1(crs1SEXP);
-    Rcpp::traits::input_parameter< std::string >::type crs2(crs2SEXP);
+    Rcpp::traits::input_parameter< Rcpp::List >::type crs1(crs1SEXP);
+    Rcpp::traits::input_parameter< Rcpp::List >::type crs2(crs2SEXP);
     rcpp_result_gen = Rcpp::wrap(CPL_crs_equivalent(crs1, crs2));
     return rcpp_result_gen;
 END_RCPP
 }
-// CPL_crs_from_epsg
-Rcpp::List CPL_crs_from_epsg(int epsg);
-RcppExport SEXP _sf_CPL_crs_from_epsg(SEXP epsgSEXP) {
+// CPL_crs_from_input
+Rcpp::List CPL_crs_from_input(Rcpp::CharacterVector input);
+RcppExport SEXP _sf_CPL_crs_from_input(SEXP inputSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< int >::type epsg(epsgSEXP);
-    rcpp_result_gen = Rcpp::wrap(CPL_crs_from_epsg(epsg));
-    return rcpp_result_gen;
-END_RCPP
-}
-// CPL_crs_from_wkt
-Rcpp::List CPL_crs_from_wkt(Rcpp::CharacterVector wkt);
-RcppExport SEXP _sf_CPL_crs_from_wkt(SEXP wktSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< Rcpp::CharacterVector >::type wkt(wktSEXP);
-    rcpp_result_gen = Rcpp::wrap(CPL_crs_from_wkt(wkt));
+    Rcpp::traits::input_parameter< Rcpp::CharacterVector >::type input(inputSEXP);
+    rcpp_result_gen = Rcpp::wrap(CPL_crs_from_input(input));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -150,14 +139,17 @@ BEGIN_RCPP
 END_RCPP
 }
 // CPL_transform
-Rcpp::List CPL_transform(Rcpp::List sfc, Rcpp::CharacterVector proj4);
-RcppExport SEXP _sf_CPL_transform(SEXP sfcSEXP, SEXP proj4SEXP) {
+Rcpp::List CPL_transform(Rcpp::List sfc, Rcpp::List crs, Rcpp::NumericVector AOI, Rcpp::CharacterVector pipeline, bool reverse);
+RcppExport SEXP _sf_CPL_transform(SEXP sfcSEXP, SEXP crsSEXP, SEXP AOISEXP, SEXP pipelineSEXP, SEXP reverseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< Rcpp::List >::type sfc(sfcSEXP);
-    Rcpp::traits::input_parameter< Rcpp::CharacterVector >::type proj4(proj4SEXP);
-    rcpp_result_gen = Rcpp::wrap(CPL_transform(sfc, proj4));
+    Rcpp::traits::input_parameter< Rcpp::List >::type crs(crsSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type AOI(AOISEXP);
+    Rcpp::traits::input_parameter< Rcpp::CharacterVector >::type pipeline(pipelineSEXP);
+    Rcpp::traits::input_parameter< bool >::type reverse(reverseSEXP);
+    rcpp_result_gen = Rcpp::wrap(CPL_transform(sfc, crs, AOI, pipeline, reverse));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -171,17 +163,6 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< Rcpp::CharacterVector >::type opt(optSEXP);
     Rcpp::traits::input_parameter< bool >::type quiet(quietSEXP);
     rcpp_result_gen = Rcpp::wrap(CPL_wrap_dateline(sfc, opt, quiet));
-    return rcpp_result_gen;
-END_RCPP
-}
-// CPL_crs_from_proj4string
-Rcpp::List CPL_crs_from_proj4string(Rcpp::CharacterVector p4s);
-RcppExport SEXP _sf_CPL_crs_from_proj4string(SEXP p4sSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< Rcpp::CharacterVector >::type p4s(p4sSEXP);
-    rcpp_result_gen = Rcpp::wrap(CPL_crs_from_proj4string(p4s));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -214,6 +195,17 @@ BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     rcpp_result_gen = Rcpp::wrap(CPL_gdal_with_geos());
+    return rcpp_result_gen;
+END_RCPP
+}
+// CPL_axis_order_authority_compliant
+Rcpp::LogicalVector CPL_axis_order_authority_compliant(Rcpp::LogicalVector authority_compliant);
+RcppExport SEXP _sf_CPL_axis_order_authority_compliant(SEXP authority_compliantSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::LogicalVector >::type authority_compliant(authority_compliantSEXP);
+    rcpp_result_gen = Rcpp::wrap(CPL_axis_order_authority_compliant(authority_compliant));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -459,8 +451,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // CPL_write_ogr
-int CPL_write_ogr(Rcpp::List obj, Rcpp::CharacterVector dsn, Rcpp::CharacterVector layer, Rcpp::CharacterVector driver, Rcpp::CharacterVector dco, Rcpp::CharacterVector lco, Rcpp::List geom, Rcpp::CharacterVector dim, Rcpp::CharacterVector fids, bool quiet, bool update, bool delete_dsn, bool delete_layer);
-RcppExport SEXP _sf_CPL_write_ogr(SEXP objSEXP, SEXP dsnSEXP, SEXP layerSEXP, SEXP driverSEXP, SEXP dcoSEXP, SEXP lcoSEXP, SEXP geomSEXP, SEXP dimSEXP, SEXP fidsSEXP, SEXP quietSEXP, SEXP updateSEXP, SEXP delete_dsnSEXP, SEXP delete_layerSEXP) {
+int CPL_write_ogr(Rcpp::List obj, Rcpp::CharacterVector dsn, Rcpp::CharacterVector layer, Rcpp::CharacterVector driver, Rcpp::CharacterVector dco, Rcpp::CharacterVector lco, Rcpp::List geom, Rcpp::CharacterVector dim, Rcpp::CharacterVector fids, bool quiet, Rcpp::LogicalVector append, bool delete_dsn, bool delete_layer);
+RcppExport SEXP _sf_CPL_write_ogr(SEXP objSEXP, SEXP dsnSEXP, SEXP layerSEXP, SEXP driverSEXP, SEXP dcoSEXP, SEXP lcoSEXP, SEXP geomSEXP, SEXP dimSEXP, SEXP fidsSEXP, SEXP quietSEXP, SEXP appendSEXP, SEXP delete_dsnSEXP, SEXP delete_layerSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -474,10 +466,10 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< Rcpp::CharacterVector >::type dim(dimSEXP);
     Rcpp::traits::input_parameter< Rcpp::CharacterVector >::type fids(fidsSEXP);
     Rcpp::traits::input_parameter< bool >::type quiet(quietSEXP);
-    Rcpp::traits::input_parameter< bool >::type update(updateSEXP);
+    Rcpp::traits::input_parameter< Rcpp::LogicalVector >::type append(appendSEXP);
     Rcpp::traits::input_parameter< bool >::type delete_dsn(delete_dsnSEXP);
     Rcpp::traits::input_parameter< bool >::type delete_layer(delete_layerSEXP);
-    rcpp_result_gen = Rcpp::wrap(CPL_write_ogr(obj, dsn, layer, driver, dco, lco, geom, dim, fids, quiet, update, delete_dsn, delete_layer));
+    rcpp_result_gen = Rcpp::wrap(CPL_write_ogr(obj, dsn, layer, driver, dco, lco, geom, dim, fids, quiet, append, delete_dsn, delete_layer));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -505,6 +497,17 @@ BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< Rcpp::List >::type sfc(sfcSEXP);
     rcpp_result_gen = Rcpp::wrap(CPL_geos_is_valid_reason(sfc));
+    return rcpp_result_gen;
+END_RCPP
+}
+// CPL_geos_make_valid
+Rcpp::List CPL_geos_make_valid(Rcpp::List sfc);
+RcppExport SEXP _sf_CPL_geos_make_valid(SEXP sfcSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::List >::type sfc(sfcSEXP);
+    rcpp_result_gen = Rcpp::wrap(CPL_geos_make_valid(sfc));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -579,8 +582,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // CPL_geos_op
-Rcpp::List CPL_geos_op(std::string op, Rcpp::List sfc, Rcpp::NumericVector bufferDist, Rcpp::IntegerVector nQuadSegs, Rcpp::NumericVector dTolerance, Rcpp::LogicalVector preserveTopology, int bOnlyEdges, Rcpp::IntegerVector endCapStyle, Rcpp::IntegerVector joinStyle, Rcpp::NumericVector mitreLimit);
-RcppExport SEXP _sf_CPL_geos_op(SEXP opSEXP, SEXP sfcSEXP, SEXP bufferDistSEXP, SEXP nQuadSegsSEXP, SEXP dToleranceSEXP, SEXP preserveTopologySEXP, SEXP bOnlyEdgesSEXP, SEXP endCapStyleSEXP, SEXP joinStyleSEXP, SEXP mitreLimitSEXP) {
+Rcpp::List CPL_geos_op(std::string op, Rcpp::List sfc, Rcpp::NumericVector bufferDist, Rcpp::IntegerVector nQuadSegs, Rcpp::NumericVector dTolerance, Rcpp::LogicalVector preserveTopology, int bOnlyEdges, Rcpp::IntegerVector endCapStyle, Rcpp::IntegerVector joinStyle, Rcpp::NumericVector mitreLimit, Rcpp::LogicalVector singleside);
+RcppExport SEXP _sf_CPL_geos_op(SEXP opSEXP, SEXP sfcSEXP, SEXP bufferDistSEXP, SEXP nQuadSegsSEXP, SEXP dToleranceSEXP, SEXP preserveTopologySEXP, SEXP bOnlyEdgesSEXP, SEXP endCapStyleSEXP, SEXP joinStyleSEXP, SEXP mitreLimitSEXP, SEXP singlesideSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -594,7 +597,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type endCapStyle(endCapStyleSEXP);
     Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type joinStyle(joinStyleSEXP);
     Rcpp::traits::input_parameter< Rcpp::NumericVector >::type mitreLimit(mitreLimitSEXP);
-    rcpp_result_gen = Rcpp::wrap(CPL_geos_op(op, sfc, bufferDist, nQuadSegs, dTolerance, preserveTopology, bOnlyEdges, endCapStyle, joinStyle, mitreLimit));
+    Rcpp::traits::input_parameter< Rcpp::LogicalVector >::type singleside(singlesideSEXP);
+    rcpp_result_gen = Rcpp::wrap(CPL_geos_op(op, sfc, bufferDist, nQuadSegs, dTolerance, preserveTopology, bOnlyEdges, endCapStyle, joinStyle, mitreLimit, singleside));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -807,6 +811,28 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// CPL_is_network_enabled
+Rcpp::LogicalVector CPL_is_network_enabled(bool b);
+RcppExport SEXP _sf_CPL_is_network_enabled(SEXP bSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< bool >::type b(bSEXP);
+    rcpp_result_gen = Rcpp::wrap(CPL_is_network_enabled(b));
+    return rcpp_result_gen;
+END_RCPP
+}
+// CPL_get_data_dir
+Rcpp::CharacterVector CPL_get_data_dir(bool b);
+RcppExport SEXP _sf_CPL_get_data_dir(SEXP bSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< bool >::type b(bSEXP);
+    rcpp_result_gen = Rcpp::wrap(CPL_get_data_dir(b));
+    return rcpp_result_gen;
+END_RCPP
+}
 // CPL_set_data_dir
 Rcpp::LogicalVector CPL_set_data_dir(std::string data_dir);
 RcppExport SEXP _sf_CPL_set_data_dir(SEXP data_dirSEXP) {
@@ -863,15 +889,16 @@ BEGIN_RCPP
 END_RCPP
 }
 // CPL_proj_direct
-Rcpp::NumericMatrix CPL_proj_direct(Rcpp::CharacterVector from_to, Rcpp::NumericMatrix pts, Rcpp::IntegerVector keep);
-RcppExport SEXP _sf_CPL_proj_direct(SEXP from_toSEXP, SEXP ptsSEXP, SEXP keepSEXP) {
+Rcpp::NumericMatrix CPL_proj_direct(Rcpp::CharacterVector from_to, Rcpp::NumericMatrix pts, Rcpp::IntegerVector keep, bool warn);
+RcppExport SEXP _sf_CPL_proj_direct(SEXP from_toSEXP, SEXP ptsSEXP, SEXP keepSEXP, SEXP warnSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< Rcpp::CharacterVector >::type from_to(from_toSEXP);
     Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type pts(ptsSEXP);
     Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type keep(keepSEXP);
-    rcpp_result_gen = Rcpp::wrap(CPL_proj_direct(from_to, pts, keep));
+    Rcpp::traits::input_parameter< bool >::type warn(warnSEXP);
+    rcpp_result_gen = Rcpp::wrap(CPL_proj_direct(from_to, pts, keep, warn));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -1117,19 +1144,18 @@ static const R_CallMethodDef CallEntries[] = {
     {"_sf_CPL_gdal_version", (DL_FUNC) &_sf_CPL_gdal_version, 1},
     {"_sf_CPL_crs_parameters", (DL_FUNC) &_sf_CPL_crs_parameters, 1},
     {"_sf_CPL_crs_equivalent", (DL_FUNC) &_sf_CPL_crs_equivalent, 2},
-    {"_sf_CPL_crs_from_epsg", (DL_FUNC) &_sf_CPL_crs_from_epsg, 1},
-    {"_sf_CPL_crs_from_wkt", (DL_FUNC) &_sf_CPL_crs_from_wkt, 1},
+    {"_sf_CPL_crs_from_input", (DL_FUNC) &_sf_CPL_crs_from_input, 1},
     {"_sf_CPL_roundtrip", (DL_FUNC) &_sf_CPL_roundtrip, 1},
     {"_sf_CPL_circularstring_to_linestring", (DL_FUNC) &_sf_CPL_circularstring_to_linestring, 1},
     {"_sf_CPL_multisurface_to_multipolygon", (DL_FUNC) &_sf_CPL_multisurface_to_multipolygon, 1},
     {"_sf_CPL_compoundcurve_to_linear", (DL_FUNC) &_sf_CPL_compoundcurve_to_linear, 1},
     {"_sf_CPL_curve_to_linestring", (DL_FUNC) &_sf_CPL_curve_to_linestring, 1},
-    {"_sf_CPL_transform", (DL_FUNC) &_sf_CPL_transform, 2},
+    {"_sf_CPL_transform", (DL_FUNC) &_sf_CPL_transform, 5},
     {"_sf_CPL_wrap_dateline", (DL_FUNC) &_sf_CPL_wrap_dateline, 3},
-    {"_sf_CPL_crs_from_proj4string", (DL_FUNC) &_sf_CPL_crs_from_proj4string, 1},
     {"_sf_CPL_get_rgdal_drivers", (DL_FUNC) &_sf_CPL_get_rgdal_drivers, 1},
     {"_sf_CPL_sfc_from_wkt", (DL_FUNC) &_sf_CPL_sfc_from_wkt, 1},
     {"_sf_CPL_gdal_with_geos", (DL_FUNC) &_sf_CPL_gdal_with_geos, 0},
+    {"_sf_CPL_axis_order_authority_compliant", (DL_FUNC) &_sf_CPL_axis_order_authority_compliant, 1},
     {"_sf_CPL_area", (DL_FUNC) &_sf_CPL_area, 1},
     {"_sf_CPL_gdal_dimension", (DL_FUNC) &_sf_CPL_gdal_dimension, 2},
     {"_sf_CPL_length", (DL_FUNC) &_sf_CPL_length, 1},
@@ -1150,13 +1176,14 @@ static const R_CallMethodDef CallEntries[] = {
     {"_sf_CPL_write_ogr", (DL_FUNC) &_sf_CPL_write_ogr, 13},
     {"_sf_CPL_geos_binop", (DL_FUNC) &_sf_CPL_geos_binop, 6},
     {"_sf_CPL_geos_is_valid_reason", (DL_FUNC) &_sf_CPL_geos_is_valid_reason, 1},
+    {"_sf_CPL_geos_make_valid", (DL_FUNC) &_sf_CPL_geos_make_valid, 1},
     {"_sf_CPL_geos_is_valid", (DL_FUNC) &_sf_CPL_geos_is_valid, 2},
     {"_sf_CPL_geos_is_simple", (DL_FUNC) &_sf_CPL_geos_is_simple, 1},
     {"_sf_CPL_geos_is_empty", (DL_FUNC) &_sf_CPL_geos_is_empty, 1},
     {"_sf_CPL_geos_normalize", (DL_FUNC) &_sf_CPL_geos_normalize, 1},
     {"_sf_CPL_geos_union", (DL_FUNC) &_sf_CPL_geos_union, 2},
     {"_sf_CPL_geos_snap", (DL_FUNC) &_sf_CPL_geos_snap, 3},
-    {"_sf_CPL_geos_op", (DL_FUNC) &_sf_CPL_geos_op, 10},
+    {"_sf_CPL_geos_op", (DL_FUNC) &_sf_CPL_geos_op, 11},
     {"_sf_CPL_geos_voronoi", (DL_FUNC) &_sf_CPL_geos_voronoi, 4},
     {"_sf_CPL_geos_op2", (DL_FUNC) &_sf_CPL_geos_op2, 3},
     {"_sf_CPL_geos_version", (DL_FUNC) &_sf_CPL_geos_version, 2},
@@ -1173,12 +1200,14 @@ static const R_CallMethodDef CallEntries[] = {
     {"_sf_CPL_polygonize", (DL_FUNC) &_sf_CPL_polygonize, 10},
     {"_sf_CPL_rasterize", (DL_FUNC) &_sf_CPL_rasterize, 6},
     {"_sf_CPL_proj_h", (DL_FUNC) &_sf_CPL_proj_h, 1},
+    {"_sf_CPL_is_network_enabled", (DL_FUNC) &_sf_CPL_is_network_enabled, 1},
+    {"_sf_CPL_get_data_dir", (DL_FUNC) &_sf_CPL_get_data_dir, 1},
     {"_sf_CPL_set_data_dir", (DL_FUNC) &_sf_CPL_set_data_dir, 1},
     {"_sf_CPL_use_proj4_init_rules", (DL_FUNC) &_sf_CPL_use_proj4_init_rules, 1},
     {"_sf_CPL_proj_version", (DL_FUNC) &_sf_CPL_proj_version, 1},
     {"_sf_CPL_proj_is_valid", (DL_FUNC) &_sf_CPL_proj_is_valid, 1},
     {"_sf_CPL_have_datum_files", (DL_FUNC) &_sf_CPL_have_datum_files, 1},
-    {"_sf_CPL_proj_direct", (DL_FUNC) &_sf_CPL_proj_direct, 3},
+    {"_sf_CPL_proj_direct", (DL_FUNC) &_sf_CPL_proj_direct, 4},
     {"_sf_CPL_proj_info", (DL_FUNC) &_sf_CPL_proj_info, 1},
     {"_sf_CPL_xy2sfc", (DL_FUNC) &_sf_CPL_xy2sfc, 4},
     {"_sf_points_cpp", (DL_FUNC) &_sf_points_cpp, 2},

@@ -5,6 +5,9 @@
 # if GEOS_VERSION_MINOR >= 5
 #  define HAVE350
 # endif
+# if GEOS_VERSION_MINOR >= 8
+#  define HAVE380
+# endif
 # if GEOS_VERSION_MINOR == 6
 #  if GEOS_VERSION_PATCH >= 1
 #   define HAVE361
@@ -19,6 +22,7 @@
 #  define HAVE350
 #  define HAVE370
 #  define HAVE361
+#  define HAVE380
 # endif
 #endif
 
@@ -491,6 +495,25 @@ Rcpp::CharacterVector CPL_geos_is_valid_reason(Rcpp::List sfc) {
 	return out;
 }
 
+// #nocov start - no GEOS 3.8.0 on travis yet
+// [[Rcpp::export]]
+Rcpp::List CPL_geos_make_valid(Rcpp::List sfc) {
+	GEOSContextHandle_t hGEOSCtxt = CPL_geos_init();
+
+	std::vector<GeomPtr> gmv = geometries_from_sfc(hGEOSCtxt, sfc, NULL);
+	std::vector<GeomPtr> out(gmv.size());
+#ifdef HAVE380
+	for (int i = 0; i < gmv.size(); i++)
+		gmv[i] = geos_ptr(GEOSMakeValid_r(hGEOSCtxt, gmv[i].get()), hGEOSCtxt);
+#else
+	Rcpp::stop("this shouldn't happen: st_make_valid should use lwgeom");
+#endif
+	Rcpp::List ret = sfc_from_geometry(hGEOSCtxt, gmv);
+	CPL_geos_finish(hGEOSCtxt);
+	return ret;
+}
+// #nocov end
+
 // [[Rcpp::export]]
 Rcpp::LogicalVector CPL_geos_is_valid(Rcpp::List sfc, bool NA_on_exception = true) {
 	GEOSContextHandle_t hGEOSCtxt = CPL_geos_init();
@@ -642,7 +665,8 @@ Rcpp::List CPL_geos_op(std::string op, Rcpp::List sfc,
                        Rcpp::NumericVector bufferDist, Rcpp::IntegerVector nQuadSegs,
                        Rcpp::NumericVector dTolerance, Rcpp::LogicalVector preserveTopology,
                        int bOnlyEdges = 1,
-                       Rcpp::IntegerVector endCapStyle = 0, Rcpp::IntegerVector joinStyle = 0, Rcpp::NumericVector mitreLimit = 1)
+                       Rcpp::IntegerVector endCapStyle = 0, Rcpp::IntegerVector joinStyle = 0,
+					   Rcpp::NumericVector mitreLimit = 1, Rcpp::LogicalVector singleside = 0)
 {
 	int dim = 2;
 	GEOSContextHandle_t hGEOSCtxt = CPL_geos_init();
@@ -656,8 +680,20 @@ Rcpp::List CPL_geos_op(std::string op, Rcpp::List sfc,
 		for (size_t i = 0; i < g.size(); i++)
 			out[i] = geos_ptr(chkNULL(GEOSBuffer_r(hGEOSCtxt, g[i].get(), bufferDist[i], nQuadSegs[i])), hGEOSCtxt);
 	} else if (op == "buffer_with_style") {
-		for (size_t i = 0; i < g.size(); i++)
-			out[i] = geos_ptr(chkNULL(GEOSBufferWithStyle_r(hGEOSCtxt, g[i].get(), bufferDist[i], nQuadSegs[i], endCapStyle[i], joinStyle[i], mitreLimit[i])), hGEOSCtxt);
+		GEOSBufferParams *bufferparams = GEOSBufferParams_create_r(hGEOSCtxt);
+		for (size_t i = 0; i < g.size(); i++) {
+			if (GEOSBufferParams_setEndCapStyle_r(hGEOSCtxt, bufferparams, endCapStyle[i]) &&
+					GEOSBufferParams_setJoinStyle_r(hGEOSCtxt, bufferparams, joinStyle[i]) &&
+					GEOSBufferParams_setMitreLimit_r(hGEOSCtxt, bufferparams, mitreLimit[i]) &&
+					GEOSBufferParams_setQuadrantSegments_r(hGEOSCtxt, bufferparams, nQuadSegs[i]) &&
+					GEOSBufferParams_setSingleSided_r(hGEOSCtxt, bufferparams, singleside[i]))
+				// out[i] = geos_ptr(chkNULL(GEOSBufferWithStyle_r(hGEOSCtxt, g[i].get(), bufferDist[i], nQuadSegs[i], endCapStyle[i], joinStyle[i], mitreLimit[i])), hGEOSCtxt);
+				out[i] = geos_ptr(chkNULL(GEOSBufferWithParams_r(hGEOSCtxt, g[i].get(),
+					bufferparams, bufferDist[i])), hGEOSCtxt);
+			else
+				Rcpp::stop("invalid buffer parameters"); // #nocov
+		}
+		GEOSBufferParams_destroy_r(hGEOSCtxt, bufferparams);
 	} else if (op == "boundary") {
 		for (size_t i = 0; i < g.size(); i++)
 			out[i] = geos_ptr(chkNULL(GEOSBoundary_r(hGEOSCtxt, g[i].get())), hGEOSCtxt);
@@ -682,7 +718,15 @@ Rcpp::List CPL_geos_op(std::string op, Rcpp::List sfc,
 		for (size_t i = 0; i < g.size(); i++) {
 			out[i] = geos_ptr(chkNULL(GEOSGetCentroid_r(hGEOSCtxt, g[i].get())), hGEOSCtxt);
 		}
-	} else if (op == "node") {
+	} else
+#ifdef HAVE370
+	if (op == "reverse") {
+		for (size_t i = 0; i < g.size(); i++) {
+			out[i] = geos_ptr(chkNULL(GEOSReverse_r(hGEOSCtxt, g[i].get())), hGEOSCtxt);
+		}
+	} else
+#endif
+	if (op == "node") {
 		for (size_t i = 0; i < g.size(); i++) {
 			out[i] = geos_ptr(chkNULL(GEOSNode_r(hGEOSCtxt, g[i].get())), hGEOSCtxt);
 		}
@@ -697,7 +741,7 @@ Rcpp::List CPL_geos_op(std::string op, Rcpp::List sfc,
 			out[i] = geos_ptr(chkNULL(GEOSDelaunayTriangulation_r(hGEOSCtxt, g[i].get(), dTolerance[i], bOnlyEdges)), hGEOSCtxt);
 	} else
 #endif
-			Rcpp::stop("invalid operation"); // #nocov
+		Rcpp::stop("invalid operation"); // #nocov
 
 	Rcpp::List ret(sfc_from_geometry(hGEOSCtxt, out, dim));
 	CPL_geos_finish(hGEOSCtxt);

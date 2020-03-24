@@ -55,6 +55,14 @@ if (require(stars)) {
   	write_stars(na.tif, "na.tif")
   	write_stars(na.tif, "na.tif", NA_value = -999)
   }
+  # https://github.com/mtennekes/tmap/issues/368
+  if (utils::packageVersion("stars") > "0.4-0") {
+    lc = system.file('tif/lc.tif', package = 'stars')
+    if (lc != "") {
+	    r = read_stars(lc, RAT = "Land Cover Class")
+	    r <- droplevels(r)
+    }
+  }
 }
 
 r = gdal_read(tif)
@@ -63,7 +71,7 @@ gdal_inv_geotransform(gt)
 rc = expand.grid(x=1:3, y = 1:3)
 #(xy = xy_from_colrow(rc, gt))
 #xy_from_colrow(xy, gt, inverse = TRUE)
-gdal_crs(tif)
+crs <- gdal_crs(tif)
 
 try(gdal_metadata("foo"))
 gdal_metadata(tif)

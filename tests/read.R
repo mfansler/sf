@@ -49,7 +49,7 @@ try(st_write(x, "foo", driver = "foo"))
 if (Sys.getenv("USER") == "travis") {
 	try(st_write(x, "/x", driver = "ESRI Shapefile"))
 	st_write(x, "xxx.gpkg")
-	st_write(x, "xxx.gpkg", quiet = FALSE) # appends to layer
+	st_write(x, "xxx.gpkg", append = TRUE, quiet = FALSE) # appends to layer
 	y <- st_sf(b = 1:2, geom = st_sfc(st_point(0:1), st_multipoint(matrix(1:4,2,2))))
 	try(st_write(y, "xxx.gpkg"))
 }
@@ -120,10 +120,10 @@ identical(st_read(quiet = TRUE, csv, options = "AUTODETECT_TYPE=Yes")$Int32[3], 
 
 if ("GML" %in% st_drivers()$name) {
   gml = system.file("gml/fmi_test.gml", package = "sf")
-  print(st_read(gml, quiet = TRUE), n = 0)
+  print(dim(st_read(gml, quiet = TRUE)))
   gml = system.file("gml/20170930_OB_530964_UKSH.xml.gz", package = "sf")
-  print(st_read(gml, layer = "Parcely"), n = 0)
-  print(st_read(gml, layer = "Parcely", int64_as_string=TRUE), n = 0)
+  print(dim(st_read(gml, layer = "Parcely", quiet = TRUE)))
+  print(dim(st_read(gml, layer = "Parcely", int64_as_string=TRUE, quiet = TRUE)))
 }
 
 # logical:

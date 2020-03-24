@@ -17,20 +17,16 @@ CPL_gdal_version <- function(what = "RELEASE_NAME") {
     .Call('_sf_CPL_gdal_version', PACKAGE = 'sf', what)
 }
 
-CPL_crs_parameters <- function(p4s) {
-    .Call('_sf_CPL_crs_parameters', PACKAGE = 'sf', p4s)
+CPL_crs_parameters <- function(crs) {
+    .Call('_sf_CPL_crs_parameters', PACKAGE = 'sf', crs)
 }
 
 CPL_crs_equivalent <- function(crs1, crs2) {
     .Call('_sf_CPL_crs_equivalent', PACKAGE = 'sf', crs1, crs2)
 }
 
-CPL_crs_from_epsg <- function(epsg) {
-    .Call('_sf_CPL_crs_from_epsg', PACKAGE = 'sf', epsg)
-}
-
-CPL_crs_from_wkt <- function(wkt) {
-    .Call('_sf_CPL_crs_from_wkt', PACKAGE = 'sf', wkt)
+CPL_crs_from_input <- function(input) {
+    .Call('_sf_CPL_crs_from_input', PACKAGE = 'sf', input)
 }
 
 CPL_roundtrip <- function(sfc) {
@@ -53,16 +49,12 @@ CPL_curve_to_linestring <- function(sfc) {
     .Call('_sf_CPL_curve_to_linestring', PACKAGE = 'sf', sfc)
 }
 
-CPL_transform <- function(sfc, proj4) {
-    .Call('_sf_CPL_transform', PACKAGE = 'sf', sfc, proj4)
+CPL_transform <- function(sfc, crs, AOI, pipeline, reverse = FALSE) {
+    .Call('_sf_CPL_transform', PACKAGE = 'sf', sfc, crs, AOI, pipeline, reverse)
 }
 
 CPL_wrap_dateline <- function(sfc, opt, quiet = TRUE) {
     .Call('_sf_CPL_wrap_dateline', PACKAGE = 'sf', sfc, opt, quiet)
-}
-
-CPL_crs_from_proj4string <- function(p4s) {
-    .Call('_sf_CPL_crs_from_proj4string', PACKAGE = 'sf', p4s)
 }
 
 CPL_get_rgdal_drivers <- function(dummy) {
@@ -75,6 +67,10 @@ CPL_sfc_from_wkt <- function(wkt) {
 
 CPL_gdal_with_geos <- function() {
     .Call('_sf_CPL_gdal_with_geos', PACKAGE = 'sf')
+}
+
+CPL_axis_order_authority_compliant <- function(authority_compliant) {
+    .Call('_sf_CPL_axis_order_authority_compliant', PACKAGE = 'sf', authority_compliant)
 }
 
 CPL_area <- function(sfc) {
@@ -145,8 +141,8 @@ CPL_gdal_warper <- function(infile, outfile, options, oo, doo) {
     .Call('_sf_CPL_gdal_warper', PACKAGE = 'sf', infile, outfile, options, oo, doo)
 }
 
-CPL_write_ogr <- function(obj, dsn, layer, driver, dco, lco, geom, dim, fids, quiet = FALSE, update = FALSE, delete_dsn = FALSE, delete_layer = FALSE) {
-    .Call('_sf_CPL_write_ogr', PACKAGE = 'sf', obj, dsn, layer, driver, dco, lco, geom, dim, fids, quiet, update, delete_dsn, delete_layer)
+CPL_write_ogr <- function(obj, dsn, layer, driver, dco, lco, geom, dim, fids, quiet, append, delete_dsn = FALSE, delete_layer = FALSE) {
+    .Call('_sf_CPL_write_ogr', PACKAGE = 'sf', obj, dsn, layer, driver, dco, lco, geom, dim, fids, quiet, append, delete_dsn, delete_layer)
 }
 
 CPL_geos_binop <- function(sfc0, sfc1, op, par = 0.0, pattern = "", prepared = FALSE) {
@@ -155,6 +151,10 @@ CPL_geos_binop <- function(sfc0, sfc1, op, par = 0.0, pattern = "", prepared = F
 
 CPL_geos_is_valid_reason <- function(sfc) {
     .Call('_sf_CPL_geos_is_valid_reason', PACKAGE = 'sf', sfc)
+}
+
+CPL_geos_make_valid <- function(sfc) {
+    .Call('_sf_CPL_geos_make_valid', PACKAGE = 'sf', sfc)
 }
 
 CPL_geos_is_valid <- function(sfc, NA_on_exception = TRUE) {
@@ -181,8 +181,8 @@ CPL_geos_snap <- function(sfc0, sfc1, tolerance) {
     .Call('_sf_CPL_geos_snap', PACKAGE = 'sf', sfc0, sfc1, tolerance)
 }
 
-CPL_geos_op <- function(op, sfc, bufferDist, nQuadSegs, dTolerance, preserveTopology, bOnlyEdges = 1L, endCapStyle = 0L, joinStyle = 0L, mitreLimit = 1L) {
-    .Call('_sf_CPL_geos_op', PACKAGE = 'sf', op, sfc, bufferDist, nQuadSegs, dTolerance, preserveTopology, bOnlyEdges, endCapStyle, joinStyle, mitreLimit)
+CPL_geos_op <- function(op, sfc, bufferDist, nQuadSegs, dTolerance, preserveTopology, bOnlyEdges = 1L, endCapStyle = 0L, joinStyle = 0L, mitreLimit = 1L, singleside = 0L) {
+    .Call('_sf_CPL_geos_op', PACKAGE = 'sf', op, sfc, bufferDist, nQuadSegs, dTolerance, preserveTopology, bOnlyEdges, endCapStyle, joinStyle, mitreLimit, singleside)
 }
 
 CPL_geos_voronoi <- function(sfc, env, dTolerance = 0.0, bOnlyEdges = 1L) {
@@ -249,6 +249,14 @@ CPL_proj_h <- function(b = FALSE) {
     .Call('_sf_CPL_proj_h', PACKAGE = 'sf', b)
 }
 
+CPL_is_network_enabled <- function(b = FALSE) {
+    .Call('_sf_CPL_is_network_enabled', PACKAGE = 'sf', b)
+}
+
+CPL_get_data_dir <- function(b = FALSE) {
+    .Call('_sf_CPL_get_data_dir', PACKAGE = 'sf', b)
+}
+
 CPL_set_data_dir <- function(data_dir) {
     .Call('_sf_CPL_set_data_dir', PACKAGE = 'sf', data_dir)
 }
@@ -269,8 +277,8 @@ CPL_have_datum_files <- function(foo) {
     .Call('_sf_CPL_have_datum_files', PACKAGE = 'sf', foo)
 }
 
-CPL_proj_direct <- function(from_to, pts, keep) {
-    .Call('_sf_CPL_proj_direct', PACKAGE = 'sf', from_to, pts, keep)
+CPL_proj_direct <- function(from_to, pts, keep, warn = TRUE) {
+    .Call('_sf_CPL_proj_direct', PACKAGE = 'sf', from_to, pts, keep, warn)
 }
 
 CPL_proj_info <- function(type) {

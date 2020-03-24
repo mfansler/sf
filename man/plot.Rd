@@ -156,7 +156,7 @@ sf.colors(n = 10, cutoff.tails = c(0.35, 0.2), alpha = 1, categorical = FALSE)
 
 \item{main}{title for plot (\code{NULL} to remove)}
 
-\item{pal}{palette function, similar to \link[grDevices]{rainbow}, or palette values; if omitted, \link{sf.colors} is used}
+\item{pal}{palette function, similar to \link[grDevices]{rainbow}, or palette values; if omitted, \code{sf.colors} is used}
 
 \item{nbreaks}{number of colors breaks (ignored for \code{factor} or \code{character} variables)}
 
@@ -170,7 +170,7 @@ sf.colors(n = 10, cutoff.tails = c(0.35, 0.2), alpha = 1, categorical = FALSE)
 
 \item{key.width}{amount of space reserved for the key (incl. labels), thickness/width of the scale bar}
 
-\item{reset}{logical; if \code{FALSE}, keep the plot in a mode that allows adding further map elements; if \code{TRUE} restore original mode after plotting; see details.}
+\item{reset}{logical; if \code{FALSE}, keep the plot in a mode that allows adding further map elements; if \code{TRUE} restore original mode after plotting \code{sf} objects with attributes; see details.}
 
 \item{logz}{logical; if \code{TRUE}, use log10-scale for the attribute variable. In that case, \code{breaks} and \code{at} need to be given as log10-values; see examples.}
 

@@ -5,7 +5,7 @@
 \alias{st_transform.sfc}
 \alias{st_transform.sf}
 \alias{st_transform.sfg}
-\alias{st_proj_info}
+\alias{sf_proj_info}
 \alias{st_wrap_dateline}
 \alias{st_wrap_dateline.sfc}
 \alias{st_wrap_dateline.sf}
@@ -14,13 +14,22 @@
 \usage{
 st_transform(x, crs, ...)
 
-\method{st_transform}{sfc}(x, crs, ..., partial = TRUE, check = FALSE, use_gdal = TRUE)
+\method{st_transform}{sfc}(
+  x,
+  crs = st_crs(x),
+  ...,
+  aoi = numeric(0),
+  pipeline = character(0),
+  reverse = FALSE,
+  partial = TRUE,
+  check = FALSE
+)
 
-\method{st_transform}{sf}(x, crs, ...)
+\method{st_transform}{sf}(x, crs = st_crs(x), ...)
 
-\method{st_transform}{sfg}(x, crs, ...)
+\method{st_transform}{sfg}(x, crs = st_crs(x), ...)
 
-st_proj_info(type = "proj")
+sf_proj_info(type = "proj", path)
 
 st_wrap_dateline(x, options, quiet)
 
@@ -37,13 +46,20 @@ st_wrap_dateline(x, options, quiet)
 
 \item{...}{ignored}
 
+\item{aoi}{area of interest, in degrees: 
+WestLongitude, SouthLatitude, EastLongitude, NorthLatitude}
+
+\item{pipeline}{character; proj4 or WKT coordinate operation, to override the default operation}
+
+\item{reverse}{boolean; if \code{TRUE}, the inverse operation of the pipeline is applied}
+
 \item{partial}{logical; allow for partial projection, if not all points of a geometry can be projected (corresponds to setting environment variable \code{OGR_ENABLE_PARTIAL_REPROJECTION} to \code{TRUE})}
 
 \item{check}{logical; perform a sanity check on resulting polygons?}
 
-\item{use_gdal}{logical; this parameter is deprecated. For transformations using PROJ.4 directly rather than indirectly through GDAL, use \link[lwgeom]{st_transform_proj} of package \code{lwgeom} (see Details)}
-
 \item{type}{character; one of \code{have_datum_files}, \code{proj}, \code{ellps}, \code{datum}, \code{units} or \code{prime_meridians}; see Details.}
+
+\item{path}{character; PROJ search path to be set}
 
 \item{options}{character; should have "WRAPDATELINE=YES" to function; another parameter that is used is "DATELINEOFFSET=10" (where 10 is the default value)}
 
@@ -55,13 +71,11 @@ Transform or convert coordinates of simple feature
 \details{
 Transforms coordinates of object to new projection. Features that cannot be transformed are returned as empty geometries.
 
-\code{st_transform} uses GDAL for coordinate transformations; internally, GDAL converts the \code{proj4string} into a well-known-text representation, before passing that on to PROJ.4. In this process, some information can get lost. Adding parameter \code{+wktext} to the \code{proj4string} definition may resolve this; see \url{https://github.com/edzer/sp/issues/42}.
-
-Some PROJ.4 projections are not supported by GDAL, e.g. \code{"+proj=wintri"} because it does not have an inverse projection. Projecting to unsupported projections can be done by \link[lwgeom]{st_transform_proj}, part of package lwgeom. Note that the unsupported \code{proj4string} cannot be passed as argument to \link{st_crs}, but has to be given as character string.
+Projecting to projections not supported by GDAL may be done by \link[lwgeom]{st_transform_proj}, part of package lwgeom.
 
 The \code{st_transform} method for \code{sfg} objects assumes that the CRS of the object is available as an attribute of that name.
 
-\code{st_proj_info} lists the available projections, ellipses, datums or units supported by the Proj.4 library when \code{type} is equal to proj, ellps, datum or units; when \code{type} equals \code{have_datum_files} a boolean is returned indicating whether datum files are installed and accessible (checking for \code{conus}).
+\code{sf_proj_info} lists the available projections, ellipses, datums, units, or data search path of the PROJ library when \code{type} is equal to proj, ellps, datum, units or path; when \code{type} equals \code{have_datum_files} a boolean is returned indicating whether datum files are installed and accessible (checking for \code{conus}).
 
 PROJ >= 6 does not provide option \code{type = "datums"}. PROJ < 6 does not provide the option \code{type = "prime_meridians"}.
 
@@ -74,6 +88,13 @@ sfc = st_sfc(p1, p2, crs = 4326)
 sfc
 st_transform(sfc, 3857)
 st_transform(st_sf(a=2:1, geom=sfc), "+init=epsg:3857")
+try(st_transform(sfc, 3857, aoi = c(-280,-90,180,90)))
+if (sf_extSoftVersion()["GDAL"] >= "3.0.0") {
+  st_transform(sfc, pipeline =
+	  "+proj=pipeline +step +proj=axisswap +order=2,1") # reverse axes
+  st_transform(sfc, pipeline =
+	  "+proj=pipeline +step +proj=axisswap +order=2,1", reverse = TRUE) # also reverse axes
+}
 nc = st_read(system.file("shape/nc.shp", package="sf"))
 st_area(nc[1,]) # area from long/lat
 st_area(st_transform(nc[1,], 32119)) # NC state plane, m
@@ -81,7 +102,7 @@ st_area(st_transform(nc[1,], 2264)) # NC state plane, US foot
 library(units)
 set_units(st_area(st_transform(nc[1,], 2264)), m^2)
 st_transform(structure(p1, proj4string = "+init=epsg:4326"), "+init=epsg:3857")
-st_proj_info("datum")
+sf_proj_info("datum")
 st_wrap_dateline(st_sfc(st_linestring(rbind(c(-179,0),c(179,0))), crs = 4326))
 library(maps)
 wrld <- st_as_sf(maps::map("world", fill = TRUE, plot = FALSE))

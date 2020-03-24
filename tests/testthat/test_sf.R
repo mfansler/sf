@@ -4,7 +4,7 @@ test_that("we can subset sf objects", {
   pt1 = st_point(1:2)
   pt2 = st_point(3:4)
   s1 = st_sf(a = c("x", "y"), geom = st_sfc(pt1, pt2))
-  expect_equal(s1[[1]], factor(c("x", "y")))
+  expect_equal(as.character(s1[[1]]), c("x", "y"))
   expect_equal(s1[,1], s1) #data.frame(x = c("x", "y")))
 
   expect_equal(nrow(s1[1,]), 1)
@@ -79,4 +79,15 @@ test_that("st_as_sf bulk points work", {
   expect_that(length(unclass(st_geometry(xyzm_sf)[[1]])), equals(4L))
 
 
+})
+
+test_that("transform work", {
+  data(meuse, package = "sp")
+  x  = st_as_sf(meuse, coords = c("x", "y"), crs = 28992)
+  x2 = transform(x, elev2 = elev^2, lead_zinc = lead/zinc)
+  expect_true(inherits(x, 'sf'))
+  expect_identical(class(x2), class(x))
+  expect_identical(st_bbox(x), st_bbox(x))
+  expect_identical(st_crs(x), st_crs(x))
+  expect_identical(x$elev^2, x2$elev2)
 })

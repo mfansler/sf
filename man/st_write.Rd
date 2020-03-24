@@ -24,15 +24,15 @@ st_write(obj, dsn, layer, ...)
   layer_options = NULL,
   quiet = FALSE,
   factorsAsCharacter = TRUE,
-  update = driver \%in\% db_drivers,
+  append = NA,
   delete_dsn = FALSE,
-  delete_layer = FALSE,
+  delete_layer = isFALSE(append),
   fid_column_name = NULL
 )
 
 \method{st_write}{data.frame}(obj, dsn, layer = NULL, ...)
 
-write_sf(..., quiet = TRUE, delete_layer = TRUE)
+write_sf(..., quiet = TRUE, append = FALSE, delete_layer = TRUE)
 
 \S4method{dbWriteTable}{PostgreSQLConnection,character,sf}(
   conn,
@@ -77,25 +77,20 @@ Database Connection}
 \code{st_drivers()} returns the drivers that are available with their properties; links to full driver documentation
 are found at \url{http://www.gdal.org/ogr_formats.html}.}
 
-\item{dataset_options}{character; driver dependent dataset creation options; 
+\item{dataset_options}{character; driver dependent dataset creation options;
 multiple options supported.}
 
-\item{layer_options}{character; driver dependent layer creation options; 
+\item{layer_options}{character; driver dependent layer creation options;
 multiple options supported.}
 
 \item{quiet}{logical; suppress info on name, driver, size and spatial reference}
 
-\item{factorsAsCharacter}{logical; convert \code{factor} objects into 
+\item{factorsAsCharacter}{logical; convert \code{factor} objects into
 character strings (default), else into numbers by \code{as.numeric}.}
 
-\item{update}{logical; \code{FALSE} by default for single-layer drivers but 
-\code{TRUE} by default for database drivers as defined by \code{db_drivers}.
-For database-type drivers (e.g. GPKG) \code{TRUE} values will make 
-\code{GDAL} try to update (append to) the existing data source, e.g. adding
-a table to an existing database, or adding records to a layer. See also the
-next two arguments and Details.}
+\item{append}{Append rows to existing table; default \code{FALSE}.}
 
-\item{delete_dsn}{logical; delete data source \code{dsn} before attempting 
+\item{delete_dsn}{logical; delete data source \code{dsn} before attempting
 to write?}
 
 \item{delete_layer}{logical; delete layer \code{layer} before attempting to
@@ -119,8 +114,6 @@ containing row.names; default \code{FALSE}.}
 
 \item{overwrite}{Will try to \code{drop} table before writing; default \code{FALSE}.}
 
-\item{append}{Append rows to existing table; default \code{FALSE}.}
-
 \item{field.types}{default \code{NULL}. Allows to override type conversion from R
 to PostgreSQL. See \code{dbDataType()} for details.}
 
@@ -128,21 +121,21 @@ to PostgreSQL. See \code{dbDataType()} for details.}
 if \code{FALSE}, uses Well-Known Text (WKT). Defaults to \code{TRUE} (WKB).}
 }
 \value{
-\code{obj}, invisibly; in case \code{obj} is of class \code{sfc}, 
+\code{obj}, invisibly; in case \code{obj} is of class \code{sfc},
 it is returned as an \code{sf} object.
 }
 \description{
 Write simple features object to file or database
 }
 \details{
-Columns (variables) of a class not supported are dropped with a warning. 
+Columns (variables) of a class not supported are dropped with a warning.
 
 When updating an existing layer, records are appended to it if the updating
-object has the right variable names and types. If names don't match an 
+object has the right variable names and types. If names don't match an
 error is raised. If types don't match, behaviour is undefined: GDAL may
 raise warnings or errors or fail silently.
 
-When deleting layers or data sources is not successful, no error is emitted. 
+When deleting layers or data sources is not successful, no error is emitted.
 \code{delete_dsn} and \code{delete_layer} should be
 handled with care; the former may erase complete directories or databases.
 }
@@ -153,7 +146,7 @@ st_write(nc, paste0(tempdir(), "/", "nc.shp"), delete_layer = TRUE) # overwrites
 data(meuse, package = "sp") # loads data.frame from sp
 meuse_sf = st_as_sf(meuse, coords = c("x", "y"), crs = 28992)
 # writes X and Y as columns:
-st_write(meuse_sf, paste0(tempdir(), "/", "meuse.csv"), layer_options = "GEOMETRY=AS_XY") 
+st_write(meuse_sf, paste0(tempdir(), "/", "meuse.csv"), layer_options = "GEOMETRY=AS_XY")
 st_write(meuse_sf, paste0(tempdir(), "/", "meuse.csv"), layer_options = "GEOMETRY=AS_WKT",
   delete_dsn=TRUE) # overwrites
 \dontrun{

@@ -14,6 +14,18 @@ Rcpp::LogicalVector CPL_proj_h(bool b = false) {
 #if defined(HAVE_PROJ_H) && !defined(ACCEPT_USE_OF_DEPRECATED_PROJ_API_H) // new api
 # include <proj.h>
 
+Rcpp::CharacterVector CPL_get_data_dir(bool b = false) {
+	return Rcpp::CharacterVector(proj_info().searchpath);
+}
+
+Rcpp::LogicalVector CPL_is_network_enabled(bool b = false) {
+#if PROJ_VERSION_MAJOR >= 7
+	return Rcpp::LogicalVector::create(proj_context_is_network_enabled(PJ_DEFAULT_CTX));
+#else
+	return Rcpp::LogicalVector::create(false);
+#endif
+}
+
 Rcpp::LogicalVector CPL_set_data_dir(std::string data_dir) {
 	const char *cp = data_dir.c_str();
 	proj_context_set_search_paths(PJ_DEFAULT_CTX, 1, &cp);
@@ -58,7 +70,8 @@ bool CPL_have_datum_files(SEXP foo) {
 	return true;
 }
 
-Rcpp::NumericMatrix CPL_proj_direct(Rcpp::CharacterVector from_to, Rcpp::NumericMatrix pts, Rcpp::IntegerVector keep) {
+Rcpp::NumericMatrix CPL_proj_direct(Rcpp::CharacterVector from_to, Rcpp::NumericMatrix pts, 
+		Rcpp::IntegerVector keep, bool warn = true) {
 
 	using namespace Rcpp;
 
@@ -66,8 +79,8 @@ Rcpp::NumericMatrix CPL_proj_direct(Rcpp::CharacterVector from_to, Rcpp::Numeric
 		stop("from_to should be size 2 character vector"); // #nocov
 	if (pts.ncol() != 2)
 		stop("pts should be 2-column numeric vector"); // #nocov
-        if (keep.size() != 1)
-                stop("keep should be a single integer"); // #nocov
+	if (keep.size() != 1)
+		stop("keep should be a single integer"); // #nocov
 
 	proj_context_use_proj4_init_rules(PJ_DEFAULT_CTX, 1);
 	PJ *P = proj_create_crs_to_crs(PJ_DEFAULT_CTX, from_to[0], from_to[1], NULL); // PJ_AREA *area);
@@ -128,11 +141,13 @@ Rcpp::NumericMatrix CPL_proj_direct(Rcpp::CharacterVector from_to, Rcpp::Numeric
 
 	int nwarn = 0;
 	for (int i = 0; i < out.nrow(); i++) {
-		if (out(i, 0) == HUGE_VAL || out(i, 1) == HUGE_VAL )
-		    // || ISNAN(pts[i,0]) || ISNAN(pts[i,1]))
-                	    nwarn++; // #nocov
+		if (out(i, 0) == HUGE_VAL || out(i, 1) == HUGE_VAL) {
+			out(i, 0) = NA_REAL;
+			out(i, 1) = NA_REAL;
+			nwarn++; // #nocov
+		}
 	}
-	if (nwarn > 0)
+	if (warn && nwarn > 0)
 		warning("one or more projected point(s) not finite"); // #nocov
 	return out;
 }
@@ -146,8 +161,26 @@ Rcpp::NumericMatrix CPL_proj_direct(Rcpp::CharacterVector from_to, Rcpp::Numeric
 #endif
 
 // [[Rcpp::export]]
+Rcpp::LogicalVector CPL_is_network_enabled(bool b = false) {
+#if PROJ_VERSION_MAJOR >= 7
+	return Rcpp::LogicalVector::create(proj_context_is_network_enabled(PJ_DEFAULT_CTX));
+#else
+	return Rcpp::LogicalVector::create(false);
+#endif
+}
+
+// [[Rcpp::export]]
+Rcpp::CharacterVector CPL_get_data_dir(bool b = false) {
+#if PROJ_VERSION_MAJOR >= 7
+	return Rcpp::CharacterVector(proj_info().searchpath);
+#else
+	return Rcpp::CharacterVector(NA_STRING);
+#endif
+}
+
+// [[Rcpp::export]]
 Rcpp::LogicalVector CPL_set_data_dir(std::string data_dir) { // #nocov start
-  return false;
+	return false;
 }
 
 // [[Rcpp::export]]
@@ -211,7 +244,8 @@ bool CPL_have_datum_files(SEXP foo) {
 }
 
 // [[Rcpp::export]]
-Rcpp::NumericMatrix CPL_proj_direct(Rcpp::CharacterVector from_to, Rcpp::NumericMatrix pts, Rcpp::IntegerVector keep) {
+Rcpp::NumericMatrix CPL_proj_direct(Rcpp::CharacterVector from_to, Rcpp::NumericMatrix pts, 
+		Rcpp::IntegerVector keep, bool warn = true) {
 
 	using namespace Rcpp;
 
@@ -284,11 +318,13 @@ Rcpp::NumericMatrix CPL_proj_direct(Rcpp::CharacterVector from_to, Rcpp::Numeric
 	pj_free(toPJ);
 	int nwarn = 0;
 	for (int i = 0; i < out.nrow(); i++) {
-		if (out(i, 0) == HUGE_VAL || out(i, 1) == HUGE_VAL )
-		    // || ISNAN(pts[i,0]) || ISNAN(pts[i,1]))
-                	    nwarn++; // #nocov
+		if (out(i, 0) == HUGE_VAL || out(i, 1) == HUGE_VAL) {
+			out(i, 0) = NA_REAL;
+			out(i, 1) = NA_REAL;
+			nwarn++; // #nocov
+		}
 	}
-	if (nwarn > 0)
+	if (warn && nwarn > 0) 
 		warning("one or more projected point(s) not finite"); // #nocov
 	return out;
 }

@@ -1,7 +1,7 @@
 
-R version 3.6.1 (2019-07-05) -- "Action of the Toes"
-Copyright (C) 2019 The R Foundation for Statistical Computing
-Platform: x86_64-pc-linux-gnu (64-bit)
+R Under development (unstable) (2020-03-11 r77925) -- "Unsuffered Consequences"
+Copyright (C) 2020 The R Foundation for Statistical Computing
+Platform: x86_64-w64-mingw32/x64 (64-bit)
 
 R is free software and comes with ABSOLUTELY NO WARRANTY.
 You are welcome to redistribute it under certain conditions.
@@ -50,13 +50,11 @@ attr(,"package")
 > library(sp)
 > suppressWarnings(RNGversion("3.5.3"))
 > set.seed(1331)
-> example(SpatialMultiPoints, ask = FALSE, echo = FALSE) # loads mpdf
-SpatialMultiPoints:
-                                                                                   geometry
-1                                                MULTIPOINT (9.38 11.5,11.1 9.85,9.76 11.2)
-2                     MULTIPOINT (10.4 -0.583,10.5 -0.313,9.8 -1.05,10.3 -0.719,11.4 -1.05)
-3 MULTIPOINT (-0.844 9.18,1.14 10.8,1.95 10.8,-0.451 10.7,0.67 10.3,0.127 10.5,-0.727 9.23)
-Coordinate Reference System (CRS) arguments: NA 
+> # example(SpatialMultiPoints, ask = FALSE, echo = FALSE) # loads mpdf
+> cl1 = cbind(rnorm(3, 10), rnorm(3, 10))
+> cl2 = cbind(rnorm(5, 10), rnorm(5,  0))
+> cl3 = cbind(rnorm(7,  0), rnorm(7, 10))
+> mpdf = SpatialMultiPointsDataFrame(list(cl1, cl2, cl3), data.frame(a = 1:3))
 > m = st_as_sf(mpdf)
 > all.equal(as(m, "Spatial"), mpdf) # TRUE
 [1] TRUE
@@ -90,7 +88,7 @@ In spTransform(meuse.grid, CRS("+proj=longlat +ellps=WGS84 +no_defs")) :
                                     NA's   :2                             
     landuse       dist.m                geometry  
  W      :50   Min.   :  10.0   POINT        :155  
- Ah     :39   1st Qu.:  80.0   epsg:4326    :  0  
+ Ah     :39   1st Qu.:  80.0   epsg:NA      :  0  
  Am     :22   Median : 270.0   +proj=long...:  0  
  Fw     :10   Mean   : 290.3                      
  Ab     : 8   3rd Qu.: 450.0                      
@@ -106,7 +104,7 @@ In spTransform(meuse.grid, CRS("+proj=longlat +ellps=WGS84 +no_defs")) :
  Max.   :1.0000   Max.   :1.0000   Max.   :0.9926                    
           geometry   
  POINT        :3103  
- epsg:4326    :   0  
+ epsg:NA      :   0  
  +proj=long...:   0  
                      
                      
@@ -115,17 +113,17 @@ In spTransform(meuse.grid, CRS("+proj=longlat +ellps=WGS84 +no_defs")) :
 > summary(st_as_sf(meuse.area))
           geometry
  POLYGON      :1  
- epsg:4326    :0  
+ epsg:NA      :0  
  +proj=long...:0  
 > summary(st_as_sf(meuse.riv))
           geometry
  POLYGON      :1  
- epsg:4326    :0  
+ epsg:NA      :0  
  +proj=long...:0  
 > summary(st_as_sf(as(meuse.riv, "SpatialLines")))
           geometry
  LINESTRING   :1  
- epsg:4326    :0  
+ epsg:NA      :0  
  +proj=long...:0  
 > summary(st_as_sf(pol.grd))
      part.a           part.b            dist        soil     ffreq   
@@ -137,7 +135,7 @@ In spTransform(meuse.grid, CRS("+proj=longlat +ellps=WGS84 +no_defs")) :
  Max.   :1.0000   Max.   :1.0000   Max.   :0.9926                    
           geometry   
  POLYGON      :3103  
- epsg:4326    :   0  
+ epsg:NA      :   0  
  +proj=long...:   0  
                      
                      
@@ -152,30 +150,29 @@ In spTransform(meuse.grid, CRS("+proj=longlat +ellps=WGS84 +no_defs")) :
  Max.   :1.0000   Max.   :1.0000   Max.   :0.9926                    
           geometry   
  LINESTRING   :3103  
- epsg:4326    :   0  
+ epsg:NA      :   0  
  +proj=long...:   0  
                      
                      
                      
 > 
-> # roundtrip nc: sf -> sp -> sf
-> # nc = st_read(system.file("gpkg/nc.gpkg", package="sf"), "nc.gpkg")
-> nc = st_read(system.file("shape/nc.shp", package="sf"), "nc", quiet = TRUE)
-> p4s = "+proj=longlat +datum=NAD27 +no_defs +ellps=clrk66 +nadgrids=@conus,@alaska,@ntv2_0.gsb,@ntv1_can.dat"
-> suppressWarnings(st_crs(nc) <- p4s)
-> names(nc)[15] = "geometry"
-> attr(nc, "sf_column") = "geometry"
-> attr(nc$geometry, "crs")$epsg = NA_integer_
+> nc = st_read(system.file("gpkg/nc.gpkg", package="sf"), "nc.gpkg")
+Reading layer `nc.gpkg' from data source `D:\RCompile\CRANguest\R-devel\lib\sf\gpkg\nc.gpkg' using driver `GPKG'
+Simple feature collection with 100 features and 14 fields
+geometry type:  MULTIPOLYGON
+dimension:      XY
+bbox:           xmin: -84.32385 ymin: 33.88199 xmax: -75.45698 ymax: 36.58965
+CRS:            4267
 > all.equal(nc, st_as_sf(as(nc, "Spatial")))
+[1] "Names: 1 string mismatch"                                                               
+[2] "Attributes: < Component \"sf_column\": 1 string mismatch >"                             
+[3] "Component 15: Attributes: < Component \"crs\": Component \"input\": 1 string mismatch >"
+> st_crs(nc) == st_crs(st_as_sf(as(nc, "Spatial")))
 [1] TRUE
 > 
-> sp = as(nc, "Spatial")
-> comment(sp) = "FALSE"
-> all.equal(nc, st_as_sf(sp))
-[1] TRUE
 > detach("package:sp")
 > unloadNamespace("rgeos")
 > 
 > proc.time()
    user  system elapsed 
-  2.728   0.072   2.792 
+   8.75    0.43    9.21 

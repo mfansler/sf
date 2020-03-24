@@ -7,7 +7,7 @@
 #' @param y ignored
 #' @param ... further specifications, see \link{plot_sf} and \link{plot} and details.
 #' @param main title for plot (\code{NULL} to remove)
-#' @param pal palette function, similar to \link[grDevices]{rainbow}, or palette values; if omitted, \link{sf.colors} is used
+#' @param pal palette function, similar to \link[grDevices]{rainbow}, or palette values; if omitted, \code{sf.colors} is used
 #' @param nbreaks number of colors breaks (ignored for \code{factor} or \code{character} variables)
 #' @param breaks either a numeric vector with the actual breaks, or a name of a method accepted by the \code{style} argument of \link[classInt]{classIntervals}
 #' @param max.plot integer; lower boundary to maximum number of attributes to plot; the default value (9) can be overriden by setting the global option \code{sf_max.plot}, e.g. \code{options(sf_max.plot=2)}
@@ -23,7 +23,7 @@
 #' @param border color of polygon border(s)
 #' @param add logical; add to current plot? Note that when using \code{add=TRUE}, you may have to set \code{reset=FALSE} in the first plot command.
 #' @param type plot type: 'p' for points, 'l' for lines, 'b' for both
-#' @param reset logical; if \code{FALSE}, keep the plot in a mode that allows adding further map elements; if \code{TRUE} restore original mode after plotting; see details.
+#' @param reset logical; if \code{FALSE}, keep the plot in a mode that allows adding further map elements; if \code{TRUE} restore original mode after plotting \code{sf} objects with attributes; see details.
 #' @param logz logical; if \code{TRUE}, use log10-scale for the attribute variable. In that case, \code{breaks} and \code{at} need to be given as log10-values; see examples.
 #' @method plot sf
 #' @name plot
@@ -36,7 +36,7 @@
 #' to control color, lines or symbols.
 #'
 #' When setting \code{reset} to \code{FALSE}, the original device parameters are lost, and the device must be reset using \code{dev.off()} in order to reset it.
-#' 
+#'
 #' parameter \code{at} can be set to specify where labels are placed along the key; see examples.
 #'
 #' @examples
@@ -62,7 +62,7 @@
 #' @export
 plot.sf <- function(x, y, ..., main, pal = NULL, nbreaks = 10, breaks = "pretty",
 		max.plot = if(is.null(n <- options("sf_max.plot")[[1]])) 9 else n,
-		key.pos = get_key_pos(x, ...), key.length = .618, key.width = lcm(1.8), 
+		key.pos = get_key_pos(x, ...), key.length = .618, key.width = lcm(1.8),
 		reset = TRUE, logz = FALSE) {
 
 	stopifnot(missing(y))
@@ -71,6 +71,8 @@ plot.sf <- function(x, y, ..., main, pal = NULL, nbreaks = 10, breaks = "pretty"
 	max_plot_missing = missing(max.plot)
 	dots = list(...)
 	col_missing = is.null(dots$col)
+
+	x = swap_axes_if_needed(x)
 
 	opar = par()
 	if (ncol(x) > 2 && !isTRUE(dots$add)) { # multiple maps to plot...
@@ -105,7 +107,7 @@ plot.sf <- function(x, y, ..., main, pal = NULL, nbreaks = 10, breaks = "pretty"
 				v0 = values[!is.na(values)]
 				n.unq = length(unique(v0))
 				breaks = if (! all(is.na(values)) && n.unq > 1)
-						classInt::classIntervals(v0, min(nbreaks, n.unq), 
+						classInt::classIntervals(v0, min(nbreaks, n.unq),
 							breaks, warnSmallN = FALSE)$brks
 					else
 						range(values, na.rm = TRUE) # lowest and highest!
@@ -115,7 +117,7 @@ plot.sf <- function(x, y, ..., main, pal = NULL, nbreaks = 10, breaks = "pretty"
 
 		# loop over each map to plot:
 		lapply(cols, function(cname) plot(x[, cname], main = cname,
-			pal = pal, nbreaks = nbreaks, breaks = breaks, key.pos = NULL, reset = FALSE, 
+			pal = pal, nbreaks = nbreaks, breaks = breaks, key.pos = NULL, reset = FALSE,
 			logz = logz, ...))
 
 		for (i in seq_len(prod(lt$mfrow) - length(cols))) # empty panels:
@@ -133,12 +135,12 @@ plot.sf <- function(x, y, ..., main, pal = NULL, nbreaks = 10, breaks = "pretty"
 				.image_scale_factor(levels(values), colors, key.pos = key.pos,
 					key.width = key.width, key.length = key.length, ...)
 			else
-				.image_scale(values, colors, breaks = breaks, key.pos = key.pos, 
+				.image_scale(values, colors, breaks = breaks, key.pos = key.pos,
 					key.length = key.length, logz = logz, ...)
 		}
 
-	} else { # single map, or dots$add=TRUE:
-		if (!identical(TRUE, dots$add) && reset)
+	} else { # single map, or dots$add == TRUE:
+		if (!isTRUE(dots$add) && reset)
 			layout(matrix(1)) # reset
 		if (ncol(x) == 1) # no attributes to choose colors from: plot geometry
 			plot(st_geometry(x), ...)
@@ -226,7 +228,7 @@ plot.sf <- function(x, y, ..., main, pal = NULL, nbreaks = 10, breaks = "pretty"
 					.image_scale_factor(levels(values), colors, key.pos = key.pos,
 						key.width = key.width, key.length = key.length, ...)
 				} else
-					.image_scale(values, colors, breaks = breaks, key.pos = key.pos, 
+					.image_scale(values, colors, breaks = breaks, key.pos = key.pos,
 						key.length = key.length, logz = logz, ...)
 			}
 			# plot the map:
@@ -245,19 +247,28 @@ plot.sf <- function(x, y, ..., main, pal = NULL, nbreaks = 10, breaks = "pretty"
 				if (length(main) && inherits(x[[main]], "units"))
 					main = make_unit_label(main, x[[main]])
 			}
-			localTitle <- function(..., col, bg, pch, cex, lty, lwd, axes, type, bgMap, 
-					border, graticule, xlim, ylim, asp, bgc, xaxs, yaxs, lab, setParUsrBB, 
+			localTitle <- function(..., col, bg, pch, cex, lty, lwd, axes, type, bgMap,
+					border, graticule, xlim, ylim, asp, bgc, xaxs, yaxs, lab, setParUsrBB,
 					expandBB, col_graticule, at, lon, lat, crs, datum, ndiscr, margin) # absorb
 				title(...)
 			localTitle(main, ...)
 		}
 	}
-	if (!isTRUE(dots$add) && reset) { # reset device:
+	if (!isTRUE(dots$add) && reset && ncol(x) > 1) { # reset device:
 		layout(matrix(1))
 		desel = which(names(opar) %in% c("cin", "cra", "csi", "cxy", "din", "page", "fig"))
 		par(opar[-desel])
 	}
 }
+
+swap_axes_if_needed = function(x) {
+	crs = st_crs(x)
+	if (st_axis_order() && !is.na(crs) && crs_parameters(crs)$yx)
+		st_transform(x, pipeline = "+proj=pipeline +step +proj=axisswap +order=2,1")
+	else
+		x
+}
+
 
 #' @name plot
 #' @export
@@ -540,6 +551,7 @@ plot_sf = function(x, xlim = NULL, ylim = NULL, asp = NA, axes = FALSE, bgc = pa
 #   min max
 # x
 # y
+
 	bbox = matrix(st_bbox(x), 2, dimnames = list(c("x", "y"), c("min", "max")))
 	# expandBB: 1=below, 2=left, 3=above and 4=right.
 	expBB = function(lim, expand) c(lim[1] - expand[1] * diff(lim), lim[2] + expand[2] * diff(lim))
@@ -792,7 +804,7 @@ bb2merc = function(x, cls = "ggmap") { # return bbox in the appropriate "web mer
 		c(0,0,-offset,-offset),
 		c(0,0,-offset,-offset),
 		c(offset,offset,0,0),
-		c(offset,offset,0,0)) 
+		c(offset,offset,0,0))
 	for(i in seq_along(poly)) {
 		if (key.pos %in% c(1,3))
 			polygon(poly[[i]], c(0, 0, 1, 1) + offs, col = col[i], border = NA)

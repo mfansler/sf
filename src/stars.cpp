@@ -1,6 +1,7 @@
 #include <cpl_port.h>
 #include <gdal.h>
 #include <gdal_priv.h>
+#include <gdal_rat.h>
 #include <ogr_api.h>
 #include <ogr_geometry.h>
 #include <ogr_srs_api.h>
@@ -36,7 +37,7 @@ CharacterVector get_meta_data(GDALDatasetH ds, CharacterVector domain_item) {
 }
 
 List get_band_meta_data(GDALDataset *poDataset) {
-	int n_bands = poDataset->GetRasterCount(); 
+	int n_bands = poDataset->GetRasterCount();
 	List ret(n_bands);
 	for (int band = 1; band <= n_bands; band++) { // unlike x & y, band is 1-based
 		GDALRasterBand *poBand = poDataset->GetRasterBand( band );
@@ -48,8 +49,8 @@ List get_band_meta_data(GDALDataset *poDataset) {
 // [[Rcpp::export]]
 CharacterVector CPL_get_metadata(CharacterVector obj, CharacterVector domain_item,
 		CharacterVector options) {
-	
-	GDALDatasetH ds = GDALOpenEx(obj[0], GDAL_OF_RASTER | GDAL_OF_READONLY, NULL, NULL, 
+
+	GDALDatasetH ds = GDALOpenEx(obj[0], GDAL_OF_RASTER | GDAL_OF_READONLY, NULL, NULL,
 		create_options(options).data());
 	CharacterVector ret = get_meta_data(ds, domain_item);
 	if (ds != NULL)
@@ -60,14 +61,14 @@ CharacterVector CPL_get_metadata(CharacterVector obj, CharacterVector domain_ite
 // [[Rcpp::export]]
 List CPL_get_crs(CharacterVector obj, CharacterVector options) {
 	List ret(4);
-	GDALDatasetH ds = GDALOpenEx(obj[0], GDAL_OF_RASTER | GDAL_OF_READONLY, NULL, NULL, 
+	GDALDatasetH ds = GDALOpenEx(obj[0], GDAL_OF_RASTER | GDAL_OF_READONLY, NULL, NULL,
 		create_options(options).data());
 	if (ds == NULL)
 		return ret; // #nocov
 
 	ret(0) = GDALGetRasterCount(ds);
 
-	ret(1) = GDALGetProjectionRef(ds);
+	ret(1) = GDALGetProjectionRef(ds); // wkt
 
 	double gt[6];
 	GDALGetGeoTransform(ds, gt);
@@ -111,20 +112,20 @@ bool equals_na(double value, double na, GDALDataType dt) {
 }
 
 // formerly: stars/src/gdal.cpp
-NumericVector read_gdal_data(GDALDataset *poDataset, 
-			NumericVector nodatavalue, 
-			int nXOff, 
-			int nYOff, 
-			int nXSize, 
-			int nYSize, 
-			int nBufXSize, 
-			int nBufYSize, 
+NumericVector read_gdal_data(GDALDataset *poDataset,
+			NumericVector nodatavalue,
+			int nXOff,
+			int nYOff,
+			int nXSize,
+			int nYSize,
+			int nBufXSize,
+			int nBufYSize,
 			IntegerVector bands,
 			GDALRasterIOExtraArg *resample
 		) {
 
 	// collapse x & y into rows, redim later:
-	NumericVector vec( 1.0 * nBufXSize * nBufYSize * bands.size() ); 
+	NumericVector vec( 1.0 * nBufXSize * nBufYSize * bands.size() );
 	// floor returns double -> no integer overflow
 
 	// read bands:
@@ -136,12 +137,12 @@ NumericVector read_gdal_data(GDALDataset *poDataset,
 			vec.begin(),
 			nBufXSize,
 			nBufYSize,
-			GDT_Float64, 
+			GDT_Float64,
 			bands.size(),
-			bands.begin(), 
-			0, 
-			0, 
-			0, 
+			bands.begin(),
+			0,
+			0,
+			0,
 			resample) == CE_Failure)
 		stop("read failure"); // #nocov
 
@@ -151,7 +152,7 @@ NumericVector read_gdal_data(GDALDataset *poDataset,
 		int band = bands(i);
 		GDALRasterBand *poBand = poDataset->GetRasterBand( band );
 		// NumericVector nodatavalue = NumericVector::create(NA_REAL);
-		// int success = 0, 
+		// int success = 0,
 		int has_scale = 0, has_offset = 0;
 		double offset = 0.0, scale = 1.0;
 		// poBand->GetNoDataValue(&success);
@@ -167,7 +168,7 @@ NumericVector read_gdal_data(GDALDataset *poDataset,
 		if (! NumericVector::is_na(nodatavalue[0]) || has_offset || has_scale) {
 
 
-			// for (R_xlen_t j = 0; j < Rf_xlength(vec); j++) {
+			// for (R_xlen_t j = 0; j < Rf_xlength(vec); j++)
 			for (R_xlen_t j = i * (((R_xlen_t) nBufXSize) * nBufYSize); // start of band i
 					j < (i + 1) * (((R_xlen_t) nBufXSize) * nBufYSize); // end of band i
 					j++) {
@@ -202,6 +203,87 @@ int get_from_list(List lst, const char *name, int otherwise) {
 		return(otherwise);
 }
 
+NumericMatrix get_color_table(GDALColorTable *tbl) {
+	int n = tbl->GetColorEntryCount();
+	NumericMatrix t(n, 4);
+	for (int i = 0; i < n; i++) {
+		const GDALColorEntry *ce = tbl->GetColorEntry(i);
+		t(i, 0) = ce->c1;
+		t(i, 1) = ce->c2;
+		t(i, 2) = ce->c3;
+		t(i, 3) = ce->c4;
+	}
+	int i = (int) tbl->GetPaletteInterpretation();
+	t.attr("interpretation") = IntegerVector::create(i);
+	return t;
+}
+
+List get_cat(char **cat) {
+	if (cat == NULL)
+		return(List::create());
+
+	int n = 0;
+	for (n = 0; cat[n] != NULL; n++)
+		n++; // number of categories
+
+	List t(1);
+	CharacterVector col(n);
+	IntegerVector row_names(n);
+	for (int i = 0; i < n; i++) {
+		col(i) = cat[i];
+		row_names(i) = i+1;
+	}
+	t(0) = col;
+	t.attr("names") = CharacterVector::create("category");
+	t.attr("row.names") = row_names;
+	t.attr("class") = CharacterVector::create("data.frame");
+	return t;
+}
+
+List get_rat(GDALRasterAttributeTable *tbl) {
+
+	if (tbl == NULL)
+		return(List::create());
+
+	List t(tbl->GetColumnCount());
+	List names(tbl->GetColumnCount());
+	for (int i = 0; i < tbl->GetColumnCount(); i++) {
+		switch (tbl->GetTypeOfCol(i)) {
+			case GFT_Integer: {
+					IntegerVector col(tbl->GetRowCount());
+					for (int j = 0; j < tbl->GetRowCount(); j++)
+						col(j) = tbl->GetValueAsInt(j, i);
+					t(i) = col;
+				}
+				break;
+			case GFT_Real: {
+					NumericVector col(tbl->GetRowCount());
+					for (int j = 0; j < tbl->GetRowCount(); j++)
+						col(j) = tbl->GetValueAsDouble(j, i);
+					t(i) = col;
+				}
+				break;
+			case GFT_String: {
+					CharacterVector col(tbl->GetRowCount());
+					for (int j = 0; j < tbl->GetRowCount(); j++)
+						col(j) = tbl->GetValueAsString(j, i);
+					t(i) = col;
+				}
+				break;
+			default:
+				stop("unknown column type in raster attribute table");
+		}
+		names(i) = tbl->GetNameOfCol(i);
+	}
+	IntegerVector row_names(tbl->GetRowCount());
+	for (int i = 0; i < tbl->GetRowCount(); i++)
+		row_names(i) = i+1;
+	t.attr("names") = names;
+	t.attr("row.names") = row_names;
+	t.attr("class") = CharacterVector::create("data.frame");
+	return t;
+}
+
 // [[Rcpp::export]]
 List CPL_read_gdal(CharacterVector fname, CharacterVector options, CharacterVector driver,
 		bool read_data, NumericVector NA_value, List RasterIO_parameters) {
@@ -227,40 +309,36 @@ List CPL_read_gdal(CharacterVector fname, CharacterVector options, CharacterVect
 	// geotransform:
 	double adfGeoTransform[6];
 	CPLErr err = poDataset->GetGeoTransform( adfGeoTransform );
+	// return the default geotransform as per the
+	// GetGeoTransform() doc in classGDALDataset
 	NumericVector geotransform = NumericVector::create(
-		err == CE_None ? adfGeoTransform[0] : NA_REAL,
-		err == CE_None ? adfGeoTransform[1] : NA_REAL,
-		err == CE_None ? adfGeoTransform[2] : NA_REAL,
-		err == CE_None ? adfGeoTransform[3] : NA_REAL,
-		err == CE_None ? adfGeoTransform[4] : NA_REAL,
-		err == CE_None ? adfGeoTransform[5] : NA_REAL);
+		err == CE_None ? adfGeoTransform[0] : 0,
+		err == CE_None ? adfGeoTransform[1] : 1,
+		err == CE_None ? adfGeoTransform[2] : 0,
+		err == CE_None ? adfGeoTransform[3] : 0,
+		err == CE_None ? adfGeoTransform[4] : 0,
+		err == CE_None ? adfGeoTransform[5] : 1); // see https://github.com/r-spatial/sf/pull/1307
+	int default_geotransform = 0;
+	if (err != CE_None) {
+		default_geotransform = 1;
+	}
 	bool geo_transform_set = (err == CE_None);
 
 	// CRS, projection:
-	const char *wkt = poDataset->GetProjectionRef();
-	CharacterVector proj = NA_STRING;
-	CharacterVector p4 = NA_STRING;
-	if (*wkt != '\0') {
-		proj = CharacterVector::create(wkt);
-		// proj4string:
-		OGRSpatialReference *sr = new OGRSpatialReference;
-		sr = handle_axis_order(sr);
-		char **ppt = (char **) &wkt;
-#if GDAL_VERSION_MAJOR <= 2 && GDAL_VERSION_MINOR <= 2
-		sr->importFromWkt(ppt);
+#if GDAL_VERSION_MAJOR >= 3
+	const OGRSpatialReference *sr = poDataset->GetSpatialRef();
+	// sr = handle_axis_order(sr); -- should be done by GDAL; xy
+	Rcpp::List crs = create_crs(sr, true);
 #else
-		sr->importFromWkt( (const char**) ppt);
+	const char *wkt_gdal = poDataset->GetProjectionRef();
+	CharacterVector wkt = NA_STRING;
+	if (*wkt_gdal != '\0')
+		wkt = CharacterVector::create(wkt_gdal);
 #endif
-		char *proj4; 
-		if (sr->exportToProj4(&proj4) != OGRERR_NONE) // need to error check?
-			stop("failure to export SRS to proj.4"); // #nocov
-		p4 = CharacterVector::create(proj4); // need to CPLFree?
-		CPLFree(proj4);
-		delete sr;
-	}
 
 	GDALRasterBand *poBand = NULL;
 	NumericVector nodatavalue = NumericVector::create(NA_REAL);
+
 	if (poDataset->GetRasterCount()) {
 		poBand = poDataset->GetRasterBand( 1 );
 		int set = 0;
@@ -273,6 +351,26 @@ List CPL_read_gdal(CharacterVector fname, CharacterVector options, CharacterVect
 			nodatavalue[0] = poBand->GetNoDataValue(NULL); // #nocov
 	}
 
+	// get color table, attribute table, and min/max values:
+	List colorTables(poDataset->GetRasterCount());
+	List attributeTables(poDataset->GetRasterCount());
+	NumericMatrix ranges(poDataset->GetRasterCount(), 4);
+	for (int i = 0; i < poDataset->GetRasterCount(); i++) {
+		poBand = poDataset->GetRasterBand(i + 1);
+		if (poBand->GetColorTable() != NULL)
+			colorTables(i) = get_color_table(poBand->GetColorTable());
+		if (poBand->GetCategoryNames() != NULL)
+			attributeTables(i) = get_cat(poBand->GetCategoryNames());
+		else
+			attributeTables(i) = get_rat(poBand->GetDefaultRAT());
+		int set = 1;
+		ranges(i, 0) = poBand->GetMinimum(&set);
+		ranges(i, 1) = (double) set;
+		ranges(i, 2) = poBand->GetMaximum(&set);
+		ranges(i, 3) = (double) set;
+	}
+
+	// get metadata items:
 	CharacterVector items = get_meta_data((GDALDatasetH) poDataset, NA_STRING);
 	CharacterVector sub = NA_STRING;
 	for (int i = 0; i < items.size(); i++) {
@@ -290,7 +388,7 @@ List CPL_read_gdal(CharacterVector fname, CharacterVector options, CharacterVect
 	int nBufYSize = get_from_list(RasterIO_parameters, "nBufYSize", nYSize);
 
 	// bands:
-	IntegerVector bands; 
+	IntegerVector bands;
 	if (RasterIO_parameters.containsElementNamed("bands"))
 		bands = RasterIO_parameters["bands"]; // #nocov
 	else {
@@ -322,7 +420,7 @@ List CPL_read_gdal(CharacterVector fname, CharacterVector options, CharacterVect
 		else if (res[0] == "nearest_neighbour")
 			resample.eResampleAlg = GRIORA_NearestNeighbour;
 		else stop("unknown method for resample"); // #nocov end
-	} 
+	}
 
 	List ReturnList = List::create(
 		_["filename"] = fname,
@@ -330,18 +428,25 @@ List CPL_read_gdal(CharacterVector fname, CharacterVector options, CharacterVect
 		_["cols"] = NumericVector::create(nXOff + 1, nXOff + nBufXSize),
 		_["rows"] = NumericVector::create(nYOff + 1, nYOff + nBufYSize),
 		_["bands"] = bands,
-		_["proj_wkt"] = proj,
-		_["proj4string"] = p4,
+#if GDAL_VERSION_MAJOR >= 3
+		_["crs"] = crs,
+#else
+		_["proj_wkt"] = wkt,
+#endif
 		_["geotransform"] = geotransform,
-		_["datatype"] =	poBand != NULL ? 
+		_["datatype"] =	poBand != NULL ?
 			GDALGetDataTypeName(poBand->GetRasterDataType()) :
 			CharacterVector::create(NA_STRING),
 		_["sub"] = sub,
 		_["meta"] = get_meta_data(poDataset, CharacterVector::create()),
-		_["band_meta"] = get_band_meta_data(poDataset)
+		_["band_meta"] = get_band_meta_data(poDataset),
+		_["attribute_tables"] = attributeTables,
+		_["color_tables"] = colorTables,
+		_["ranges"] = ranges,
+		_["default_geotransform"] = default_geotransform
 	);
 	if (read_data) {
-		ReturnList.attr("data") = read_gdal_data(poDataset, nodatavalue, nXOff, nYOff, 
+		ReturnList.attr("data") = read_gdal_data(poDataset, nodatavalue, nXOff, nYOff,
 			nXSize, nYSize, nBufXSize, nBufYSize, bands, &resample);
 	}
 	GDALClose(poDataset);
@@ -365,8 +470,8 @@ List CPL_read_gdal(CharacterVector fname, CharacterVector options, CharacterVect
 }
 
 // [[Rcpp::export]]
-void CPL_write_gdal(NumericMatrix x, CharacterVector fname, CharacterVector driver, CharacterVector options,
-		CharacterVector Type, IntegerVector dims, IntegerVector from,
+void CPL_write_gdal(NumericMatrix x, CharacterVector fname, CharacterVector driver,
+		CharacterVector options, CharacterVector Type, IntegerVector dims, IntegerVector from,
 		NumericVector gt, CharacterVector p4s, NumericVector na_val,
 		bool create = true, bool only_create = false) {
 
@@ -433,14 +538,20 @@ void CPL_write_gdal(NumericMatrix x, CharacterVector fname, CharacterVector driv
 
 		// CRS:
 		if (p4s.length() != 1)
-			stop("p4s should have length three"); // #nocov
-		OGRSpatialReference oSRS;
-		oSRS.importFromProj4( p4s[0] );
-		char *pszSRS_WKT = NULL;
-		oSRS.exportToWkt( &pszSRS_WKT );
-		if (poDstDS->SetProjection( pszSRS_WKT ) != CE_None)
-			stop("SetProjection: error"); // #nocov
-		CPLFree( pszSRS_WKT );
+			stop("p4s should have length one"); // #nocov
+		if (p4s[0] != NA_STRING) {
+			OGRSpatialReference oSRS;
+			oSRS.SetFromUserInput((const char *) p4s[0]); // handles wkt too
+#if GDAL_VERSION_MAJOR >= 3
+			poDstDS->SetSpatialRef(&oSRS);
+#else
+			char *pszSRS_WKT = NULL;
+			oSRS.exportToWkt( &pszSRS_WKT );
+			if (poDstDS->SetProjection( pszSRS_WKT ) != CE_None)
+				stop("SetProjection: error"); // #nocov
+			CPLFree( pszSRS_WKT );
+#endif
+		}
 
 		// set band NA's
 		if (! NumericVector::is_na(na_val[0])) {
@@ -473,7 +584,7 @@ void CPL_write_gdal(NumericMatrix x, CharacterVector fname, CharacterVector driv
 		// write values:
 		// write the whole lot:
 		if (poDstDS->RasterIO(GF_Write, from[0], from[1], dims[0] - from[0], dims[1] - from[1],
-				x.begin(), dims[0] - from[0], dims[1] - from[1], GDT_Float64, 
+				x.begin(), dims[0] - from[0], dims[1] - from[1], GDT_Float64,
 				dims[2], NULL, 0, 0, 0, NULL) == CE_Failure)
 			stop("write failure"); // #nocov
 	}
