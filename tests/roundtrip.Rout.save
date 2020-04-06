@@ -1,5 +1,5 @@
 
-R Under development (unstable) (2020-03-11 r77925) -- "Unsuffered Consequences"
+R version 4.0.0 alpha (2020-03-26 r78078)
 Copyright (C) 2020 The R Foundation for Statistical Computing
 Platform: x86_64-w64-mingw32/x64 (64-bit)
 
@@ -157,7 +157,7 @@ In spTransform(meuse.grid, CRS("+proj=longlat +ellps=WGS84 +no_defs")) :
                      
 > 
 > nc = st_read(system.file("gpkg/nc.gpkg", package="sf"), "nc.gpkg")
-Reading layer `nc.gpkg' from data source `D:\RCompile\CRANguest\R-devel\lib\sf\gpkg\nc.gpkg' using driver `GPKG'
+Reading layer `nc.gpkg' from data source `D:\temp\Rtmpm8We6c\RLIBS_2f0d4562c4d7e\sf\gpkg\nc.gpkg' using driver `GPKG'
 Simple feature collection with 100 features and 14 fields
 geometry type:  MULTIPOLYGON
 dimension:      XY
@@ -175,4 +175,4 @@ CRS:            4267
 > 
 > proc.time()
    user  system elapsed 
-   8.75    0.43    9.21 
+   8.26    0.23    8.50 

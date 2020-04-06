@@ -1,5 +1,5 @@
 
-R Under development (unstable) (2020-03-11 r77925) -- "Unsuffered Consequences"
+R version 4.0.0 alpha (2020-03-26 r78078)
 Copyright (C) 2020 The R Foundation for Statistical Computing
 Platform: x86_64-w64-mingw32/x64 (64-bit)
 
@@ -237,4 +237,4 @@ POLYGON ((0 0, 10 0, 10 10, 0 10, 0 0), (5 5, 5 6, 6 6, 6 5, 5 5))
 > 
 > proc.time()
    user  system elapsed 
-   1.23    0.34    1.65 
+   1.18    0.24    1.48 

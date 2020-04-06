@@ -1,5 +1,5 @@
 
-R Under development (unstable) (2020-03-11 r77925) -- "Unsuffered Consequences"
+R version 4.0.0 alpha (2020-03-26 r78078)
 Copyright (C) 2020 The R Foundation for Statistical Computing
 Platform: x86_64-w64-mingw32/x64 (64-bit)
 
@@ -88,7 +88,7 @@ bbox:           xmin: -9386880 ymin: 4012991 xmax: -8399788 ymax: 4382079
 CRS:            EPSG:3857
 # A tibble: 4 x 3
   area_cl    `mean(AREA)`                                               geometry
-* <fct>             <dbl>                                     <MULTIPOLYGON [m]>
+  <fct>             <dbl>                                     <MULTIPOLYGON [m]>
 1 (0,0.1]          0.0760 (((-8678517 4054264, -8679088 4061405, -8680136 40615~
 2 (0.1,0.12]       0.112  (((-9383227 4192541, -9375980 4199500, -9370835 41966~
 3 (0.12,0.1~       0.134  (((-8520830 4108031, -8522040 4111119, -8520104 41115~
@@ -194,7 +194,7 @@ bbox:           xmin: 123829 ymin: 14744.69 xmax: 930521.8 ymax: 318259.9
 CRS:            EPSG:32119
 # A tibble: 1 x 2
   `mean(dens)`                                                          geometry
-* [person/m^2]                                                <MULTIPOLYGON [m]>
+  [person/m^2]                                                <MULTIPOLYGON [m]>
 1 2.593234e-06 (((834893.7 95747.49, 833834.2 98254.6, 835420.2 98655.72, 84006~
 > out %>% summarise(mean(new_dens))
 Simple feature collection with 1 feature and 1 field
@@ -204,7 +204,7 @@ bbox:           xmin: 123829 ymin: 14744.69 xmax: 930521.8 ymax: 318259.9
 CRS:            EPSG:32119
 # A tibble: 1 x 2
   `mean(new_dens)`                                                      geometry
-*     [person/m^2]                                            <MULTIPOLYGON [m]>
+      [person/m^2]                                            <MULTIPOLYGON [m]>
 1     2.589362e-06 (((834893.7 95747.49, 833834.2 98254.6, 835420.2 98655.72, 8~
 > 
 > # total densities don't:
@@ -216,7 +216,7 @@ bbox:           xmin: 123829 ymin: 14744.69 xmax: 930521.8 ymax: 318259.9
 CRS:            EPSG:32119
 # A tibble: 1 x 2
   `sum(area * dens)`                                                    geometry
-*           [person]                                          <MULTIPOLYGON [m]>
+            [person]                                          <MULTIPOLYGON [m]>
 1             329962 (((834893.7 95747.49, 833834.2 98254.6, 835420.2 98655.72,~
 > out %>% summarise(sum(A * new_dens))
 Simple feature collection with 1 feature and 1 field
@@ -226,7 +226,7 @@ bbox:           xmin: 123829 ymin: 14744.69 xmax: 930521.8 ymax: 318259.9
 CRS:            EPSG:32119
 # A tibble: 1 x 2
   `sum(A * new_dens~                                                    geometry
-*           [person]                                          <MULTIPOLYGON [m]>
+            [person]                                          <MULTIPOLYGON [m]>
 1             329962 (((834893.7 95747.49, 833834.2 98254.6, 835420.2 98655.72,~
 > 
 > conn = system.file("gpkg/nc.gpkg", package = "sf")
@@ -283,4 +283,4 @@ First 10 features:
 > 
 > proc.time()
    user  system elapsed 
-   6.48    0.48    7.19 
+   6.64    0.46    7.17 

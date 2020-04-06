@@ -1,5 +1,5 @@
 
-R Under development (unstable) (2020-03-11 r77925) -- "Unsuffered Consequences"
+R version 4.0.0 alpha (2020-03-26 r78078)
 Copyright (C) 2020 The R Foundation for Statistical Computing
 Platform: x86_64-w64-mingw32/x64 (64-bit)
 
@@ -20,35 +20,15 @@ Type 'q()' to quit R.
 > 
 > test_check("sf")
 Cannot open layer foo
-Reading layer `nospatial' from data source `D:\RCompile\CRANguest\R-devel\lib\sf\gpkg\nospatial.gpkg' using driver `GPKG'
-Reading layer `nospatial' from data source `D:\RCompile\CRANguest\R-devel\lib\sf\gpkg\nospatial.gpkg' using driver `GPKG'
+Reading layer `nospatial' from data source `D:\temp\Rtmpm8We6c\RLIBS_2f0d4562c4d7e\sf\gpkg\nospatial.gpkg' using driver `GPKG'
+Reading layer `nospatial' from data source `D:\temp\Rtmpm8We6c\RLIBS_2f0d4562c4d7e\sf\gpkg\nospatial.gpkg' using driver `GPKG'
 OGR: Unsupported geometry type
-Reading layer `nc' from data source `D:\RCompile\CRANguest\R-devel\lib\sf\shape\nc.shp' using driver `ESRI Shapefile'
-Simple feature collection with 100 features and 14 fields
-geometry type:  MULTIPOLYGON
-dimension:      XY
-bbox:           xmin: -84.32385 ymin: 33.88199 xmax: -75.45698 ymax: 36.58965
-CRS:            4267
-XXX: path0=D:\temp\RtmpusiYuD/working_dir\RtmpUDBYPW\file7920633d654f.nc path=D:\temp\RtmpusiYuD\working_dir\RtmpUDBYPW\file7920633d654f.nc
+XXX: path0=D:\temp\Rtmpm8We6c/working_dir\RtmpYJLgoL\file1529020b07513.nc path=D:\temp\Rtmpm8We6c\working_dir\RtmpYJLgoL\file1529020b07513.nc
 Failed to create feature 1 in x
 Failed to create feature 1 in x
-Reading layer `storms_xyzm' from data source `D:\RCompile\CRANguest\R-devel\lib\sf\shape\storms_xyzm.shp' using driver `ESRI Shapefile'
-Simple feature collection with 71 features and 0 fields
-geometry type:  LINESTRING
-dimension:      XYM
-bbox:           xmin: -102.2 ymin: 8.3 xmax: 0 ymax: 59.5
-m_range:        zmin: 924 zmax: 1017
-CRS:            NA
-Reading layer `storms_xyz' from data source `D:\RCompile\CRANguest\R-devel\lib\sf\shape\storms_xyz.shp' using driver `ESRI Shapefile'
-Simple feature collection with 71 features and 0 fields
-geometry type:  LINESTRING
-dimension:      XYZ
-bbox:           xmin: -102.2 ymin: 8.3 xmax: 0 ymax: 59.5
-z_range:        zmin: 924 zmax: 1017
-CRS:            NA
 == testthat results  ===========================================================
-[ OK: 714 | SKIPPED: 65 | WARNINGS: 3 | FAILED: 0 ]
+[ OK: 706 | SKIPPED: 56 | WARNINGS: 3 | FAILED: 0 ]
 > 
 > proc.time()
    user  system elapsed 
-  12.79    1.10   17.14 
+  13.80    1.18   17.65 

@@ -1,5 +1,5 @@
 
-R Under development (unstable) (2020-03-11 r77925) -- "Unsuffered Consequences"
+R version 4.0.0 alpha (2020-03-26 r78078)
 Copyright (C) 2020 The R Foundation for Statistical Computing
 Platform: x86_64-w64-mingw32/x64 (64-bit)
 
@@ -341,7 +341,7 @@ First 3 features:
 + }
 Writing layer `tst__' to data source `tst__.gpkg' using driver `GPKG'
 Writing 100 features with 15 fields and geometry type Multi Polygon.
-Reading layer `tst__' from data source `D:\RCompile\CRANguest\R-devel\sf.Rcheck\tests_x64\tst__.gpkg' using driver `GPKG'
+Reading layer `tst__' from data source `d:\RCompile\CRANguest\R-devel\sf.Rcheck\tests_x64\tst__.gpkg' using driver `GPKG'
 Simple feature collection with 100 features and 15 fields
 geometry type:  MULTIPOLYGON
 dimension:      XY
@@ -365,4 +365,4 @@ Error in CPL_read_ogr(dsn, layer, query, as.character(options), quiet,  :
 > 
 > proc.time()
    user  system elapsed 
-   3.68    0.46    4.30 
+   3.33    0.46    3.93 

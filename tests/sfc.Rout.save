@@ -1,5 +1,5 @@
 
-R Under development (unstable) (2020-03-11 r77925) -- "Unsuffered Consequences"
+R version 4.0.0 alpha (2020-03-26 r78078)
 Copyright (C) 2020 The R Foundation for Statistical Computing
 Platform: x86_64-w64-mingw32/x64 (64-bit)
 
@@ -433,10 +433,10 @@ Classes 'sf' and 'data.frame':	100 obs. of  15 variables:
  $ geometry :sfc_MULTIPOLYGON of length 100; first list element: List of 1
   ..$ :List of 1
   .. ..$ : num [1:27, 1:2] -81.5 -81.5 -81.6 -81.6 -81.7 ...
-  ..- attr(*, "class")= chr  "XY" "MULTIPOLYGON" "sfg"
+  ..- attr(*, "class")= chr [1:3] "XY" "MULTIPOLYGON" "sfg"
  - attr(*, "sf_column")= chr "geometry"
  - attr(*, "agr")= Factor w/ 3 levels "constant","aggregate",..: NA NA NA NA NA NA NA NA NA NA ...
-  ..- attr(*, "names")= chr  "AREA" "PERIMETER" "CNTY_" "CNTY_ID" ...
+  ..- attr(*, "names")= chr [1:14] "AREA" "PERIMETER" "CNTY_" "CNTY_ID" ...
 > bb = st_as_sfc(st_bbox(nc))
 > format(st_bbox(nc))
 [1] "((-84.32385,33.88199),(-75.45698,36.58965))"
@@ -645,7 +645,7 @@ CRS:            NA
 3     3  14 POINT (3 3)
 > # st_join, largest = TRUE:
 > nc <- st_transform(st_read(system.file("shape/nc.shp", package="sf")), 2264)
-Reading layer `nc' from data source `D:\RCompile\CRANguest\R-devel\lib\sf\shape\nc.shp' using driver `ESRI Shapefile'
+Reading layer `nc' from data source `D:\temp\Rtmpm8We6c\RLIBS_2f0d4562c4d7e\sf\shape\nc.shp' using driver `ESRI Shapefile'
 Simple feature collection with 100 features and 14 fields
 geometry type:  MULTIPOLYGON
 dimension:      XY
@@ -1124,4 +1124,4 @@ CRS:            NA
 > 
 > proc.time()
    user  system elapsed 
-  13.63    0.45   14.16 
+  11.65    0.65   12.34 

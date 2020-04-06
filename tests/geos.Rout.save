@@ -1,5 +1,5 @@
 
-R Under development (unstable) (2020-03-11 r77925) -- "Unsuffered Consequences"
+R version 4.0.0 alpha (2020-03-26 r78078)
 Copyright (C) 2020 The R Foundation for Statistical Computing
 Platform: x86_64-w64-mingw32/x64 (64-bit)
 
@@ -575,4 +575,4 @@ Sparse geometry binary predicate list of length 1, where the predicate was `inte
 > 
 > proc.time()
    user  system elapsed 
-  13.16    0.14   13.38 
+   9.90    0.29   10.24 

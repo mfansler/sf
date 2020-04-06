@@ -1,5 +1,5 @@
 
-R Under development (unstable) (2020-03-11 r77925) -- "Unsuffered Consequences"
+R version 4.0.0 alpha (2020-03-26 r78078)
 Copyright (C) 2020 The R Foundation for Statistical Computing
 Platform: x86_64-w64-mingw32/x64 (64-bit)
 
@@ -332,4 +332,4 @@ lines[GRID.lines.1]
 > 
 > proc.time()
    user  system elapsed 
-   2.62    0.23    2.94 
+   1.82    0.17    1.99 

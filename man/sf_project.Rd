@@ -4,7 +4,14 @@
 \alias{sf_project}
 \title{directly transform a set of coordinates}
 \usage{
-sf_project(from, to, pts, keep = FALSE, warn = TRUE)
+sf_project(
+  from,
+  to,
+  pts,
+  keep = FALSE,
+  warn = TRUE,
+  authority_compliant = st_axis_order()
+)
 }
 \arguments{
 \item{from}{character description of source CRS, or object of class \code{crs}}
@@ -18,6 +25,8 @@ sf_project(from, to, pts, keep = FALSE, warn = TRUE)
 return value; otherwise an error is reported and nothing is returned.}
 
 \item{warn}{logical; if \code{TRUE}, warn when non-finite values are generated}
+
+\item{authority_compliant}{logical; \code{TRUE} means handle axis order authority compliant (e.g. EPSG:4326 implying x=lat, y=lon), \code{FALSE} means use visualisation order (i.e. always x=lon, y=lat)}
 }
 \value{
 two-column numeric matrix with transformed/converted coordinates, returning invalid values as \code{Inf}

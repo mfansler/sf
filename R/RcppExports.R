@@ -277,8 +277,8 @@ CPL_have_datum_files <- function(foo) {
     .Call('_sf_CPL_have_datum_files', PACKAGE = 'sf', foo)
 }
 
-CPL_proj_direct <- function(from_to, pts, keep, warn = TRUE) {
-    .Call('_sf_CPL_proj_direct', PACKAGE = 'sf', from_to, pts, keep, warn)
+CPL_proj_direct <- function(from_to, pts, keep, warn = TRUE, authority_compliant = FALSE) {
+    .Call('_sf_CPL_proj_direct', PACKAGE = 'sf', from_to, pts, keep, warn, authority_compliant)
 }
 
 CPL_proj_info <- function(type) {
@@ -325,11 +325,11 @@ CPL_write_wkb <- function(sfc, EWKB = FALSE) {
     .Call('_sf_CPL_write_wkb', PACKAGE = 'sf', sfc, EWKB)
 }
 
-CPL_get_z_range <- function(sf, depth = 0L) {
+CPL_get_z_range <- function(sf, depth) {
     .Call('_sf_CPL_get_z_range', PACKAGE = 'sf', sf, depth)
 }
 
-CPL_get_m_range <- function(sf, depth = 0L) {
+CPL_get_m_range <- function(sf, depth) {
     .Call('_sf_CPL_get_m_range', PACKAGE = 'sf', sf, depth)
 }
 

@@ -1,5 +1,5 @@
 
-R Under development (unstable) (2020-03-11 r77925) -- "Unsuffered Consequences"
+R version 4.0.0 alpha (2020-03-26 r78078)
 Copyright (C) 2020 The R Foundation for Statistical Computing
 Platform: x86_64-w64-mingw32/x64 (64-bit)
 
@@ -147,7 +147,7 @@ Geometry set for 7 features  (with 7 geometries empty)
 geometry type:  GEOMETRY
 dimension:      XYM
 bbox:           xmin: NA ymin: NA xmax: NA ymax: NA
-m_range:        zmin: NA zmax: NA
+m_range:        mmin: NA mmax: NA
 CRS:            NA
 First 5 geometries:
 POINT M EMPTY
@@ -219,7 +219,7 @@ Geometry set for 7 features  (with 7 geometries empty)
 geometry type:  GEOMETRY
 dimension:      XYM
 bbox:           xmin: NA ymin: NA xmax: NA ymax: NA
-m_range:        zmin: NA zmax: NA
+m_range:        mmin: NA mmax: NA
 CRS:            NA
 First 5 geometries:
 POINT M EMPTY
@@ -285,4 +285,4 @@ POINT EMPTY
 > 
 > proc.time()
    user  system elapsed 
-   1.23    0.29    1.49 
+   1.27    0.20    1.51 
