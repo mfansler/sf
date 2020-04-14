@@ -283,4 +283,4 @@ First 10 features:
 > 
 > proc.time()
    user  system elapsed 
-   6.64    0.46    7.17 
+   4.77    0.28    5.05 

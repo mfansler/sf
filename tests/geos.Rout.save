@@ -575,4 +575,4 @@ Sparse geometry binary predicate list of length 1, where the predicate was `inte
 > 
 > proc.time()
    user  system elapsed 
-   9.90    0.29   10.24 
+   8.33    0.15    8.50 

@@ -169,4 +169,4 @@ plotting the first 10 out of 15 attributes; use max.plot = 15 to plot all
 > 
 > proc.time()
    user  system elapsed 
-  11.18    0.59   11.98 
+   7.42    0.37    7.92 

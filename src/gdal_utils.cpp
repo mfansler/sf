@@ -109,9 +109,11 @@ Rcpp::LogicalVector CPL_gdaltranslate(Rcpp::CharacterVector src, Rcpp::Character
 	if (src_pt == NULL)
 		return 1; // #nocov
 	GDALDatasetH result = GDALTranslate((const char *) dst[0], src_pt, opt, &err);
+	GDALTranslateOptionsFree(opt);
+	/* see https://github.com/r-spatial/sf/issues/1352:
 	if (src_pt != NULL)
 		GDALClose(src_pt);
-	GDALTranslateOptionsFree(opt);
+	*/
 	if (result != NULL)
 		GDALClose(result);
 	return result == NULL || err;
@@ -149,26 +151,29 @@ Rcpp::LogicalVector CPL_gdalbuildvrt(Rcpp::CharacterVector src, Rcpp::CharacterV
 
 	int err = 0;
 	std::vector <char *> options_char = create_options(options, true);
-	std::vector <char *> oo_char = create_options(oo, true); // open options
 	GDALBuildVRTOptions* opt = GDALBuildVRTOptionsNew(options_char.data(), NULL);
-
-	/*
-	std::vector<const char *> srcpt(src.size());
-	for (int i = 0; i < src.size(); i++)
-		srcpt[i] = (const char *) src[i];
-	*/
-	std::vector<GDALDatasetH> srcpt(src.size());
-	for (int i = 0; i < src.size(); i++) {
-		const char *name = src[i];
-		srcpt[i] = GDALOpenEx(name, GDAL_OF_RASTER | GA_ReadOnly, NULL, 
-			oo_char.data(), NULL);
+	GDALDatasetH result = NULL;
+	if (oo.size()) { 
+		// to understand why we don't always take this path, read: 
+		// https://github.com/r-spatial/sf/issues/1336
+		std::vector <char *> oo_char = create_options(oo, true); // open options
+		std::vector<GDALDatasetH> srcpt(src.size());
+		for (int i = 0; i < src.size(); i++) {
+			srcpt[i] = GDALOpenEx((const char *) src[i], GDAL_OF_RASTER | GA_ReadOnly, NULL, 
+				oo_char.data(), NULL);
+			if (srcpt[i] == NULL)
+				Rcpp::stop("cannot open source dataset");
+		}
+		result = GDALBuildVRT((const char *) dst[0], src.size(), srcpt.data(), NULL, opt, &err);
+		for (int i = 0; i < src.size(); i++)
+			GDALClose(srcpt[i]);
+	} else {
+		std::vector<const char *> srcpt(src.size());
+		for (int i = 0; i < src.size(); i++)
+			srcpt[i] = (const char *) src[i];
+		result = GDALBuildVRT((const char *) dst[0], src.size(), NULL, srcpt.data(), opt, &err);
 	}
-
-	GDALDatasetH result = GDALBuildVRT((const char *) dst[0], src.size(), srcpt.data(), NULL, opt, &err);
-
 	GDALBuildVRTOptionsFree(opt);
-	for (int i = 0; i < src.size(); i++)
-		GDALClose(srcpt[i]);
 	if (result != NULL)
 		GDALClose(result);
 	return result == NULL || err;

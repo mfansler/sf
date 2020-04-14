@@ -645,7 +645,7 @@ CRS:            NA
 3     3  14 POINT (3 3)
 > # st_join, largest = TRUE:
 > nc <- st_transform(st_read(system.file("shape/nc.shp", package="sf")), 2264)
-Reading layer `nc' from data source `D:\temp\Rtmpm8We6c\RLIBS_2f0d4562c4d7e\sf\shape\nc.shp' using driver `ESRI Shapefile'
+Reading layer `nc' from data source `D:\temp\Rtmp8qxg3B\RLIBS_1b15869f17642\sf\shape\nc.shp' using driver `ESRI Shapefile'
 Simple feature collection with 100 features and 14 fields
 geometry type:  MULTIPOLYGON
 dimension:      XY
@@ -1124,4 +1124,4 @@ CRS:            NA
 > 
 > proc.time()
    user  system elapsed 
-  11.65    0.65   12.34 
+   7.33    0.31    7.66 

@@ -285,4 +285,4 @@ POINT EMPTY
 > 
 > proc.time()
    user  system elapsed 
-   1.27    0.20    1.51 
+   1.12    0.21    1.32 

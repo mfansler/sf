@@ -75,4 +75,4 @@ Error in Ops.sfg(pt) : unary ! not defined for "sfg" objects
 > 
 > proc.time()
    user  system elapsed 
-   0.95    0.17    1.10 
+   0.68    0.14    0.81 

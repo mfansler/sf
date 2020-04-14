@@ -18,17 +18,8 @@ Type 'q()' to quit R.
 > library(testthat)
 > suppressPackageStartupMessages(library(sf))
 > 
-> test_check("sf")
-Cannot open layer foo
-Reading layer `nospatial' from data source `D:\temp\Rtmpm8We6c\RLIBS_2f0d4562c4d7e\sf\gpkg\nospatial.gpkg' using driver `GPKG'
-Reading layer `nospatial' from data source `D:\temp\Rtmpm8We6c\RLIBS_2f0d4562c4d7e\sf\gpkg\nospatial.gpkg' using driver `GPKG'
-OGR: Unsupported geometry type
-XXX: path0=D:\temp\Rtmpm8We6c/working_dir\RtmpYJLgoL\file1529020b07513.nc path=D:\temp\Rtmpm8We6c\working_dir\RtmpYJLgoL\file1529020b07513.nc
-Failed to create feature 1 in x
-Failed to create feature 1 in x
-== testthat results  ===========================================================
-[ OK: 706 | SKIPPED: 56 | WARNINGS: 3 | FAILED: 0 ]
+> # test_check("sf")
 > 
 > proc.time()
    user  system elapsed 
-  13.80    1.18   17.65 
+   0.90    0.09    0.98 

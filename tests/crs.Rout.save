@@ -93,8 +93,10 @@ POINT (111319.5 111325.1)
 > 
 > st_axis_order()
 [1] FALSE
+> if (sf_extSoftVersion()["GDAL"] >= "2.5.0")
++   st_axis_order(TRUE)
 > st_axis_order(FALSE)
 > 
 > proc.time()
    user  system elapsed 
-   1.32    0.14    1.51 
+   1.17    0.12    1.26 

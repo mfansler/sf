@@ -210,7 +210,7 @@ enclosing rectangle: [-1, 1] x [1, 2] units
 > 
 > # as.owin.sf, as.owin.sfc_*
 > nc = st_read(system.file("gpkg/nc.gpkg", package="sf"), check_ring_dir = TRUE)
-Reading layer `nc.gpkg' from data source `D:\temp\Rtmpm8We6c\RLIBS_2f0d4562c4d7e\sf\gpkg\nc.gpkg' using driver `GPKG'
+Reading layer `nc.gpkg' from data source `D:\temp\Rtmp8qxg3B\RLIBS_1b15869f17642\sf\gpkg\nc.gpkg' using driver `GPKG'
 Simple feature collection with 100 features and 14 fields
 geometry type:  MULTIPOLYGON
 dimension:      XY
@@ -302,4 +302,4 @@ LINESTRING (1 1, 2 0)
 > 
 > proc.time()
    user  system elapsed 
-   4.39    0.43    4.99 
+   3.04    0.23    3.32 

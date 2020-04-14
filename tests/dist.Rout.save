@@ -108,4 +108,4 @@ Error in st_line_sample(ls, density = 1/1000) :
 > 
 > proc.time()
    user  system elapsed 
-   1.24    0.26    1.51 
+   0.98    0.15    1.13 

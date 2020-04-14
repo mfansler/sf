@@ -1,5 +1,5 @@
 Package: sf
-Version: 0.9-1
+Version: 0.9-2
 Title: Simple Features for R
 Authors@R: 
     c(person(given = "Edzer",
@@ -47,7 +47,7 @@ Description: Support for simple features, a standardized way to
     data, to 'GEOS' for geometrical operations, and to 'PROJ' for
     projection conversions and datum transformations.
 License: GPL-2 | MIT + file LICENSE
-URL: https://github.com/r-spatial/sf/, https://r-spatial.github.io/sf/
+URL: https://r-spatial.github.io/sf/, https://github.com/r-spatial/sf/
 BugReports: https://github.com/r-spatial/sf/issues/
 Depends: methods, R (>= 3.3.0)
 Imports: classInt (>= 0.4-1), DBI (>= 0.8), graphics, grDevices, grid,
@@ -75,7 +75,7 @@ Collate: 'RcppExports.R' 'init.R' 'crs.R' 'bbox.R' 'read.R' 'db.R'
         'normalize.R' 'defunct.R' 'z_range.R' 'm_range.R'
         'shift_longitude.R' 'make_grid.R'
 NeedsCompilation: yes
-Packaged: 2020-04-04 11:22:35 UTC; edzer
+Packaged: 2020-04-14 15:40:57 UTC; edzer
 Author: Edzer Pebesma [aut, cre] (<https://orcid.org/0000-0001-8049-7069>),
   Roger Bivand [ctb] (<https://orcid.org/0000-0003-2392-6140>),
   Etienne Racine [ctb],
@@ -90,4 +90,4 @@ Author: Edzer Pebesma [aut, cre] (<https://orcid.org/0000-0001-8049-7069>),
   Dan Baston [ctb]
 Maintainer: Edzer Pebesma <edzer.pebesma@uni-muenster.de>
 Repository: CRAN
-Date/Publication: 2020-04-06 14:40:03 UTC
+Date/Publication: 2020-04-14 17:10:05 UTC

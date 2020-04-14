@@ -64,4 +64,4 @@ ind-ch : 1 [ind_ch]
 > 
 > proc.time()
    user  system elapsed 
-   1.23    0.14    1.38 
+   1.01    0.14    1.13 
