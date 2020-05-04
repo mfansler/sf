@@ -1,7 +1,7 @@
 
-R version 4.0.0 alpha (2020-03-26 r78078)
-Copyright (C) 2020 The R Foundation for Statistical Computing
-Platform: x86_64-w64-mingw32/x64 (64-bit)
+R version 3.6.2 (2019-12-12) -- "Dark and Stormy Night"
+Copyright (C) 2019 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
 
 R is free software and comes with ABSOLUTELY NO WARRANTY.
 You are welcome to redistribute it under certain conditions.
@@ -237,4 +237,4 @@ POLYGON ((0 0, 10 0, 10 10, 0 10, 0 0), (5 5, 5 6, 6 6, 6 5, 5 5))
 > 
 > proc.time()
    user  system elapsed 
-   0.79    0.14    0.95 
+  0.358   0.052   0.400 

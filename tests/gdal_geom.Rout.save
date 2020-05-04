@@ -1,7 +1,7 @@
 
-R version 4.0.0 alpha (2020-03-26 r78078)
+R version 4.0.0 (2020-04-24) -- "Arbor Day"
 Copyright (C) 2020 The R Foundation for Statistical Computing
-Platform: x86_64-w64-mingw32/x64 (64-bit)
+Platform: x86_64-pc-linux-gnu (64-bit)
 
 R is free software and comes with ABSOLUTELY NO WARRANTY.
 You are welcome to redistribute it under certain conditions.
@@ -257,7 +257,7 @@ POINT Z (6378137 0 0)
 > 
 > cbind(st_area(nc_tr[1:5,]), a$AREA)
            [,1]  [,2]
-[1,] 1760244757 0.114
+[1,] 1760244967 0.114
 [2,]  946435667 0.061
 [3,] 2202248253 0.143
 [4,] 1074351919 0.070
@@ -290,13 +290,16 @@ Error in st_buffer.sfc(sfc, units::set_units(1000, km)) :
   x does not have a crs set: can't convert units
 > sfc = st_sfc(p1, p2, crs = 4326)
 > try(st_buffer(sfc, units::set_units(1000, km))) # error: wrong units
-Error : cannot convert km into °
+Error : cannot convert km into Â°
 In addition: Warning message:
 In st_buffer.sfc(sfc, units::set_units(1000, km)) :
   st_buffer does not correctly buffer longitude/latitude data
 > if (version$os == "linux-gnu") { # FIXME: why does this break on windows - degree symbol?
 +   x = st_buffer(sfc, units::set_units(0.1, rad))      # OK: will convert to arc_degrees
 + }
+Warning message:
+In st_buffer.sfc(sfc, units::set_units(0.1, rad)) :
+  st_buffer does not correctly buffer longitude/latitude data
 > x = st_transform(sfc, 3857)
 > x = st_buffer(x, units::set_units(1000, km)) # success
 > 
@@ -332,4 +335,4 @@ lines[GRID.lines.1]
 > 
 > proc.time()
    user  system elapsed 
-   1.49    0.24    1.74 
+  1.160   0.072   1.229 

@@ -1,7 +1,7 @@
 
-R version 4.0.0 alpha (2020-03-26 r78078)
+R version 4.0.0 (2020-04-24) -- "Arbor Day"
 Copyright (C) 2020 The R Foundation for Statistical Computing
-Platform: x86_64-w64-mingw32/x64 (64-bit)
+Platform: x86_64-pc-linux-gnu (64-bit)
 
 R is free software and comes with ABSOLUTELY NO WARRANTY.
 You are welcome to redistribute it under certain conditions.
@@ -173,7 +173,7 @@ Geometry set for 2 features
 geometry type:  POINT
 dimension:      XY
 bbox:           xmin: 0 ymin: 1 xmax: 0 ymax: 1
-CRS:            EPSG:4326
+geographic CRS: WGS 84
 POINT (0 1)
 POINT (0 1)
 > y = st_sfc(x, crs = "+proj=longlat +datum=WGS84 +no_defs")
@@ -347,7 +347,7 @@ use `st_zm(...)` to coerce to XY dimensions
 > 
 > sf_extSoftVersion()[1:3]
    GEOS    GDAL  proj.4 
-"3.6.1" "2.2.3" "4.9.3" 
+"3.8.0" "3.0.4" "7.0.0" 
 > 
 > # Ops.sfc:
 > ls = st_sfc(st_linestring(rbind(c(0,0),c(0,1))))
@@ -481,14 +481,22 @@ xmin ymin xmax ymax
 -84.32385  33.88199 -75.45698  36.58965 
 > st_crs(bb)
 Coordinate Reference System:
-  User input: 4267 
+  User input: NAD27 
   wkt:
-GEOGCS["GCS_North_American_1927",
-    DATUM["North_American_Datum_1927",
-        SPHEROID["Clarke_1866",6378206.4,294.9786982]],
-    PRIMEM["Greenwich",0],
-    UNIT["Degree",0.017453292519943295],
-    AUTHORITY["EPSG","4267"]]
+GEOGCRS["NAD27",
+    DATUM["North American Datum 1927",
+        ELLIPSOID["Clarke 1866",6378206.4,294.978698213898,
+            LENGTHUNIT["metre",1]]],
+    PRIMEM["Greenwich",0,
+        ANGLEUNIT["degree",0.0174532925199433]],
+    CS[ellipsoidal,2],
+        AXIS["latitude",north,
+            ORDER[1],
+            ANGLEUNIT["degree",0.0174532925199433]],
+        AXIS["longitude",east,
+            ORDER[2],
+            ANGLEUNIT["degree",0.0174532925199433]],
+    ID["EPSG",4267]]
 > st_bbox(c(xmin = 16.1, xmax = 16.6, ymin = 48.6, ymax = 47.9), crs = st_crs(4326))
 xmin ymin xmax ymax 
 16.1 48.6 16.6 47.9 
@@ -645,12 +653,12 @@ CRS:            NA
 3     3  14 POINT (3 3)
 > # st_join, largest = TRUE:
 > nc <- st_transform(st_read(system.file("shape/nc.shp", package="sf")), 2264)
-Reading layer `nc' from data source `D:\temp\Rtmp8qxg3B\RLIBS_1b15869f17642\sf\shape\nc.shp' using driver `ESRI Shapefile'
+Reading layer `nc' from data source `/home/edzer/git/sf.Rcheck/sf/shape/nc.shp' using driver `ESRI Shapefile'
 Simple feature collection with 100 features and 14 fields
 geometry type:  MULTIPOLYGON
 dimension:      XY
 bbox:           xmin: -84.32385 ymin: 33.88199 xmax: -75.45698 ymax: 36.58965
-CRS:            4267
+geographic CRS: NAD27
 > gr = st_sf(
 +     label = apply(expand.grid(1:10, LETTERS[10:1])[,2:1], 1, paste0, collapse = " "),
 + 	geom = st_make_grid(st_as_sfc(st_bbox(nc))))
@@ -662,7 +670,7 @@ Simple feature collection with 100 features and 16 fields
 geometry type:  MULTIPOLYGON
 dimension:      XY
 bbox:           xmin: 406262.2 ymin: 48374.87 xmax: 3052887 ymax: 1044158
-CRS:            EPSG:2264
+projected CRS:  NAD83 / North Carolina (ftUS)
 First 10 features:
     AREA PERIMETER CNTY_ CNTY_ID        NAME  FIPS FIPSNO CRESS_ID BIR74 SID74
 1  0.114     1.442  1825    1825        Ashe 37009  37009        5  1091     1
@@ -696,7 +704,7 @@ Simple feature collection with 6 features and 1 field
 geometry type:  POINT
 dimension:      XY
 bbox:           xmin: 0 ymin: 1 xmax: 0 ymax: 1
-CRS:            EPSG:4326
+geographic CRS: WGS 84
   a        geom
 1 1 POINT (0 1)
 2 2 POINT (0 1)
@@ -722,7 +730,7 @@ Geometry set for 10 features
 geometry type:  POINT
 dimension:      XY
 bbox:           xmin: 11.2448 ymin: 3.16385 xmax: 82.3451 ymax: 60.1703
-CRS:            EPSG:4326
+geographic CRS: WGS 84
 First 5 geometries:
 POINT (18.5793 25.2416)
 POINT (11.2448 20.8596)
@@ -743,7 +751,7 @@ Geometry set for 10 features
 geometry type:  POINT
 dimension:      XY
 bbox:           xmin: -148.196 ymin: -51.7878 xmax: 164.644 ymax: 79.4122
-CRS:            EPSG:4326
+geographic CRS: WGS 84
 First 5 geometries:
 POINT (-148.196 72.3139)
 POINT (143.075 54.9954)
@@ -779,7 +787,7 @@ Geometry set for 30 features
 geometry type:  POINT
 dimension:      XY
 bbox:           xmin: 1200740 ymin: 942550 xmax: 1425790 ymax: 1036860
-CRS:            EPSG:2264
+projected CRS:  NAD83 / North Carolina (ftUS)
 First 5 geometries:
 POINT (1228809 1011255)
 POINT (1233859 956721)
@@ -794,7 +802,7 @@ Geometry set for 2 features
 geometry type:  MULTIPOINT
 dimension:      XY
 bbox:           xmin: -81.7408 ymin: 36.2735 xmax: -80.9188 ymax: 36.5821
-CRS:            EPSG:4326
+geographic CRS: WGS 84
 MULTIPOINT ((-81.3308 36.5204), (-81.5205 36.58...
 MULTIPOINT ((-81.3127 36.4804), (-81.2655 36.43...
 > st_sample(ls, 80, type = "regular")
@@ -950,7 +958,7 @@ Simple feature collection with 1 feature and 1 field
 geometry type:  MULTILINESTRING
 dimension:      XY
 bbox:           xmin: -180 ymin: 0 xmax: 180 ymax: 0
-CRS:            EPSG:4326
+geographic CRS: WGS 84
   a                       geometry
 1 1 MULTILINESTRING ((-179 0, -...
 > st_wrap_dateline(x)
@@ -958,7 +966,7 @@ Geometry set for 1 feature
 geometry type:  MULTILINESTRING
 dimension:      XY
 bbox:           xmin: -180 ymin: 0 xmax: 180 ymax: 0
-CRS:            EPSG:4326
+geographic CRS: WGS 84
 MULTILINESTRING ((-179 0, -180 0), (180 0, 179 0))
 > st_wrap_dateline(x[[1]])
 MULTILINESTRING ((-179 0, -180 0), (180 0, 179 0))
@@ -973,7 +981,7 @@ Geometry set for 5 features
 geometry type:  POINT
 dimension:      XY
 bbox:           xmin: -118.682 ymin: 36.4337 xmax: -118.674 ymax: 36.4421
-CRS:            4326
+geographic CRS: WGS 84
 POINT (-118.682 36.4376)
 POINT (-118.674 36.4337)
 POINT (-118.677 36.4421)
@@ -984,7 +992,7 @@ Geometry set for 5 features
 geometry type:  POINT
 dimension:      XY
 bbox:           xmin: -118.682 ymin: 36.4337 xmax: -118.674 ymax: 36.4421
-CRS:            4326
+geographic CRS: WGS 84
 POINT (-118.682 36.4376)
 POINT (-118.674 36.4337)
 POINT (-118.677 36.4421)
@@ -996,7 +1004,7 @@ Geometry set for 1 feature
 geometry type:  POINT
 dimension:      XY
 bbox:           xmin: 0 ymin: 1 xmax: 0 ymax: 1
-CRS:            EPSG:4326
+geographic CRS: WGS 84
 POINT (0 1)
 > 
 > x = nc
@@ -1009,7 +1017,7 @@ Geometry set for 1 feature
 geometry type:  POINT
 dimension:      XY
 bbox:           xmin: 0 ymin: 1 xmax: 0 ymax: 1
-CRS:            EPSG:4326
+geographic CRS: WGS 84
 POINT (0 1)
 > 
 > # crop:
@@ -1124,4 +1132,4 @@ CRS:            NA
 > 
 > proc.time()
    user  system elapsed 
-   7.33    0.31    7.66 
+  6.032   0.160   6.217 

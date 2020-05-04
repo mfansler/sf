@@ -134,22 +134,19 @@ Rcpp::CharacterVector wkt_from_spatial_reference(const OGRSpatialReference *srs)
 	return out;
 }
 
-Rcpp::CharacterVector CPL_wkt_from_user_input(Rcpp::CharacterVector input) {
-	OGRSpatialReference *srs = new OGRSpatialReference;
-	srs = handle_axis_order(srs);
-	handle_error(srs->SetFromUserInput((const char *) input[0]));
-	Rcpp::CharacterVector out = wkt_from_spatial_reference(srs);
-	delete srs;
-	return(out);
-}
-
 Rcpp::List fix_old_style(Rcpp::List crs) {
 	Rcpp::CharacterVector n = crs.attr("names");
 	if (n[0] == "epsg") { // create new: // #nocov start
 		Rcpp::List ret(2);
 		Rcpp::CharacterVector proj4string = crs[1];
-		ret[0] = proj4string[0];
-		ret[1] = CPL_wkt_from_user_input(proj4string);
+		ret[0] = proj4string[0]; // $input
+
+		OGRSpatialReference *srs = new OGRSpatialReference;
+		srs = handle_axis_order(srs);
+		handle_error(srs->SetFromUserInput((const char *) proj4string[0]));
+		ret[1] = wkt_from_spatial_reference(srs); // $wkt
+		delete srs;
+
 		Rcpp::CharacterVector names(2);
 		names(0) = "input";
 		names(1) = "wkt";
@@ -358,10 +355,10 @@ Rcpp::List create_crs(const OGRSpatialReference *ref, bool set_input) {
 		crs(1) = Rcpp::CharacterVector::create(NA_STRING);
 	} else {
 		if (set_input) {
-			const char *cp;
 #if GDAL_VERSION_MAJOR >= 3
 			crs(0) = Rcpp::CharacterVector::create(ref->GetName());
 #else
+			const char *cp;
 			OGRSpatialReference ref_cp = *ref;
 			if (ref_cp.AutoIdentifyEPSG() == OGRERR_NONE && // ->AutoIdentifyEPSG() breaks if "this" is const
 					(cp = ref_cp.GetAuthorityCode(NULL)) != NULL)

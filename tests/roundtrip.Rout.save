@@ -1,7 +1,7 @@
 
-R version 4.0.0 alpha (2020-03-26 r78078)
+R version 4.0.0 (2020-04-24) -- "Arbor Day"
 Copyright (C) 2020 The R Foundation for Statistical Computing
-Platform: x86_64-w64-mingw32/x64 (64-bit)
+Platform: x86_64-pc-linux-gnu (64-bit)
 
 R is free software and comes with ABSOLUTELY NO WARRANTY.
 You are welcome to redistribute it under certain conditions.
@@ -110,6 +110,9 @@ In spTransform(meuse.grid, CRS("+proj=longlat +ellps=WGS84 +no_defs")) :
                      
                      
 > x <- st_as_sf(meuse.grid) # don't print: CRS variations.
+Warning message:
+In CPL_crs_from_input(x) :
+  GDAL Message 1: +init=epsg:XXXX syntax is deprecated. It might return a CRS with a non-EPSG compliant axis order.
 > summary(st_as_sf(meuse.area))
           geometry
  POLYGON      :1  
@@ -157,16 +160,15 @@ In spTransform(meuse.grid, CRS("+proj=longlat +ellps=WGS84 +no_defs")) :
                      
 > 
 > nc = st_read(system.file("gpkg/nc.gpkg", package="sf"), "nc.gpkg")
-Reading layer `nc.gpkg' from data source `D:\temp\Rtmp8qxg3B\RLIBS_1b15869f17642\sf\gpkg\nc.gpkg' using driver `GPKG'
+Reading layer `nc.gpkg' from data source `/home/edzer/git/sf.Rcheck/sf/gpkg/nc.gpkg' using driver `GPKG'
 Simple feature collection with 100 features and 14 fields
 geometry type:  MULTIPOLYGON
 dimension:      XY
 bbox:           xmin: -84.32385 ymin: 33.88199 xmax: -75.45698 ymax: 36.58965
-CRS:            4267
+geographic CRS: NAD27
 > all.equal(nc, st_as_sf(as(nc, "Spatial")))
-[1] "Names: 1 string mismatch"                                                               
-[2] "Attributes: < Component \"sf_column\": 1 string mismatch >"                             
-[3] "Component 15: Attributes: < Component \"crs\": Component \"input\": 1 string mismatch >"
+[1] "Names: 1 string mismatch"                                  
+[2] "Attributes: < Component \"sf_column\": 1 string mismatch >"
 > st_crs(nc) == st_crs(st_as_sf(as(nc, "Spatial")))
 [1] TRUE
 > 
@@ -175,4 +177,4 @@ CRS:            4267
 > 
 > proc.time()
    user  system elapsed 
-   4.86    0.20    5.03 
+  3.706   0.047   3.766 

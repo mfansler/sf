@@ -1,7 +1,7 @@
 
-R version 4.0.0 alpha (2020-03-26 r78078)
-Copyright (C) 2020 The R Foundation for Statistical Computing
-Platform: x86_64-w64-mingw32/x64 (64-bit)
+R version 3.6.2 (2019-12-12) -- "Dark and Stormy Night"
+Copyright (C) 2019 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
 
 R is free software and comes with ABSOLUTELY NO WARRANTY.
 You are welcome to redistribute it under certain conditions.
@@ -210,12 +210,12 @@ enclosing rectangle: [-1, 1] x [1, 2] units
 > 
 > # as.owin.sf, as.owin.sfc_*
 > nc = st_read(system.file("gpkg/nc.gpkg", package="sf"), check_ring_dir = TRUE)
-Reading layer `nc.gpkg' from data source `D:\temp\Rtmp8qxg3B\RLIBS_1b15869f17642\sf\gpkg\nc.gpkg' using driver `GPKG'
+Reading layer `nc.gpkg' from data source `/home/edzer/git/sf.Rcheck/sf/gpkg/nc.gpkg' using driver `GPKG'
 Simple feature collection with 100 features and 14 fields
 geometry type:  MULTIPOLYGON
 dimension:      XY
 bbox:           xmin: -84.32385 ymin: 33.88199 xmax: -75.45698 ymax: 36.58965
-CRS:            4267
+geographic CRS: NAD27
 > try(as.owin(nc)) # should be projected
 Error in as.owin.sfc_MULTIPOLYGON(st_cast(W, "MULTIPOLYGON"), ...) : 
   Only projected coordinates may be converted to spatstat class objects
@@ -302,4 +302,4 @@ LINESTRING (1 1, 2 0)
 > 
 > proc.time()
    user  system elapsed 
-   3.04    0.23    3.32 
+  2.022   0.126   2.145 

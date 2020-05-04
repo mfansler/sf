@@ -1,7 +1,7 @@
 
-R version 4.0.0 alpha (2020-03-26 r78078)
+R version 4.0.0 (2020-04-24) -- "Arbor Day"
 Copyright (C) 2020 The R Foundation for Statistical Computing
-Platform: x86_64-w64-mingw32/x64 (64-bit)
+Platform: x86_64-pc-linux-gnu (64-bit)
 
 R is free software and comes with ABSOLUTELY NO WARRANTY.
 You are welcome to redistribute it under certain conditions.
@@ -65,9 +65,9 @@ Coordinate Reference System: NA
 Geometry set for 2 features 
 geometry type:  POINT
 dimension:      XY
-bbox:           xmin: 0 ymin: -7.081155e-10 xmax: 111319.5 ymax: 111325.1
-CRS:            EPSG:3857
-POINT (0 -7.081155e-10)
+bbox:           xmin: 0 ymin: 0 xmax: 111319.5 ymax: 111325.1
+projected CRS:  WGS 84 / Pseudo-Mercator
+POINT (0 0)
 POINT (111319.5 111325.1)
 > if (Sys.getenv("USER") %in% c("edzer", "travis")) { # causes memory leaks:
 +   stopifnot(inherits(try(sf_project("+proj=longlat", "+proj=bar", matrix(1:4,2)), silent = TRUE), "try-error"))
@@ -99,4 +99,4 @@ POINT (111319.5 111325.1)
 > 
 > proc.time()
    user  system elapsed 
-   1.17    0.12    1.26 
+  0.888   0.044   0.928 
