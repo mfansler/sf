@@ -140,8 +140,8 @@ select.sf <- function(.data, ...) {
 	sf_column_loc_loc = match(sf_column_loc, loc)
 	if (is.na(sf_column_loc_loc)) {
 		# The sf column was subsetted out, select it back in
-		loc = c(sf_column_loc, loc)
-		names(loc)[[1]] = sf_column
+		loc = c(loc, sf_column_loc)
+		names(loc)[[length(loc)]] = sf_column
 	} else {
 		# The sf column was not subsetted out but it might have been renamed
 		sf_column = names(loc[sf_column_loc_loc])
@@ -161,11 +161,34 @@ select.sf <- function(.data, ...) {
 #' nc2 <- nc %>% rename(area = AREA)
 rename.sf <- function(.data, ...) {
 
-	if (!requireNamespace("dplyr", quietly = TRUE))
-		stop("dplyr required: install that first") # nocov
+	if (!requireNamespace("tidyselect", quietly = TRUE))
+		stop("tidyselect required: install that first") # nocov
+	loc = tidyselect::eval_rename(quote(c(...)), .data)
 
-	class(.data) <- setdiff(class(.data), "sf")
-	st_as_sf(dplyr::rename(.data, ...))
+	sf_column = attr(.data, "sf_column")
+	sf_column_loc = match(sf_column, names(.data))
+
+	if (length(sf_column_loc) != 1 || is.na(sf_column_loc))
+		stop("internal error: can't find sf column") # nocov
+
+	agr = st_agr(.data)
+	agr_loc = match(names(agr), names(.data))
+
+	if (anyNA(agr_loc))
+		stop("internal error: can't find `agr` columns") # nocov
+
+	vars_loc = loc[loc %in% agr_loc]
+	names(agr)[vars_loc] = names(vars_loc)
+
+	sf_column_loc_loc = match(sf_column_loc, loc)
+	if (!is.na(sf_column_loc_loc))
+		sf_column = names(loc[sf_column_loc_loc])
+
+	ret = .data
+	class(ret) = setdiff(class(ret), "sf")
+	names(ret)[loc] = names(loc)
+
+	st_set_agr(st_as_sf(ret, sf_column_name = sf_column), agr)
 }
 
 #' @name tidyverse
@@ -431,6 +454,7 @@ pillar_shaft.sfc <- function(x, ...) {
 	pillar::new_pillar_shaft_simple(out, align = "right", min_width = 25)
 }
 
+#nocov start
 register_all_s3_methods = function() {
 	has_dplyr_1.0 =
 		requireNamespace("dplyr", quietly = TRUE) &&
@@ -488,7 +512,6 @@ register_all_s3_methods = function() {
 
 # from: https://github.com/tidyverse/hms/blob/master/R/zzz.R
 # Thu Apr 19 10:53:24 CEST 2018
-#nocov start
 register_s3_method <- function(pkg, generic, class, fun = NULL) {
   stopifnot(is.character(pkg), length(pkg) == 1)
   stopifnot(is.character(generic), length(generic) == 1)

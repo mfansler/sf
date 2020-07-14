@@ -120,7 +120,11 @@ st_crs.CRS = function(x, ...) {
 		st_crs(x@projargs)
 	else {
 		ret = st_crs(comment(x))
-		ret$input = ret$Name
+		name = ret$Name
+		ret$input = if (name == "unknown")
+				x@projargs
+			else
+				name
 		ret
 	}
 }
@@ -302,9 +306,6 @@ proj4string = function(x) {
 	crs_parameters(x, with_units = FALSE)[["proj4string"]]
 }
 
-is_crs = function(x) {
-	inherits(x, "crs")
-}
 
 #' @name st_as_text
 #' @param pretty logical; if TRUE, print human-readable well-known-text representation of a coordinate reference system

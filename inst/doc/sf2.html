@@ -283,9 +283,9 @@ div.tocify {
 <pre class="r"><code>library(sf)
 fname &lt;- system.file(&quot;shape/nc.shp&quot;, package=&quot;sf&quot;)
 fname
-## [1] &quot;/tmp/Rtmp01dKxZ/Rinst6cb31414e095/sf/shape/nc.shp&quot;
+## [1] &quot;/tmp/RtmpNt5oDA/Rinst34af264cc9b4/sf/shape/nc.shp&quot;
 nc &lt;- st_read(fname)
-## Reading layer `nc' from data source `/tmp/Rtmp01dKxZ/Rinst6cb31414e095/sf/shape/nc.shp' using driver `ESRI Shapefile'
+## Reading layer `nc' from data source `/tmp/RtmpNt5oDA/Rinst34af264cc9b4/sf/shape/nc.shp' using driver `ESRI Shapefile'
 ## Simple feature collection with 100 features and 14 fields
 ## geometry type:  MULTIPOLYGON
 ## dimension:      XY
@@ -328,7 +328,7 @@ Available layers:
 <p>Alternatively, a user can set the global option <code>stringsAsFactors</code>, and this will have the same effect:</p>
 <pre class="r"><code>options(stringsAsFactors = FALSE)
 st_read(fname)
-## Reading layer `nc' from data source `/tmp/Rtmp01dKxZ/Rinst6cb31414e095/sf/shape/nc.shp' using driver `ESRI Shapefile'
+## Reading layer `nc' from data source `/tmp/RtmpNt5oDA/Rinst34af264cc9b4/sf/shape/nc.shp' using driver `ESRI Shapefile'
 ## Simple feature collection with 100 features and 14 fields
 ## geometry type:  MULTIPOLYGON
 ## dimension:      XY
@@ -592,7 +592,8 @@ methods(st_as_sfc)
 ## [13] st_as_sfc.list*               st_as_sfc.map*               
 ## [15] st_as_sfc.owin*               st_as_sfc.pq_geometry*       
 ## [17] st_as_sfc.psp*                st_as_sfc.raw*               
-## [19] st_as_sfc.tess*              
+## [19] st_as_sfc.s2_geography*       st_as_sfc.tess*              
+## [21] st_as_sfc.wk_wkb*            
 ## see '?methods' for accessing help and source code</code></pre>
 <p>An example would be:</p>
 <pre class="r"><code>library(sp)

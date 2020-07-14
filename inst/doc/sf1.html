@@ -343,7 +343,7 @@ div.tocify {
 </tbody>
 </table>
 <p>Each of the geometry types can also be a (typed) empty set, containing zero coordinates (for <code>POINT</code> the standard is not clear how to represent the empty geometry). Empty geometries can be thought of being the analogue to missing (<code>NA</code>) attributes, NULL values or empty lists.</p>
-<p>The remaining geometries 10 are more rare, but increasingly find implementations:</p>
+<p>The remaining geometries 10 are rarer, but increasingly find implementations:</p>
 <table style="width:78%;">
 <colgroup>
 <col width="6%"></col>
@@ -358,7 +358,7 @@ div.tocify {
 <tbody>
 <tr class="odd">
 <td><code>CIRCULARSTRING</code></td>
-<td>The CIRCULARSTRING is the basic curve type, similar to a LINESTRING in the linear world. A single segment requires three points, the start and end points (first and third) and any other point on the arc. The exception to this is for a closed circle, where the start and end points are the same. In this case the second point MUST be the center of the arc, ie the opposite side of the circle. To chain arcs together, the last point of the previous arc becomes the first point of the next arc, just like in LINESTRING. This means that a valid circular string must have an odd number of points greated than 1.</td>
+<td>The CIRCULARSTRING is the basic curve type, similar to a LINESTRING in the linear world. A single segment requires three points, the start and end points (first and third) and any other point on the arc. The exception to this is for a closed circle, where the start and end points are the same. In this case the second point MUST be the center of the arc, i.e., the opposite side of the circle. To chain arcs together, the last point of the previous arc becomes the first point of the next arc, just like in LINESTRING. This means that a valid circular string must have an odd number of points greater than 1.</td>
 </tr>
 <tr class="even">
 <td><code>COMPOUNDCURVE</code></td>
@@ -402,7 +402,7 @@ div.tocify {
 </div>
 <div id="coordinate-reference-system" class="section level2">
 <h2>Coordinate reference system</h2>
-<p>Coordinates can only be placed on the Earth's surface when their coordinate reference system (CRS) is known; this may be an spheroid CRS such as WGS84, a projected, two-dimensional (Cartesian) CRS such as a UTM zone or Web Mercator, or a CRS in three-dimensions, or including time. Similarly, M-coordinates need an attribute reference system, e.g. a <a href="https://CRAN.R-project.org/package=units">measurement unit</a>.</p>
+<p>Coordinates can only be placed on the Earth's surface when their coordinate reference system (CRS) is known; this may be a spheroid CRS such as WGS84, a projected, two-dimensional (Cartesian) CRS such as a UTM zone or Web Mercator, or a CRS in three-dimensions, or including time. Similarly, M-coordinates need an attribute reference system, e.g. a <a href="https://CRAN.R-project.org/package=units">measurement unit</a>.</p>
 </div>
 </div>
 <div id="how-simple-features-in-r-are-organized" class="section level1">
@@ -421,7 +421,7 @@ div.tocify {
 <pre class="r"><code>library(sf)
 ## Linking to GEOS 3.8.0, GDAL 3.0.4, PROJ 7.0.0
 nc &lt;- st_read(system.file(&quot;shape/nc.shp&quot;, package=&quot;sf&quot;))
-## Reading layer `nc' from data source `/tmp/Rtmp01dKxZ/Rinst6cb31414e095/sf/shape/nc.shp' using driver `ESRI Shapefile'
+## Reading layer `nc' from data source `/tmp/RtmpNt5oDA/Rinst34af264cc9b4/sf/shape/nc.shp' using driver `ESRI Shapefile'
 ## Simple feature collection with 100 features and 14 fields
 ## geometry type:  MULTIPOLYGON
 ## dimension:      XY
@@ -456,22 +456,23 @@ nc &lt;- st_read(system.file(&quot;shape/nc.shp&quot;, package=&quot;sf&quot;))
 ## [13] merge                 plot                  print                
 ## [16] rbind                 show                  slotsFromS3          
 ## [19] st_agr                st_agr&lt;-              st_area              
-## [22] st_as_sf              st_bbox               st_boundary          
-## [25] st_buffer             st_cast               st_centroid          
-## [28] st_collection_extract st_convex_hull        st_coordinates       
-## [31] st_crop               st_crs                st_crs&lt;-             
-## [34] st_difference         st_filter             st_geometry          
-## [37] st_geometry&lt;-         st_interpolate_aw     st_intersection      
-## [40] st_intersects         st_is                 st_is_valid          
-## [43] st_join               st_line_merge         st_m_range           
-## [46] st_make_valid         st_nearest_points     st_node              
-## [49] st_normalize          st_point_on_surface   st_polygonize        
-## [52] st_precision          st_reverse            st_sample            
-## [55] st_segmentize         st_set_precision      st_shift_longitude   
-## [58] st_simplify           st_snap               st_sym_difference    
-## [61] st_transform          st_triangulate        st_union             
-## [64] st_voronoi            st_wrap_dateline      st_write             
-## [67] st_z_range            st_zm                 transform            
+## [22] st_as_s2              st_as_sf              st_bbox              
+## [25] st_boundary           st_buffer             st_cast              
+## [28] st_centroid           st_collection_extract st_convex_hull       
+## [31] st_coordinates        st_crop               st_crs               
+## [34] st_crs&lt;-              st_difference         st_filter            
+## [37] st_geometry           st_geometry&lt;-         st_interpolate_aw    
+## [40] st_intersection       st_intersects         st_is                
+## [43] st_is_valid           st_join               st_line_merge        
+## [46] st_m_range            st_make_valid         st_nearest_points    
+## [49] st_node               st_normalize          st_point_on_surface  
+## [52] st_polygonize         st_precision          st_reverse           
+## [55] st_sample             st_segmentize         st_set_precision     
+## [58] st_shift_longitude    st_simplify           st_snap              
+## [61] st_sym_difference     st_transform          st_triangulate       
+## [64] st_union              st_voronoi            st_wrap_dateline     
+## [67] st_write              st_z_range            st_zm                
+## [70] transform            
 ## see '?methods' for accessing help and source code</code></pre>
 <p>It is also possible to create <code>data.frame</code> objects with geometry list-columns that are not of class <code>sf</code>, e.g. by</p>
 <pre class="r"><code>nc.no_sf &lt;- as.data.frame(nc)
@@ -530,23 +531,23 @@ plot(nc[w,1], col = 2:7)</code></pre>
 ##  [7] format                identify              initialize           
 ## [10] print                 rep                   show                 
 ## [13] slotsFromS3           st_area               st_as_binary         
-## [16] st_as_grob            st_as_sf              st_as_text           
-## [19] st_bbox               st_boundary           st_buffer            
-## [22] st_cast               st_centroid           st_collection_extract
-## [25] st_convex_hull        st_coordinates        st_crop              
-## [28] st_crs                st_crs&lt;-              st_difference        
-## [31] st_geometry           st_intersection       st_intersects        
-## [34] st_is                 st_is_valid           st_line_merge        
-## [37] st_m_range            st_make_valid         st_nearest_points    
-## [40] st_node               st_normalize          st_point_on_surface  
-## [43] st_polygonize         st_precision          st_reverse           
-## [46] st_sample             st_segmentize         st_set_precision     
-## [49] st_shift_longitude    st_simplify           st_snap              
-## [52] st_sym_difference     st_transform          st_triangulate       
-## [55] st_union              st_voronoi            st_wrap_dateline     
-## [58] st_write              st_z_range            st_zm                
-## [61] str                   summary               vec_cast.sfc         
-## [64] vec_ptype2.sfc       
+## [16] st_as_grob            st_as_s2              st_as_sf             
+## [19] st_as_text            st_bbox               st_boundary          
+## [22] st_buffer             st_cast               st_centroid          
+## [25] st_collection_extract st_convex_hull        st_coordinates       
+## [28] st_crop               st_crs                st_crs&lt;-             
+## [31] st_difference         st_geometry           st_intersection      
+## [34] st_intersects         st_is                 st_is_valid          
+## [37] st_line_merge         st_m_range            st_make_valid        
+## [40] st_nearest_points     st_node               st_normalize         
+## [43] st_point_on_surface   st_polygonize         st_precision         
+## [46] st_reverse            st_sample             st_segmentize        
+## [49] st_set_precision      st_shift_longitude    st_simplify          
+## [52] st_snap               st_sym_difference     st_transform         
+## [55] st_triangulate        st_union              st_voronoi           
+## [58] st_wrap_dateline      st_write              st_z_range           
+## [61] st_zm                 str                   summary              
+## [64] vec_cast.sfc          vec_ptype2.sfc       
 ## see '?methods' for accessing help and source code</code></pre>
 <p>Coordinate reference systems (<code>st_crs</code> and <code>st_transform</code>) are discussed in the section on <a href="#crs">coordinate reference systems</a>. <code>st_as_wkb</code> and <code>st_as_text</code> convert geometry list-columns into well-known-binary or well-known-text, explained <a href="#wkb">below</a>. <code>st_bbox</code> retrieves the coordinate bounding box.</p>
 <p>Attributes include</p>
@@ -707,7 +708,7 @@ st_as_sfc(structure(list(st_as_binary(x)), class = &quot;WKB&quot;))[[1]]
 <p>As we've seen above, reading spatial data from an external file can be done by</p>
 <pre class="r"><code>filename &lt;- system.file(&quot;shape/nc.shp&quot;, package=&quot;sf&quot;)
 nc &lt;- st_read(filename)
-## Reading layer `nc' from data source `/tmp/Rtmp01dKxZ/Rinst6cb31414e095/sf/shape/nc.shp' using driver `ESRI Shapefile'
+## Reading layer `nc' from data source `/tmp/RtmpNt5oDA/Rinst34af264cc9b4/sf/shape/nc.shp' using driver `ESRI Shapefile'
 ## Simple feature collection with 100 features and 14 fields
 ## geometry type:  MULTIPOLYGON
 ## dimension:      XY
@@ -773,7 +774,7 @@ bikraces &lt;- st_read(&quot;bikeraces.kml&quot;)</code></pre>
 <h3>Create, read, update and delete</h3>
 <p>GDAL provides the <a href="https://en.wikipedia.org/wiki/Create,_read,_update_and_delete">crud</a> (create, read, update, delete) functions to persistent storage. <code>st_read</code> (or <code>read_sf</code>) are used for reading. <code>st_write</code> (or <code>write_sf</code>) creates, and has the following arguments to control update and delete:</p>
 <ul>
-<li><code>update=TRUE</code> causes an existing data source to be updated, if it exists; this options is by default <code>TRUE</code> for all database drivers, where the database is updated by adding a table.</li>
+<li><code>update=TRUE</code> causes an existing data source to be updated, if it exists; this option is by default <code>TRUE</code> for all database drivers, where the database is updated by adding a table.</li>
 <li><code>delete_layer=TRUE</code> causes <code>st_write</code> try to open the the data source and delete the layer; no errors are given if the data source is not present, or the layer does not exist in the data source.</li>
 <li><code>delete_dsn=TRUE</code> causes <code>st_write</code> to delete the data source when present, before writing the layer in a newly created data source. No error is given when the data source does not exist. This option should be handled with care, as it may wipe complete directories or databases.</li>
 </ul>
@@ -852,7 +853,8 @@ methods(st_as_sfc)
 ## [11] st_as_sfc.factor*             st_as_sfc.list*              
 ## [13] st_as_sfc.map*                st_as_sfc.owin*              
 ## [15] st_as_sfc.pq_geometry*        st_as_sfc.psp*               
-## [17] st_as_sfc.raw*                st_as_sfc.tess*              
+## [17] st_as_sfc.raw*                st_as_sfc.s2_geography*      
+## [19] st_as_sfc.tess*               st_as_sfc.wk_wkb*            
 ## see '?methods' for accessing help and source code
 # anticipate that sp::CRS will expand proj4strings:
 p4s &lt;- &quot;+proj=longlat +datum=NAD27 +no_defs +ellps=clrk66 +nadgrids=@conus,@alaska,@ntv2_0.gsb,@ntv1_can.dat&quot;
@@ -993,7 +995,7 @@ units::set_units(a, ha) # result in hectares
         CNTY_ID = &quot;identity&quot;, NAME = &quot;identity&quot;, FIPS = &quot;identity&quot;, FIPSNO = &quot;identity&quot;,
         CRESS_ID = &quot;identity&quot;, BIR74 = &quot;aggregate&quot;, SID74 = &quot;aggregate&quot;, NWBIR74 = &quot;aggregate&quot;,
         BIR79 = &quot;aggregate&quot;, SID79 = &quot;aggregate&quot;, NWBIR79 = &quot;aggregate&quot;))
-## Reading layer `nc' from data source `/tmp/Rtmp01dKxZ/Rinst6cb31414e095/sf/shape/nc.shp' using driver `ESRI Shapefile'
+## Reading layer `nc' from data source `/tmp/RtmpNt5oDA/Rinst34af264cc9b4/sf/shape/nc.shp' using driver `ESRI Shapefile'
 ## Simple feature collection with 100 features and 14 fields
 ## Attribute-geometry relationship: 0 constant, 8 aggregate, 6 identity
 ## geometry type:  MULTIPOLYGON
