@@ -42,7 +42,7 @@ The returned object has the same class as that of the first argument (\code{x}) 
 Perform geometric set operations with simple feature geometry collections
 }
 \details{
-When using GEOS and not using s2, a spatial index is built on argument \code{x}; see \url{http://r-spatial.org/r/2017/06/22/spatial-index.html}. The reference for the STR tree algorithm is: Leutenegger, Scott T., Mario A. Lopez, and Jeffrey Edgington. "STR: A simple and efficient algorithm for R-tree packing." Data Engineering, 1997. Proceedings. 13th international conference on. IEEE, 1997. For the pdf, search Google Scholar.
+When using GEOS and not using s2, a spatial index is built on argument \code{x}; see \url{https://www.r-spatial.org/r/2017/06/22/spatial-index.html}. The reference for the STR tree algorithm is: Leutenegger, Scott T., Mario A. Lopez, and Jeffrey Edgington. "STR: A simple and efficient algorithm for R-tree packing." Data Engineering, 1997. Proceedings. 13th international conference on. IEEE, 1997. For the pdf, search Google Scholar.
 
 When called with missing \code{y}, the \code{sfc} method for \code{st_intersection} returns all non-empty intersections of the geometries of \code{x}; an attribute \code{idx} contains a list-column with the indexes of contributing geometries.
 
@@ -54,6 +54,10 @@ numbers in the argument to \code{x}; geometries that are empty
 or contained fully inside geometries with higher priority are removed entirely.
 The \code{st_difference.sfc} method with a single argument returns an object with
 an \code{"idx"} attribute with the orginal index for returned geometries.
+
+\code{st_snap} snaps the vertices and segments of a geometry to another geometry's vertices. If \code{y} contains more than one geometry, its geometries are merged into a collection before snapping to that collection.
+
+(from the GEOS docs:) "A snap distance tolerance is used to control where snapping is performed. Snapping one geometry to another can improve robustness for overlay operations by eliminating nearly-coincident edges (which cause problems during noding and intersection calculation). Too much snapping can result in invalid topology being created, so the number and location of snapped vertices is decided using heuristics to determine when it is safe to snap. This can result in some potential snaps being omitted, however."
 }
 \note{
 To find whether pairs of simple feature geometries intersect, use
@@ -86,6 +90,16 @@ plot(i["n.overlaps"])
 summary(i$n.overlaps - lengths(i$origins))
 # A helper function that erases all of y from x:
 st_erase = function(x, y) st_difference(x, st_union(st_combine(y)))
+poly = st_polygon(list(cbind(c(0, 0, 1, 1, 0), c(0, 1, 1, 0, 0))))
+lines = st_multilinestring(list(
+ cbind(c(0, 1), c(1, 1.05)),
+ cbind(c(0, 1), c(0, -.05)),
+ cbind(c(1, .95, 1), c(1.05, .5, -.05))
+))
+snapped = st_snap(poly, lines, tolerance=.1)
+plot(snapped, col='red')
+plot(poly, border='green', add=TRUE)
+plot(lines, lwd=2, col='blue', add=TRUE)
 }
 \seealso{
 \link{st_union} for the union of simple features collections; \link{intersect} and \link{setdiff} for the base R set operations.

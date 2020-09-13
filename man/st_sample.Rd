@@ -11,7 +11,15 @@ st_sample(x, size, ...)
 
 \method{st_sample}{sf}(x, size, ...)
 
-\method{st_sample}{sfc}(x, size, ..., type = "random", exact = TRUE)
+\method{st_sample}{sfc}(
+  x,
+  size,
+  ...,
+  type = "random",
+  exact = TRUE,
+  warn_if_not_integer = TRUE,
+  by_polygon = FALSE
+)
 
 \method{st_sample}{sfg}(x, size, ...)
 }
@@ -25,7 +33,11 @@ st_sample(x, size, ...)
 \item{type}{character; indicates the spatial sampling type; one of \code{random}, \code{hexagonal} (triangular really), \code{regular},
 or one of the \code{spatstat} methods such as \code{Thomas} for calling \code{spatstat::rThomas} (see Details).}
 
-\item{exact}{logical; should the length of output be exactly
+\item{exact}{logical; should the length of output be exactly}
+
+\item{warn_if_not_integer}{logical; if \code{FALSE} then no warning is emitted if \code{size} is not an integer}
+
+\item{by_polygon}{logical; for \code{MULTIPOLYGON} geometries, should the effort be split by \code{POLYGON}? See https://github.com/r-spatial/sf/issues/1480https://github.com/r-spatial/sf/issues/1480
 the same as specified by \code{size}? \code{TRUE} by default. Only applies to polygons, and
 when \code{type = "random"}.}
 }
@@ -35,9 +47,9 @@ an \code{sfc} object containing the sampled \code{POINT} geometries
 \description{
 Sample points on or in (sets of) spatial features.
 By default, returns a pre-specified number of points that is equal to
-\code{size} (if \code{type = "random"}) or an approximation of
-\code{size} (for other sampling types). \code{spatstat} methods are
-interfaced and do not use the \code{size} argument.
+\code{size} (if \code{type = "random"} and \code{exact = TRUE}) or an approximation of
+\code{size} otherwise. \code{spatstat} methods are
+interfaced and do not use the \code{size} argument, see examples.
 }
 \details{
 The function is vectorised: it samples \code{size} points across all geometries in

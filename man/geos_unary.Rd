@@ -53,7 +53,7 @@ st_node(x)
 st_segmentize(x, dfMaxLength, ...)
 }
 \arguments{
-\item{x}{object of class \code{sfg}, \code{sfg} or \code{sf}}
+\item{x}{object of class \code{sfg}, \code{sfc} or \code{sf}}
 
 \item{dist}{numeric; buffer distance for all, or for each of the elements in \code{x}; in case
 \code{dist} is a \code{units} object, it should be convertible to \code{arc_degree} if
@@ -67,7 +67,7 @@ st_segmentize(x, dfMaxLength, ...)
 
 \item{mitreLimit}{numeric; limit of extension for a join if \code{joinStyle} 'MITRE' is used (default 1.0, minimum 0.0)}
 
-\item{singleSide}{logical; if \code{TRUE}, single-sided buffers are returned for linear geometries, 
+\item{singleSide}{logical; if \code{TRUE}, single-sided buffers are returned for linear geometries,
 in which case negative \code{dist} values give buffers on the right-hand side, positive on the left.}
 
 \item{...}{ignored}

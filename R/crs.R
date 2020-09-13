@@ -116,7 +116,8 @@ st_crs.bbox = function(x, ...) {
 #' @name st_crs
 #' @export
 st_crs.CRS = function(x, ...) {
-	if (is.null(comment(x)))
+	if (is.null(comment(x)) || CPL_proj_version() < "6.0.0" || 
+			CPL_gdal_version() < "3.0.0")
 		st_crs(x@projargs)
 	else {
 		ret = st_crs(comment(x))
@@ -163,10 +164,12 @@ st_crs.default = function(x, ...) NA_crs_
 make_crs = function(x) {
 
 	if (inherits(x, "CRS")) {
-		x = if (!is.null(comment(x)))
-				comment(x) # WKT2
-			else
+		x = if (is.null(comment(x)) || (CPL_proj_version() < "6.0.0" || 
+                    CPL_gdal_version() < "3.0.0"))
+
 				x@projargs
+			else
+				comment(x) # WKT2
 	}
 	if (is.numeric(x) && !is.na(x))
 		x = paste0("EPSG:", x)

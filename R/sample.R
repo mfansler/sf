@@ -6,9 +6,9 @@ st_sample = function(x, size, ...) UseMethod("st_sample")
 #'
 #' Sample points on or in (sets of) spatial features.
 #' By default, returns a pre-specified number of points that is equal to
-#' \code{size} (if \code{type = "random"}) or an approximation of
-#' \code{size} (for other sampling types). \code{spatstat} methods are
-#' interfaced and do not use the \code{size} argument.
+#' \code{size} (if \code{type = "random"} and \code{exact = TRUE}) or an approximation of
+#' \code{size} otherwise. \code{spatstat} methods are
+#' interfaced and do not use the \code{size} argument, see examples.
 #'
 #' The function is vectorised: it samples \code{size} points across all geometries in
 #' the object if \code{size} is a single number, or the specified number of points
@@ -17,10 +17,12 @@ st_sample = function(x, size, ...) UseMethod("st_sample")
 #'
 #' @param x object of class \code{sf} or \code{sfc}
 #' @param size sample size(s) requested; either total size, or a numeric vector with sample sizes for each feature geometry. When sampling polygons, the returned sampling size may differ from the requested size, as the bounding box is sampled, and sampled points intersecting the polygon are returned.
+#' @param warn_if_not_integer logical; if \code{FALSE} then no warning is emitted if \code{size} is not an integer
 #' @param ... passed on to \link[base]{sample} for \code{multipoint} sampling, or to \code{spatstat} functions for spatstat sampling types (see details)
 #' @param type character; indicates the spatial sampling type; one of \code{random}, \code{hexagonal} (triangular really), \code{regular},
 #' or one of the \code{spatstat} methods such as \code{Thomas} for calling \code{spatstat::rThomas} (see Details).
 #' @param exact logical; should the length of output be exactly
+#' @param by_polygon logical; for \code{MULTIPOLYGON} geometries, should the effort be split by \code{POLYGON}? See https://github.com/r-spatial/sf/issues/1480https://github.com/r-spatial/sf/issues/1480
 #' the same as specified by \code{size}? \code{TRUE} by default. Only applies to polygons, and
 #' when \code{type = "random"}.
 #' @return an \code{sfc} object containing the sampled \code{POINT} geometries
@@ -90,30 +92,32 @@ st_sample.sf = function(x, size, ...) st_sample(st_geometry(x), size, ...)
 
 #' @export
 #' @name st_sample
-st_sample.sfc = function(x, size, ..., type = "random", exact = TRUE) {
+st_sample.sfc = function(x, size, ..., type = "random", exact = TRUE, warn_if_not_integer = TRUE,
+		by_polygon = FALSE) {
 
-	if (!missing(size) && any(size %% 1 != 0))
-		stop("size should be an integer")
+	if (!missing(size) && warn_if_not_integer && any(size %% 1 != 0))
+		warning("size is not an integer")
 	if (!missing(size) && length(size) > 1) { # recurse:
 		size = rep(size, length.out = length(x))
 		ret = lapply(1:length(x), function(i) st_sample(x[i], size[i], type = type, exact = exact, ...))
-		res = st_set_crs(do.call(c, ret), st_crs(x))
+		st_set_crs(do.call(c, ret), st_crs(x))
 	} else {
 		res = switch(max(st_dimension(x)) + 1,
 					 st_multipoints_sample(do.call(c, x), size = size, ..., type = type),
 					 st_ll_sample(st_cast(x, "LINESTRING"), size = size, ..., type = type),
-					 st_poly_sample(x, size = size, ..., type = type))
+					 st_poly_sample(x, size = size, ..., type = type, by_polygon = by_polygon))
 		if (exact & type == "random" & all(st_geometry_type(res) == "POINT")) {
 			diff = size - length(res)
-			if(diff > 0) { # too few points
-				res_additional = st_sample_exact(x = x, size = diff, ..., type = type)
+			if (diff > 0) { # too few points
+				res_additional = st_sample_exact(x = x, size = diff, ..., 
+					type = type, by_polygon = by_polygon)
 				res = c(res, res_additional)
 			} else if (diff < 0) { # too many points
 				res = res[1:size]
 			}
 		}
+		res
 	}
-	res
 }
 
 #' @export
@@ -123,8 +127,16 @@ st_sample.sfg = function(x, size, ...) {
 }
 
 st_poly_sample = function(x, size, ..., type = "random",
-                          offset = st_sample(st_as_sfc(st_bbox(x)), 1)[[1]]) {
+                          offset = st_sample(st_as_sfc(st_bbox(x)), 1)[[1]],
+						  by_polygon = FALSE) {
 
+	if (by_polygon && inherits(x, "sfc_MULTIPOLYGON")) { # recurse into polygons:
+		sum_a = units::drop_units(sum(st_area(x)))
+		x = lapply(suppressWarnings(st_cast(st_geometry(x), "POLYGON")), st_sfc, crs = st_crs(x))
+		a = sapply(x, st_area)
+		ret = mapply(st_poly_sample, x, size = size * a / sum_a, type = type, ...)
+		return(do.call(c, ret))
+	}
 	if (type %in% c("hexagonal", "regular", "random")) {
 
 		if (isTRUE(st_is_longlat(x))) {
@@ -138,8 +150,13 @@ st_poly_sample = function(x, size, ..., type = "random",
 		a1 = as.numeric(sum(st_area(x)))
 		# st_polygon(list(rbind(c(-180,-90),c(180,-90),c(180,90),c(-180,90),c(-180,-90))))
 		# for instance has 0 st_area
-		if (is.finite(a0) && is.finite(a1) && a0 > a0 * 0.0 && a1 > a1 * 0.0)
-			size = round(size * a0 / a1)
+		if (is.finite(a0) && is.finite(a1) && a0 > a0 * 0.0 && a1 > a1 * 0.0) {
+			r = round(size * a0 / a1)
+			size = if (r == 0)
+					rbinom(1, 1, size * a0 / a1)
+				else
+					r
+		}
 		bb = st_bbox(x)
 
 		pts = if (type == "hexagonal") {
@@ -234,11 +251,11 @@ hex_grid_points = function(obj, pt, dx) {
 	st_sfc(lapply(seq_len(nrow(xy)), function(i) st_point(xy[i,])), crs = st_crs(bb))
 }
 
-st_sample_exact = function(x, size, ..., type) {
+st_sample_exact = function(x, size, ..., type, by_polygon) {
 	random_pt = st_sample(x = x, size = size, ..., type = type, exact = FALSE)
 	while (length(random_pt) < size) {
 		diff = size - length(random_pt)
-		random_pt_new = st_sample(x, size = diff, ..., type, exact = FALSE)
+		random_pt_new = st_sample(x, size = diff, ..., type, exact = FALSE, by_polygon = by_polygon)
 		random_pt = c(random_pt, random_pt_new)
 	}
 	if(length(random_pt) > size) {

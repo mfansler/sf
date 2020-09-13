@@ -637,7 +637,7 @@ plot_sf = function(x, xlim = NULL, ylim = NULL, asp = NA, axes = FALSE, bgc = pa
 #' @name plot
 #' @export
 #' @details non-categorical colors from \code{sf.colors} were taken from \link[sp]{bpy.colors}, with modified \code{cutoff.tails} defaults
-#' If categorical is \code{TRUE}, default colors are from \url{http://www.colorbrewer2.org/} (if n < 9, Set2, else Set3).
+#' If categorical is \code{TRUE}, default colors are from \url{https://colorbrewer2.org/} (if n < 9, Set2, else Set3).
 #' @examples
 #' sf.colors(10)
 sf.colors = function (n = 10, cutoff.tails = c(0.35, 0.2), alpha = 1, categorical = FALSE) {
@@ -837,7 +837,7 @@ bb2merc = function(x, cls = "ggmap") { # return bbox in the appropriate "web mer
 #' @name stars
 #' @export
 #' @param key.width ignore
-.image_scale_factor = function(z, col, breaks = NULL, key.pos, add.axis = TRUE,
+.image_scale_factor = function(z, col, key.pos, add.axis = TRUE,
 	..., axes = FALSE, key.width, key.length) {
 
 	n = length(z)
