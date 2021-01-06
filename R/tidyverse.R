@@ -77,6 +77,13 @@ ungroup.sf <- function(x, ...) {
 	st_as_sf(NextMethod(), sf_column_name = sf_column_name)
 }
 
+#' @name tidyverse
+rowwise.sf <- function(x, ...) {
+	sf_column_name = attr(x, "sf_column")
+	class(x) <- setdiff(class(x), "sf")
+	st_as_sf(NextMethod(), sf_column_name = sf_column_name)
+}
+
 .re_sf = function(x, sf_column_name, agr, geom = NULL) {
 	stopifnot(!inherits(x, "sf"), !missing(sf_column_name), !missing(agr))
 	# non-geom attribute names
@@ -137,16 +144,17 @@ select.sf <- function(.data, ...) {
 
 	agr = st_agr(.data)
 	vars = names(.data)[setdiff(loc, sf_column_loc)]
-	new_agr = agr[vars]
 
 	sf_column_loc_loc = match(sf_column_loc, loc)
 	if (is.na(sf_column_loc_loc)) {
 		# The sf column was subsetted out, select it back in
+		new_agr = setNames(agr[vars], names(loc))
 		loc = c(loc, sf_column_loc)
 		names(loc)[[length(loc)]] = sf_column
 	} else {
 		# The sf column was not subsetted out but it might have been renamed
 		sf_column = names(loc[sf_column_loc_loc])
+		new_agr = setNames(agr[vars], setdiff(names(loc), sf_column))
 	}
 
 	ret = .data
@@ -205,6 +213,7 @@ slice.sf <- function(.data, ..., .dots) {
 #' @name tidyverse
 #' @aliases summarise
 #' @param do_union logical; in case \code{summary} does not create a geometry column, should geometries be created by unioning using \link{st_union}, or simply by combining using \link{st_combine}? Using \link{st_union} resolves internal boundaries, but in case of unioning points, this will likely change the order of the points; see Details.
+#' @param is_coverage logical; if \code{do_union} is \code{TRUE}, use an optimized algorithm for features that form a polygonal coverage (have no overlaps)
 #' @return an object of class \link{sf}
 #' @details
 #' In case one or more of the arguments (expressions) in the \code{summarise} call creates a geometry list-column, the first of these will be the (active) geometry of the returned object. If this is not the case, a geometry column is created, depending on the value of \code{do_union}.
@@ -216,7 +225,7 @@ slice.sf <- function(.data, ..., .dots) {
 #' nc.g %>% summarise(mean(AREA))
 #' nc.g %>% summarise(mean(AREA)) %>% plot(col = grey(3:6 / 7))
 #' nc %>% as.data.frame %>% summarise(mean(AREA))
-summarise.sf <- function(.data, ..., .dots, do_union = TRUE) {
+summarise.sf <- function(.data, ..., .dots, do_union = TRUE, is_coverage = FALSE) {
 	sf_column = attr(.data, "sf_column")
 	precision = st_precision(.data)
 	crs = st_crs(.data)
@@ -233,7 +242,7 @@ summarise.sf <- function(.data, ..., .dots, do_union = TRUE) {
 				i = dplyr::group_indices(.data)
 				# geom = st_geometry(.data)
 				geom = if (do_union)
-						lapply(sort(unique(i)), function(x) st_union(geom[i == x]))
+						lapply(sort(unique(i)), function(x) st_union(geom[i == x], is_coverage = is_coverage))
 					else
 						lapply(sort(unique(i)), function(x) st_combine(geom[i == x]))
 				geom = unlist(geom, recursive = FALSE)
@@ -242,7 +251,7 @@ summarise.sf <- function(.data, ..., .dots, do_union = TRUE) {
 				do.call(st_sfc, c(geom, crs = list(crs), precision = precision))
 			} else { # single group:
 				if (do_union)
-					st_union(geom)
+					st_union(geom, is_coverage = is_coverage)
 				else
 					st_combine(geom)
 			}
@@ -480,6 +489,7 @@ register_all_s3_methods = function() {
 	register_s3_method("dplyr", "mutate", "sf")
 	register_s3_method("dplyr", "rename", "sf")
 	register_s3_method("dplyr", "right_join", "sf")
+	register_s3_method("dplyr", "rowwise", "sf")
 	register_s3_method("dplyr", "sample_frac", "sf")
 	register_s3_method("dplyr", "sample_n", "sf")
 	register_s3_method("dplyr", "select", "sf")
@@ -511,6 +521,9 @@ register_all_s3_methods = function() {
 	register_s3_method("spatstat", "as.psp", "sfc_MULTILINESTRING")
 	register_s3_method("spatstat", "as.psp", "sfc")
 	register_s3_method("spatstat", "as.psp", "sf")
+	register_s3_method("wk", "as_wkb", "sf")
+	register_s3_method("wk", "as_wkb", "sfc")
+	register_s3_method("wk", "as_wkb", "sfg")
 	register_vctrs_methods()
 }
 

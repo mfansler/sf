@@ -61,10 +61,25 @@ RUN export DEBIAN_FRONTEND=noninteractive; apt-get -y update \
 	cmake \
 	libtiff5-dev
 
+RUN export DEBIAN_FRONTEND=noninteractive; apt-get -y update \
+  && apt-get install -y autoconf
+
+RUN git clone --depth 1 https://github.com/libgeos/geos.git
+RUN (cd geos; git pull)
+RUN (cd geos; libtoolize --force)
+RUN (cd geos; aclocal)
+RUN (cd geos; autoheader)
+RUN (cd geos; automake --force-missing --add-missing)
+RUN (cd geos; autoconf)
+RUN (cd geos; ./configure --enable-overlayng)
+RUN (cd geos; make)
+RUN (cd geos; make install)
+RUN ldconfig
+
 #RUN git clone --depth 1 https://github.com/OSGeo/PROJ.git
-RUN wget http://download.osgeo.org/proj/proj-7.2.0.tar.gz
-RUN tar zxvf proj-7.2.0.tar.gz
-RUN cd proj-7.2.0 \
+RUN wget http://download.osgeo.org/proj/proj-7.1.0.tar.gz
+RUN tar zxvf proj-7.1.0.tar.gz
+RUN cd proj-7.1.0 \
   && ls -l \
   && mkdir build \
   && cd build \
@@ -85,33 +100,11 @@ RUN cd proj-7.2.0 \
 
 # https://download.osgeo.org/gdal/3.1.0/gdal-3.1.0rc2.tar.gz
 ENV GDAL_VERSION 3.2.0
-ENV GDAL_VERSION_NAME 3.2.0
+ENV GDAL_VERSION_NAME 3.2.0rc1
 
 RUN wget http://download.osgeo.org/gdal/${GDAL_VERSION}/gdal-${GDAL_VERSION_NAME}.tar.gz \
   && tar -xf gdal-${GDAL_VERSION_NAME}.tar.gz \
   && cd gdal* \
-  && ./configure \
-  && make \
-  && make install \
-  && cd .. \
-  && ldconfig
-
-#RUN git clone --depth 1 https://github.com/OSGeo/gdal.git
-#RUN cd gdal/gdal \
-#  && ls -l \
-#  && ./configure \
-#  && make \
-#  && make install \
-#  && cd .. \
-#  && ldconfig
-
-# GEOS:
-ENV GEOS_VERSION 3.9.0
-
-RUN wget http://download.osgeo.org/geos/geos-${GEOS_VERSION}.tar.bz2 \
-  && bzip2 -d geos-*bz2 \
-  && tar xf geos*tar \
-  && cd geos* \
   && ./configure \
   && make \
   && make install \
@@ -150,11 +143,11 @@ RUN R CMD INSTALL stars
 RUN Rscript -e 'install.packages("rgdal", repos="http://R-Forge.R-project.org")'
 # after rgdal:
 RUN Rscript -e 'install.packages(c("XML"))'
-RUN Rscript -e 'install.packages(c("tmaptools", "tmap", "mapview", "s2"))'
+RUN Rscript -e 'install.packages(c("tmaptools", "tmap", "mapview"))'
 
 RUN (cd sf; git pull)
 RUN R CMD build --no-build-vignettes --no-manual sf
-RUN R CMD check --no-build-vignettes --no-manual --as-cran sf_*.tar.gz 
+#RUN R CMD check --no-build-vignettes --no-manual --as-cran sf_*.tar.gz 
 #RUN R CMD check --no-build-vignettes --no-manual --as-cran lwgeom_*.tar.gz 
 
 #RUN Rscript -e 'install.packages("starsdata", repos="http://gis-bigdata.uni-muenster.de/pebesma/")'

@@ -107,7 +107,6 @@ st_make_grid = function(x,
 ## - covers a bounding box st_bbox(obj)
 ## - contains pt
 ## - has x spacing dx: the shortest distance between x coordinates with identical y coordinate
-## - selects geometries intersecting with obj
 make_hex_grid = function(obj, pt, dx, what, flat_topped = TRUE) {
 
 	dy = sqrt(3) * dx / 2
@@ -157,13 +156,8 @@ make_hex_grid = function(obj, pt, dx, what, flat_topped = TRUE) {
 				st_polygon(list(xy[i_from_x(m),2:1]))
 			}
 
-	ret = if (what == "points")
-			st_sfc(lapply(seq_len(nrow(centers)), function(i) mk_point(centers[i,])), crs = st_crs(bb))
-		else # points:
-			st_sfc(lapply(seq_len(nrow(centers)), function(i) mk_pol(centers[i,])), crs = st_crs(bb))
-
-	if (what == "points" || min(st_dimension(obj)) < 2)
-		ret[obj]
-	else 
-		ret[lengths(st_relate(ret, obj, "2********")) > 0] # part or total overlap
+	if (what == "centers")
+		st_sfc(lapply(seq_len(nrow(centers)), function(i) mk_point(centers[i,])), crs = st_crs(bb))
+	else # points:
+		st_sfc(lapply(seq_len(nrow(centers)), function(i) mk_pol(centers[i,])), crs = st_crs(bb))
 }

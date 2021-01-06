@@ -55,6 +55,10 @@ gdal_write = function(x, ..., file, driver = "GTiff", options = character(0), ty
 	}
 	if (length(dims) == 2)
 		dims = c(dims, 1) # one band
+	else { # add band descriptions?
+		if (is.character(d[[3]]$values))
+			attr(mat, "descriptions") = d[[3]]$values
+	}
 
 	CPL_write_gdal(mat, file, driver, options, type, dims, from, geotransform,
 		st_crs(x)[[2]], as.double(NA_value), create = !update, only_create = only_create)
@@ -252,7 +256,7 @@ gdal_polygonize = function(x, mask = NULL, file = tempfile(), driver = "GTiff", 
 			if (max(breaks) == max(x[[1]], na.rm = TRUE)) # expand, because GDAL will not include interval RHS
 				nbreaks[length(nbreaks)] = breaks[length(breaks)] * 1.01
 			c(paste0("FIXED_LEVELS=", paste0(nbreaks, collapse = ",")),
-			paste0("ELEV_FIELD=0"),
+			paste0("ELEV_FIELD=Value"),
 			paste0("POLYGONIZE=", ifelse(contour_lines, "NO", "YES")))
 		} else
 			character(0)
@@ -267,8 +271,8 @@ gdal_polygonize = function(x, mask = NULL, file = tempfile(), driver = "GTiff", 
 	out = process_cpl_read_ogr(pol, quiet = TRUE)
 	names(out)[1] = names(x)[1]
 	if (use_contours) {
-		m = as.integer(cut(out[[1]], breaks = nbreaks)) # FIXME: add coverage when GDAL 2.4.0 is here
-		if (any(is.na(m)))
+		m = as.integer(cut(out[[1]], breaks = nbreaks, include.lowest = TRUE)) # FIXME: add coverage when GDAL 2.4.0 is here
+		if (any(is.na(m)) && !all(is.na(m)))
 			warning("range of breaks does not cover range of cell values")
 		out[[1]] = structure(m, levels = levels(cut(breaks, breaks, include.lowest = TRUE)), class = "factor")
 	}
@@ -281,4 +285,13 @@ gdal_polygonize = function(x, mask = NULL, file = tempfile(), driver = "GTiff", 
 gdal_rasterize = function(sf, x, gt, file, driver = "GTiff", options = character()) {
 	gdal_write(x, file = file, driver = driver, geotransform = gt)
 	CPL_rasterize(file, driver, st_geometry(sf), as.double(as.data.frame(sf)[[1]]), options, NA_real_);
+}
+
+#' @export
+#' @name gdal
+#' @param f gdal raster data source filename
+#' @param pts points matrix
+#' @param bilinear logical; use bilinear interpolation, rather than nearest neighbor?
+gdal_extract = function(f, pts, bilinear = FALSE) {
+	CPL_extract(f, pts, as.logical(bilinear))
 }

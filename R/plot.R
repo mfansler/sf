@@ -11,7 +11,7 @@
 #' @param nbreaks number of colors breaks (ignored for \code{factor} or \code{character} variables)
 #' @param breaks either a numeric vector with the actual breaks, or a name of a method accepted by the \code{style} argument of \link[classInt]{classIntervals}
 #' @param max.plot integer; lower boundary to maximum number of attributes to plot; the default value (9) can be overriden by setting the global option \code{sf_max.plot}, e.g. \code{options(sf_max.plot=2)}
-#' @param key.pos integer; side to plot a color key: 1 bottom, 2 left, 3 top, 4 right; set to \code{NULL} to omit key, or -1 to select automatically. If multiple columns are plotted in a single function call by default no key is plotted and every submap is stretched individually; if a key is requested (and \code{col} is missing) all maps are colored according to a single key. Auto select depends on plot size, map aspect, and, if set, parameter \code{asp}.
+#' @param key.pos integer; side to plot a color key: 1 bottom, 2 left, 3 top, 4 right; set to \code{NULL} to omit key completely, 0 to only not plot the key, or -1 to select automatically. If multiple columns are plotted in a single function call by default no key is plotted and every submap is stretched individually; if a key is requested (and \code{col} is missing) all maps are colored according to a single key. Auto select depends on plot size, map aspect, and, if set, parameter \code{asp}.
 #' @param key.width amount of space reserved for the key (incl. labels), thickness/width of the scale bar
 #' @param key.length amount of space reserved for the key along its axis, length of the scale bar
 #' @param pch plotting symbol
@@ -128,7 +128,7 @@ plot.sf <- function(x, y, ..., main, pal = NULL, nbreaks = 10, breaks = "pretty"
 			plot.new()
 
 		# plot key?
-		if (!is.null(key.pos) && col_missing) {
+		if (!is.null(key.pos) && key.pos != 0 && col_missing) {
 			if (is.null(pal))
 				pal = function(n) sf.colors(n, categorical = is.factor(values))
 			colors = if (is.function(pal))
@@ -667,25 +667,32 @@ sf.colors = function (n = 10, cutoff.tails = c(0.35, 0.2), alpha = 1, categorica
 #' @param n ignore
 #' @param total_size ignore
 #' @param key.length ignore
-.get_layout = function(bb, n, total_size, key.pos, key.length) {
+#' @param mfrow length-2 integer vector with number of rows, columns
+.get_layout = function(bb, n, total_size, key.pos, key.length, mfrow = NULL) {
 # return list with "m" matrix, "key.pos", "widths" and "heights" fields
 # if key.pos = -1, it will be a return value, "optimally" placed
 	asp = diff(bb[c(2,4)])/diff(bb[c(1,3)])
 	if (isTRUE(st_is_longlat(bb)))
 		asp = asp / cos(mean(bb[c(2,4)]) * pi /180)
-	size = function(nrow, n, asp) {
-		ncol = ceiling(n / nrow)
-		xsize = total_size[1] / ncol
-		ysize = xsize  * asp
-		if (xsize * ysize * n > prod(total_size)) {
-			ysize = total_size[2] / nrow
-			xsize = ysize / asp
+	if (is.null(mfrow)) {
+		size = function(nrow, n, asp) {
+			ncol = ceiling(n / nrow)
+			xsize = total_size[1] / ncol
+			ysize = xsize  * asp
+			if (xsize * ysize * n > prod(total_size)) {
+				ysize = total_size[2] / nrow
+				xsize = ysize / asp
+			}
+			xsize * ysize
 		}
-		xsize * ysize
+		sz = vapply(1:n, function(x) size(x, n, asp), 0.0)
+		nrow = which.max(sz)
+		ncol = ceiling(n / nrow)
+	} else {
+		stopifnot(is.numeric(mfrow), length(mfrow) == 2)
+		nrow = mfrow[1]
+		ncol = mfrow[2]
 	}
-	sz = vapply(1:n, function(x) size(x, n, asp), 0.0)
-	nrow = which.max(sz)
-	ncol = ceiling(n / nrow)
 
 	ret = list()
 	ret$mfrow = c(nrow, ncol)
