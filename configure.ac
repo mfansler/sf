@@ -218,10 +218,15 @@ fi
 # Optional local copy of GDAL datadir and PROJ_LIB
 
 data_copy=no
-AC_ARG_WITH([data-copy],
-    AC_HELP_STRING([--with-data-copy=yes/no],
+if test "${PROJ_GDAL_DATA_COPY}" ; then
+    data_copy=yes
+    AC_MSG_NOTICE([PROJ_GDAL_DATA_COPY used.])
+else
+    AC_ARG_WITH([data-copy],
+        AC_HELP_STRING([--with-data-copy=yes/no],
                [local copy of data directories in package, default no]),
                [data_copy=$withval])
+fi
 if test "${data_copy}" = "yes" ; then
 AC_MSG_NOTICE([Copy data for:])
   proj_lib0="${PROJ_LIB}"
@@ -385,7 +390,7 @@ if test [ -n "$proj_lib_path" ] ; then
     AC_SUBST([PROJ_LIBS], ["-L${proj_lib_path} ${INPKG_LIBS} -lproj"])
 else
   if test "${proj_config_ok}" = yes; then
-    PROJ_LIB_PATH=`${PROJ_CONFIG} --libs`
+    PROJ_LIB_PATH=`${PROJ_CONFIG} --libs --static`
     AC_SUBST([PROJ_LIBS], ["${PROJ_LIB_PATH} ${INPKG_LIBS}"])
 	proj_version=`${PROJ_CONFIG} --modversion`
 	AC_MSG_NOTICE([PROJ: ${proj_version}])

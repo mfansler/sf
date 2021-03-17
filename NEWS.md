@@ -1,3 +1,23 @@
+# version 0.9-8
+
+* add `st_as_sf` method for terra's `SpatVector` class; #1567
+
+* `distinct.sf` works by default on all variables, and keeps active geometry active; #1613
+
+* improve (fix?) polygonize/contour code; #1608
+
+* `sf_proj_network()` reports whether PROJ uses network (CDN) grids, can switch it on or off, and can set the CDN url.
+
+* `st_write` returns obj, invisibly; #1597
+
+* fix regression in n-ary `st_intersection()`, #1595, introduced at #1549
+
+* `st_inscribed_circle` computes the maximum inscribed circle for polygons (requires GEOS >= 3.9.0)
+
+* allow to `st_cast` COMPOUNDCURVE, MULTISURFACE or CURVEPOLYGON to GEOMETRYCOLLECTION (and back); #1573
+
+* Fixed a bug in `st_as_grob()` when plotting a mix of MULTI and non-MULTI geometries of the same base type
+
 # version 0.9-7
 
 * n-ary `st_intersection` skips failing geometries, rather than returning an error; #1549

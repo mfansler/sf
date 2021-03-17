@@ -234,6 +234,8 @@ summarise.sf <- function(.data, ..., .dots, do_union = TRUE, is_coverage = FALSE
 	ret = NextMethod()
 	if (!missing(do_union))
 		ret$do_union = NULL
+	if (!missing(is_coverage))
+		ret$is_coverage = NULL
 
 	if (! any(sapply(ret, inherits, what = "sfc"))) {
 		geom = if (inherits(.data, "grouped_df") || inherits(.data, "grouped_dt")) {
@@ -281,9 +283,9 @@ distinct.sf <- function(.data, ..., .keep_all = FALSE) {
 	if (!requireNamespace("rlang", quietly = TRUE))
 		stop("rlang required: install first?")
 
-	.data = dplyr::distinct(.data, ..., !! rlang::sym(sf_column), .keep_all = .keep_all)
+	.data = dplyr::distinct(.data, ..., .keep_all = .keep_all)
 	.data[[ sf_column ]] = geom[ .data[[ sf_column ]] ]
-	st_as_sf(.data)
+	st_as_sf(.data, sf_column_name = sf_column)
 }
 
 ## tidyr methods:
@@ -508,22 +510,21 @@ register_all_s3_methods = function() {
 	register_s3_method("pillar", "obj_sum", "sfc")
 	register_s3_method("pillar", "type_sum", "sfc")
 	register_s3_method("pillar", "pillar_shaft", "sfc")
-	register_s3_method("spatstat", "as.ppp", "sfc")
-	register_s3_method("spatstat", "as.ppp", "sf")
-	register_s3_method("spatstat", "as.owin", "POLYGON")
-	register_s3_method("spatstat", "as.owin", "MULTIPOLYGON")
-	register_s3_method("spatstat", "as.owin", "sfc_POLYGON")
-	register_s3_method("spatstat", "as.owin", "sfc_MULTIPOLYGON")
-	register_s3_method("spatstat", "as.owin", "sfc")
-	register_s3_method("spatstat", "as.owin", "sf")
-	register_s3_method("spatstat", "as.psp", "LINESTRING")
-	register_s3_method("spatstat", "as.psp", "MULTILINESTRING")
-	register_s3_method("spatstat", "as.psp", "sfc_MULTILINESTRING")
-	register_s3_method("spatstat", "as.psp", "sfc")
-	register_s3_method("spatstat", "as.psp", "sf")
-	register_s3_method("wk", "as_wkb", "sf")
-	register_s3_method("wk", "as_wkb", "sfc")
-	register_s3_method("wk", "as_wkb", "sfg")
+	register_s3_method("spatstat.geom", "as.ppp", "sfc")
+	register_s3_method("spatstat.geom", "as.ppp", "sf")
+	register_s3_method("spatstat.geom", "as.owin", "POLYGON")
+	register_s3_method("spatstat.geom", "as.owin", "MULTIPOLYGON")
+	register_s3_method("spatstat.geom", "as.owin", "sfc_POLYGON")
+	register_s3_method("spatstat.geom", "as.owin", "sfc_MULTIPOLYGON")
+	register_s3_method("spatstat.geom", "as.owin", "sfc")
+	register_s3_method("spatstat.geom", "as.owin", "sf")
+	register_s3_method("spatstat.geom", "as.psp", "LINESTRING")
+	register_s3_method("spatstat.geom", "as.psp", "MULTILINESTRING")
+	register_s3_method("spatstat.geom", "as.psp", "sfc_MULTILINESTRING")
+	register_s3_method("spatstat.geom", "as.psp", "sfc")
+	register_s3_method("spatstat.geom", "as.psp", "sf")
+	register_s3_method("s2", "as_s2_geography", "sfc")
+	register_s3_method("s2", "as_s2_geography", "sf")
 	register_vctrs_methods()
 }
 

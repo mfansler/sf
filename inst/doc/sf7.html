@@ -15,45 +15,6 @@
 
 <title>7. Spherical geometry in sf using s2geometry</title>
 
-<style type="text/css">
-a.anchor-section {margin-left: 10px; visibility: hidden; color: inherit;}
-a.anchor-section::before {content: '#';}
-.hasAnchor:hover a.anchor-section {visibility: visible;}
-</style>
-<script>// Anchor sections v1.0 written by Atsushi Yasumoto on Oct 3rd, 2020.
-document.addEventListener('DOMContentLoaded', function() {
-  // Do nothing if AnchorJS is used
-  if (typeof window.anchors === 'object' && anchors.hasOwnProperty('hasAnchorJSLink')) {
-    return;
-  }
-
-  const h = document.querySelectorAll('h1, h2, h3, h4, h5, h6');
-
-  // Do nothing if sections are already anchored
-  if (Array.from(h).some(x => x.classList.contains('hasAnchor'))) {
-    return null;
-  }
-
-  // Use section id when pandoc runs with --section-divs
-  const section_id = function(x) {
-    return ((x.classList.contains('section') || (x.tagName === 'SECTION'))
-            ? x.id : '');
-  };
-
-  // Add anchors
-  h.forEach(function(x) {
-    const id = x.id || section_id(x.parentElement);
-    if (id === '') {
-      return null;
-    }
-    let anchor = document.createElement('a');
-    anchor.href = '#' + id;
-    anchor.classList = ['anchor-section'];
-    x.classList.add('hasAnchor');
-    x.appendChild(anchor);
-  });
-});
-</script>
 
 <style type="text/css">
   code{white-space: pre-wrap;}
@@ -65,7 +26,14 @@ document.addEventListener('DOMContentLoaded', function() {
     </style>
 
 
-<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css">
+  code {
+    white-space: pre;
+  }
+  .sourceCode {
+    overflow: visible;
+  }
+</style>
 <style type="text/css" data-origin="pandoc">
 a.sourceLine { display: inline-block; line-height: 1.25; }
 a.sourceLine { pointer-events: none; color: inherit; text-decoration: inherit; }
@@ -151,6 +119,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
   }
 })();
 </script>
+
 
 
 
@@ -376,7 +345,11 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <li>passes through <code>POINT(0 0)</code>, or</li>
 <li>passes through <code>POINT(180 0)</code></li>
 </ul>
-<p>and whether it is * a straight line, cutting through the Earth’s surface, or * a curved line following the Earth’s surface</p>
+<p>and whether it is</p>
+<ul>
+<li>a straight line, cutting through the Earth’s surface, or</li>
+<li>a curved line following the Earth’s surface</li>
+</ul>
 <p>Starting with <code>sf</code> version 1.0, <code>sf</code> uses the new package <code>s2</code> (Dunnington, Pebesma, Rubak 2020) for spherical geometry, which has functions for computing pretty much all measures, predicates and transformations <em>on the sphere</em>. This means:</p>
 <ul>
 <li>no more hodge-podge of some functions working on <span class="math inline">\(R^2\)</span>, with annoying messages, some on the ellipsoid</li>
@@ -561,32 +534,32 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <a class="sourceLine" id="cb22-4" title="4">  uk_buffer_sf =<span class="st"> </span><span class="kw">st_buffer</span>(uk_projected, <span class="dt">dist =</span> <span class="dv">20000</span>)</a>
 <a class="sourceLine" id="cb22-5" title="5">})</a>
 <a class="sourceLine" id="cb22-6" title="6"><span class="co">##    user  system elapsed </span></a>
-<a class="sourceLine" id="cb22-7" title="7"><span class="co">##    0.04    0.00    0.04</span></a>
+<a class="sourceLine" id="cb22-7" title="7"><span class="co">##   0.043   0.000   0.043</span></a>
 <a class="sourceLine" id="cb22-8" title="8"><span class="co"># sf way with few than the 30 segments in the buffer</span></a>
 <a class="sourceLine" id="cb22-9" title="9"><span class="kw">system.time</span>({</a>
 <a class="sourceLine" id="cb22-10" title="10">  uk_projected =<span class="st"> </span><span class="kw">st_transform</span>(uk_sfc, <span class="dv">27700</span>)</a>
 <a class="sourceLine" id="cb22-11" title="11">  uk_buffer_sf2 =<span class="st"> </span><span class="kw">st_buffer</span>(uk_projected, <span class="dt">dist =</span> <span class="dv">20000</span>, <span class="dt">nQuadSegs =</span> <span class="dv">4</span>)</a>
 <a class="sourceLine" id="cb22-12" title="12">})</a>
 <a class="sourceLine" id="cb22-13" title="13"><span class="co">##    user  system elapsed </span></a>
-<a class="sourceLine" id="cb22-14" title="14"><span class="co">##   0.031   0.001   0.031</span></a>
+<a class="sourceLine" id="cb22-14" title="14"><span class="co">##   0.035   0.000   0.035</span></a>
 <a class="sourceLine" id="cb22-15" title="15"><span class="co"># s2 with default cell size</span></a>
 <a class="sourceLine" id="cb22-16" title="16"><span class="kw">system.time</span>({</a>
 <a class="sourceLine" id="cb22-17" title="17">  uk_buffer =<span class="st"> </span><span class="kw">s2_buffer_cells</span>(uk, <span class="dt">distance =</span> <span class="dv">20000</span>)</a>
 <a class="sourceLine" id="cb22-18" title="18">})</a>
 <a class="sourceLine" id="cb22-19" title="19"><span class="co">##    user  system elapsed </span></a>
-<a class="sourceLine" id="cb22-20" title="20"><span class="co">##   0.035   0.000   0.035</span></a>
+<a class="sourceLine" id="cb22-20" title="20"><span class="co">##   0.034   0.000   0.034</span></a>
 <a class="sourceLine" id="cb22-21" title="21"><span class="co"># s2 with 10000 cells</span></a>
 <a class="sourceLine" id="cb22-22" title="22"><span class="kw">system.time</span>({</a>
 <a class="sourceLine" id="cb22-23" title="23">  uk_buffer2 =<span class="st"> </span><span class="kw">s2_buffer_cells</span>(uk, <span class="dt">distance =</span> <span class="dv">20000</span>, <span class="dt">max_cells =</span> <span class="dv">10000</span>)</a>
 <a class="sourceLine" id="cb22-24" title="24">})</a>
 <a class="sourceLine" id="cb22-25" title="25"><span class="co">##    user  system elapsed </span></a>
-<a class="sourceLine" id="cb22-26" title="26"><span class="co">##   0.266   0.000   0.267</span></a>
+<a class="sourceLine" id="cb22-26" title="26"><span class="co">##   0.258   0.000   0.258</span></a>
 <a class="sourceLine" id="cb22-27" title="27"><span class="co"># s2 with 100 cells</span></a>
 <a class="sourceLine" id="cb22-28" title="28"><span class="kw">system.time</span>({</a>
 <a class="sourceLine" id="cb22-29" title="29">  uk_buffer2 =<span class="st"> </span><span class="kw">s2_buffer_cells</span>(uk, <span class="dt">distance =</span> <span class="dv">20000</span>, <span class="dt">max_cells =</span> <span class="dv">100</span>)</a>
 <a class="sourceLine" id="cb22-30" title="30">})</a>
 <a class="sourceLine" id="cb22-31" title="31"><span class="co">##    user  system elapsed </span></a>
-<a class="sourceLine" id="cb22-32" title="32"><span class="co">##   0.005   0.000   0.005</span></a></code></pre></div>
+<a class="sourceLine" id="cb22-32" title="32"><span class="co">##   0.004   0.000   0.005</span></a></code></pre></div>
 <p>The result of the previous benchmarks emphasise the point that there are trade-offs between geographic resolution and computational resources, something that web developers working on geographic services such as Google Maps understand well. In this case the default setting of 1000 cells, which runs slightly faster than the default transform -&gt; buffer workflow, is probably appropriate given the low resolution of the input geometry representing the UK.</p>
 </div>
 <div id="st_buffer-or-st_is_within_distance" class="section level2">

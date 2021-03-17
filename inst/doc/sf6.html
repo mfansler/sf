@@ -15,45 +15,6 @@
 
 <title>6. Miscellaneous</title>
 
-<style type="text/css">
-a.anchor-section {margin-left: 10px; visibility: hidden; color: inherit;}
-a.anchor-section::before {content: '#';}
-.hasAnchor:hover a.anchor-section {visibility: visible;}
-</style>
-<script>// Anchor sections v1.0 written by Atsushi Yasumoto on Oct 3rd, 2020.
-document.addEventListener('DOMContentLoaded', function() {
-  // Do nothing if AnchorJS is used
-  if (typeof window.anchors === 'object' && anchors.hasOwnProperty('hasAnchorJSLink')) {
-    return;
-  }
-
-  const h = document.querySelectorAll('h1, h2, h3, h4, h5, h6');
-
-  // Do nothing if sections are already anchored
-  if (Array.from(h).some(x => x.classList.contains('hasAnchor'))) {
-    return null;
-  }
-
-  // Use section id when pandoc runs with --section-divs
-  const section_id = function(x) {
-    return ((x.classList.contains('section') || (x.tagName === 'SECTION'))
-            ? x.id : '');
-  };
-
-  // Add anchors
-  h.forEach(function(x) {
-    const id = x.id || section_id(x.parentElement);
-    if (id === '') {
-      return null;
-    }
-    let anchor = document.createElement('a');
-    anchor.href = '#' + id;
-    anchor.classList = ['anchor-section'];
-    x.classList.add('hasAnchor');
-    x.appendChild(anchor);
-  });
-});
-</script>
 
 <style type="text/css">
   code{white-space: pre-wrap;}
@@ -65,7 +26,14 @@ document.addEventListener('DOMContentLoaded', function() {
     </style>
 
 
-<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css">
+  code {
+    white-space: pre;
+  }
+  .sourceCode {
+    overflow: visible;
+  }
+</style>
 <style type="text/css" data-origin="pandoc">
 a.sourceLine { display: inline-block; line-height: 1.25; }
 a.sourceLine { pointer-events: none; color: inherit; text-decoration: inherit; }
@@ -151,6 +119,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
   }
 })();
 </script>
+
 
 
 
@@ -364,13 +333,13 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <p><code>sf</code> objects can have more than one geometry list-column, but always only one geometry column is considered <em>active</em>, and returned by <code>st_geometry</code>. When there are multiple geometry columns, the default <code>print</code> methods reports which one is active:</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">library</span>(sf)</a>
 <a class="sourceLine" id="cb2-2" title="2"><span class="kw">demo</span>(nc, <span class="dt">ask =</span> <span class="ot">FALSE</span>, <span class="dt">echo =</span> <span class="ot">FALSE</span>)</a>
-<a class="sourceLine" id="cb2-3" title="3"><span class="co">## Reading layer `nc.gpkg&#39; from data source `/tmp/RtmptpFtGS/Rinst253762c85271e/sf/gpkg/nc.gpkg&#39; using driver `GPKG&#39;</span></a>
+<a class="sourceLine" id="cb2-3" title="3"><span class="co">## Reading layer `nc.gpkg&#39; from data source `/tmp/Rtmpl6EaFo/Rinst6231414d3e82f/sf/gpkg/nc.gpkg&#39; using driver `GPKG&#39;</span></a>
 <a class="sourceLine" id="cb2-4" title="4"><span class="co">## Simple feature collection with 100 features and 14 fields</span></a>
 <a class="sourceLine" id="cb2-5" title="5"><span class="co">## Attribute-geometry relationship: 0 constant, 8 aggregate, 6 identity</span></a>
-<a class="sourceLine" id="cb2-6" title="6"><span class="co">## geometry type:  MULTIPOLYGON</span></a>
-<a class="sourceLine" id="cb2-7" title="7"><span class="co">## dimension:      XY</span></a>
-<a class="sourceLine" id="cb2-8" title="8"><span class="co">## bbox:           xmin: -84.32385 ymin: 33.88199 xmax: -75.45698 ymax: 36.58965</span></a>
-<a class="sourceLine" id="cb2-9" title="9"><span class="co">## geographic CRS: NAD27</span></a>
+<a class="sourceLine" id="cb2-6" title="6"><span class="co">## Geometry type: MULTIPOLYGON</span></a>
+<a class="sourceLine" id="cb2-7" title="7"><span class="co">## Dimension:     XY</span></a>
+<a class="sourceLine" id="cb2-8" title="8"><span class="co">## Bounding box:  xmin: -84.32385 ymin: 33.88199 xmax: -75.45698 ymax: 36.58965</span></a>
+<a class="sourceLine" id="cb2-9" title="9"><span class="co">## Geodetic CRS:  NAD27</span></a>
 <a class="sourceLine" id="cb2-10" title="10">nc<span class="op">$</span>geom2 =<span class="st"> </span><span class="kw">st_centroid</span>(<span class="kw">st_geometry</span>(nc))</a>
 <a class="sourceLine" id="cb2-11" title="11"><span class="co">## Warning in st_centroid.sfc(st_geometry(nc)): st_centroid does not give correct</span></a>
 <a class="sourceLine" id="cb2-12" title="12"><span class="co">## centroids for longitude/latitude data</span></a>
@@ -378,10 +347,10 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <a class="sourceLine" id="cb2-14" title="14"><span class="co">## Simple feature collection with 100 features and 14 fields</span></a>
 <a class="sourceLine" id="cb2-15" title="15"><span class="co">## Attribute-geometry relationship: 0 constant, 8 aggregate, 6 identity, 1 NA&#39;s</span></a>
 <a class="sourceLine" id="cb2-16" title="16"><span class="co">## Active geometry column: geom</span></a>
-<a class="sourceLine" id="cb2-17" title="17"><span class="co">## geometry type:  MULTIPOLYGON</span></a>
-<a class="sourceLine" id="cb2-18" title="18"><span class="co">## dimension:      XY</span></a>
-<a class="sourceLine" id="cb2-19" title="19"><span class="co">## bbox:           xmin: -84.32385 ymin: 33.88199 xmax: -75.45698 ymax: 36.58965</span></a>
-<a class="sourceLine" id="cb2-20" title="20"><span class="co">## geographic CRS: NAD27</span></a>
+<a class="sourceLine" id="cb2-17" title="17"><span class="co">## Geometry type: MULTIPOLYGON</span></a>
+<a class="sourceLine" id="cb2-18" title="18"><span class="co">## Dimension:     XY</span></a>
+<a class="sourceLine" id="cb2-19" title="19"><span class="co">## Bounding box:  xmin: -84.32385 ymin: 33.88199 xmax: -75.45698 ymax: 36.58965</span></a>
+<a class="sourceLine" id="cb2-20" title="20"><span class="co">## Geodetic CRS:  NAD27</span></a>
 <a class="sourceLine" id="cb2-21" title="21"><span class="co">## First 2 features:</span></a>
 <a class="sourceLine" id="cb2-22" title="22"><span class="co">##    AREA PERIMETER CNTY_ CNTY_ID      NAME  FIPS FIPSNO CRESS_ID BIR74 SID74</span></a>
 <a class="sourceLine" id="cb2-23" title="23"><span class="co">## 1 0.114     1.442  1825    1825      Ashe 37009  37009        5  1091     1</span></a>
@@ -414,7 +383,7 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <h1>What is this error/warning/message about?</h1>
 <div id="although-coordinates-are-longitudelatitude-xxx-assumes-that-they-are-planar" class="section level2">
 <h2><em>although coordinates are longitude/latitude, xxx assumes that they are planar</em></h2>
-<p>Most (but not all) of the geometry calculating routines used by <code>sf</code> come from the <a href="https://trac.osgeo.org/geos/">GEOS</a> library. This library considers coordinates in a two-dimensional, flat, Euclidian space. For longitude latitude data, this is not the case. A simple example is a polygon enclosing the North pole, which should include the pole:</p>
+<p>Most (but not all) of the geometry calculating routines used by <code>sf</code> come from the <a href="https://trac.osgeo.org/geos/">GEOS</a> library. This library considers coordinates in a two-dimensional, flat, Euclidean space. For longitude latitude data, this is not the case. A simple example is a polygon enclosing the North pole, which should include the pole:</p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb7-1" title="1">polygon =<span class="st"> </span><span class="kw">st_sfc</span>(<span class="kw">st_polygon</span>(<span class="kw">list</span>(<span class="kw">rbind</span>(<span class="kw">c</span>(<span class="dv">0</span>,<span class="dv">80</span>), <span class="kw">c</span>(<span class="dv">120</span>,<span class="dv">80</span>), <span class="kw">c</span>(<span class="dv">240</span>,<span class="dv">80</span>), <span class="kw">c</span>(<span class="dv">0</span>,<span class="dv">80</span>)))), </a>
 <a class="sourceLine" id="cb7-2" title="2">        <span class="dt">crs =</span> <span class="dv">4326</span>)</a>
 <a class="sourceLine" id="cb7-3" title="3">pole =<span class="st"> </span><span class="kw">st_sfc</span>(<span class="kw">st_point</span>(<span class="kw">c</span>(<span class="dv">0</span>,<span class="dv">90</span>)), <span class="dt">crs =</span> <span class="dv">4326</span>)</a>

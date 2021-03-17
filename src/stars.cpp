@@ -194,7 +194,7 @@ NumericVector read_gdal_data(GDALDataset *poDataset,
 }
 
 int get_from_list(List lst, const char *name, int otherwise) {
-	if (lst.containsElementNamed(name)) {
+	if (lst.containsElementNamed(name) && lst[name] != R_NilValue) {
 		IntegerVector ret = lst[name]; // #nocov
 		return(ret[0]);                // #nocov
 	} else
@@ -349,18 +349,29 @@ List CPL_read_gdal(CharacterVector fname, CharacterVector options, CharacterVect
 			nodatavalue[0] = poBand->GetNoDataValue(NULL); // #nocov
 	}
 
+	// bands:
+	IntegerVector bands;
+	if (RasterIO_parameters.containsElementNamed("bands"))
+		bands = RasterIO_parameters["bands"]; // #nocov
+	else {
+		bands = IntegerVector(poDataset->GetRasterCount());
+		for (int j = 0; j < bands.size(); j++)
+			bands(j) = j + 1; // bands is 1-based
+	}
+
 	// get color table, attribute table, and min/max values:
-	List colorTables(poDataset->GetRasterCount());
-	List attributeTables(poDataset->GetRasterCount());
-	CharacterVector descriptions(poDataset->GetRasterCount());
-	NumericMatrix ranges(poDataset->GetRasterCount(), 4);
-	for (int i = 0; i < poDataset->GetRasterCount(); i++) {
-		poBand = poDataset->GetRasterBand(i + 1);
+	List colorTables(bands.size());
+	List attributeTables(bands.size());
+	CharacterVector descriptions(bands.size());
+	NumericMatrix ranges(bands.size(), 4);
+	for (int i = 0; i < bands.size(); i++) {
+		poBand = poDataset->GetRasterBand(bands(i));
 		const char *md = poBand->GetMetadataItem("BANDNAME", NULL);
 		if (md == NULL)
 			descriptions(i) = poBand->GetDescription();
 		else
 			descriptions(i) = md;
+
 		if (poBand->GetColorTable() != NULL)
 			colorTables(i) = get_color_table(poBand->GetColorTable());
 		if (poBand->GetCategoryNames() != NULL)
@@ -390,16 +401,6 @@ List CPL_read_gdal(CharacterVector fname, CharacterVector options, CharacterVect
 	int nYSize = get_from_list(RasterIO_parameters, "nYSize", poDataset->GetRasterYSize() - nYOff);
 	int nBufXSize = get_from_list(RasterIO_parameters, "nBufXSize", nXSize);
 	int nBufYSize = get_from_list(RasterIO_parameters, "nBufYSize", nYSize);
-
-	// bands:
-	IntegerVector bands;
-	if (RasterIO_parameters.containsElementNamed("bands"))
-		bands = RasterIO_parameters["bands"]; // #nocov
-	else {
-		bands = IntegerVector(poDataset->GetRasterCount());
-		for (int j = 0; j < bands.size(); j++)
-			bands(j) = j + 1; // bands is 1-based
-	}
 
 	// resampling method:
 	GDALRasterIOExtraArg resample;
@@ -577,6 +578,38 @@ void CPL_write_gdal(NumericMatrix x, CharacterVector fname, CharacterVector driv
 			}
 		}
 
+		// write factor levels to CategoryNames:
+		if (x.attr("levels") != R_NilValue) {
+			Rcpp::CharacterVector levels = x.attr("levels");
+			Rcpp::CharacterVector l(levels.size() + 1);
+			l[0] = ""; // levels start at 1, CategoryNames at 0.
+			for (int i = 0; i < levels.size(); i++)
+				l[i+1] = levels[i];
+			for (int band = 1; band <= dims(2); band++) {
+				GDALRasterBand *poBand = poDstDS->GetRasterBand( band );
+				if (poBand->SetCategoryNames(create_options(l).data()) != CE_None)
+					warning("error writing factor levels to raster band");
+			}
+		}
+		// write color table:
+		if (x.attr("rgba") != R_NilValue) {
+			Rcpp::NumericMatrix co = x.attr("rgba"); // r g b alpha in columns; levels in rows
+			GDALColorTable ct = GDALColorTable(GPI_RGB);
+			GDALColorEntry ce;
+			ce.c1 = 0; ce.c2 = 0; ce.c3 = 0; ce.c4 = 0;
+			ct.SetColorEntry(0, &ce);
+			for (int i = 0; i < co.nrow(); i++) {
+				ce.c1 = co(i, 0);
+				ce.c2 = co(i, 1);
+				ce.c3 = co(i, 2);
+				ce.c4 = co(i, 3);
+				ct.SetColorEntry(i + 1, &ce);
+			}
+			GDALRasterBand *poBand = poDstDS->GetRasterBand( 1 ); // can only set CT for band 1
+			if (poBand->SetColorTable(&ct) != CE_None)
+				warning("error writing color table to raster band");
+		}
+
 	} else { // no create, update:
 		if ((poDstDS = (GDALDataset *) GDALOpen(fname[0], GA_Update)) == NULL) // #nocov
 			stop("updating dataset failed"); // #nocov
@@ -620,11 +653,11 @@ double get_bilinear(GDALRasterBand *poBand, double Pixel, double Line,
 		iPixel -= 1;
 
 	// x:
-	if (Pixel < 0.5)
+	if (Pixel < 0.5) // border:
 		dX = 0.0;
 	else if (Pixel > RasterXSize - 0.5)
 		dX = 1.0;
-	else if (dX < 0.5)
+	else if (dX < 0.5) // shift to pixel center:
 		dX += 0.5;
 	else
 		dX -= 0.5;
@@ -644,8 +677,8 @@ double get_bilinear(GDALRasterBand *poBand, double Pixel, double Line,
 			(void *) pixels, 2, 2, GDT_CFloat64, sizeof(double), 0) != CE_None)
 		stop("Error reading!");
 	// f(0,0): pixels[0], f(1,0): pixels[1], f(0,1): pixels[2], f(1,1): pixels[3]
-	if (na_set && pixels[0] == na_value || pixels[1] == na_value ||
-			pixels[2] == na_value || pixels[3] == na_value)
+	if (na_set && (pixels[0] == na_value || pixels[1] == na_value ||
+			pixels[2] == na_value || pixels[3] == na_value))
 		return na_value;
 	else // https://en.wikipedia.org/wiki/Bilinear_interpolation#Unit_square
 		return	pixels[0] * (1-dX) * (1-dY) +
@@ -670,7 +703,9 @@ NumericMatrix CPL_extract(CharacterVector input, NumericMatrix xy, bool interpol
 	double gt[6];
 	poDataset->GetGeoTransform(gt);
 	double gt_inv[6];
-	int retval = GDALInvGeoTransform(gt, gt_inv);
+	// int retval = GDALInvGeoTransform(gt, gt_inv);
+	if (! GDALInvGeoTransform(gt, gt_inv))
+		stop("geotransform not invertible");
 
 	for (int j = 0; j < poDataset->GetRasterCount(); j++) {
 		GDALRasterBand *poBand = poDataset->GetRasterBand(j+1);

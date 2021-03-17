@@ -15,45 +15,6 @@
 
 <title>1. Simple Features for R</title>
 
-<style type="text/css">
-a.anchor-section {margin-left: 10px; visibility: hidden; color: inherit;}
-a.anchor-section::before {content: '#';}
-.hasAnchor:hover a.anchor-section {visibility: visible;}
-</style>
-<script>// Anchor sections v1.0 written by Atsushi Yasumoto on Oct 3rd, 2020.
-document.addEventListener('DOMContentLoaded', function() {
-  // Do nothing if AnchorJS is used
-  if (typeof window.anchors === 'object' && anchors.hasOwnProperty('hasAnchorJSLink')) {
-    return;
-  }
-
-  const h = document.querySelectorAll('h1, h2, h3, h4, h5, h6');
-
-  // Do nothing if sections are already anchored
-  if (Array.from(h).some(x => x.classList.contains('hasAnchor'))) {
-    return null;
-  }
-
-  // Use section id when pandoc runs with --section-divs
-  const section_id = function(x) {
-    return ((x.classList.contains('section') || (x.tagName === 'SECTION'))
-            ? x.id : '');
-  };
-
-  // Add anchors
-  h.forEach(function(x) {
-    const id = x.id || section_id(x.parentElement);
-    if (id === '') {
-      return null;
-    }
-    let anchor = document.createElement('a');
-    anchor.href = '#' + id;
-    anchor.classList = ['anchor-section'];
-    x.classList.add('hasAnchor');
-    x.appendChild(anchor);
-  });
-});
-</script>
 
 <style type="text/css">
   code{white-space: pre-wrap;}
@@ -65,7 +26,14 @@ document.addEventListener('DOMContentLoaded', function() {
     </style>
 
 
-<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css">
+  code {
+    white-space: pre;
+  }
+  .sourceCode {
+    overflow: visible;
+  }
+</style>
 <style type="text/css" data-origin="pandoc">
 a.sourceLine { display: inline-block; line-height: 1.25; }
 a.sourceLine { pointer-events: none; color: inherit; text-decoration: inherit; }
@@ -151,6 +119,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
   }
 })();
 </script>
+
 
 
 
@@ -506,14 +475,14 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <h2>sf: objects with simple features</h2>
 <p>As we usually do not work with geometries of single simple features, but with datasets consisting of sets of features with attributes, the two are put together in <code>sf</code> (simple feature) objects. The following command reads the <code>nc</code> dataset from a file that is contained in the <code>sf</code> package:</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">library</span>(sf)</a>
-<a class="sourceLine" id="cb1-2" title="2"><span class="co">## Linking to GEOS 3.9.0, GDAL 3.2.0, PROJ 7.2.0</span></a>
+<a class="sourceLine" id="cb1-2" title="2"><span class="co">## Linking to GEOS 3.9.0, GDAL 3.2.1, PROJ 7.2.1</span></a>
 <a class="sourceLine" id="cb1-3" title="3">nc &lt;-<span class="st"> </span><span class="kw">st_read</span>(<span class="kw">system.file</span>(<span class="st">&quot;shape/nc.shp&quot;</span>, <span class="dt">package=</span><span class="st">&quot;sf&quot;</span>))</a>
-<a class="sourceLine" id="cb1-4" title="4"><span class="co">## Reading layer `nc&#39; from data source `/tmp/RtmptpFtGS/Rinst253762c85271e/sf/shape/nc.shp&#39; using driver `ESRI Shapefile&#39;</span></a>
+<a class="sourceLine" id="cb1-4" title="4"><span class="co">## Reading layer `nc&#39; from data source `/tmp/Rtmpl6EaFo/Rinst6231414d3e82f/sf/shape/nc.shp&#39; using driver `ESRI Shapefile&#39;</span></a>
 <a class="sourceLine" id="cb1-5" title="5"><span class="co">## Simple feature collection with 100 features and 14 fields</span></a>
-<a class="sourceLine" id="cb1-6" title="6"><span class="co">## geometry type:  MULTIPOLYGON</span></a>
-<a class="sourceLine" id="cb1-7" title="7"><span class="co">## dimension:      XY</span></a>
-<a class="sourceLine" id="cb1-8" title="8"><span class="co">## bbox:           xmin: -84.32385 ymin: 33.88199 xmax: -75.45698 ymax: 36.58965</span></a>
-<a class="sourceLine" id="cb1-9" title="9"><span class="co">## geographic CRS: NAD27</span></a></code></pre></div>
+<a class="sourceLine" id="cb1-6" title="6"><span class="co">## Geometry type: MULTIPOLYGON</span></a>
+<a class="sourceLine" id="cb1-7" title="7"><span class="co">## Dimension:     XY</span></a>
+<a class="sourceLine" id="cb1-8" title="8"><span class="co">## Bounding box:  xmin: -84.32385 ymin: 33.88199 xmax: -75.45698 ymax: 36.58965</span></a>
+<a class="sourceLine" id="cb1-9" title="9"><span class="co">## Geodetic CRS:  NAD27</span></a></code></pre></div>
 <p>(Note that users will not use <code>system.file</code> but give a <code>filename</code> directly, and that shapefiles consist of more than one file, all with identical basename, which reside in the same directory.) The short report printed gives the file name, the driver (ESRI Shapefile), mentions that there are 100 features (records, represented as rows) and 14 fields (attributes, represented as columns). This object is of class</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">class</span>(nc)</a>
 <a class="sourceLine" id="cb2-2" title="2"><span class="co">## [1] &quot;sf&quot;         &quot;data.frame&quot;</span></a></code></pre></div>
@@ -545,18 +514,18 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <a class="sourceLine" id="cb5-11" title="11"><span class="co">## [28] st_centroid           st_collection_extract st_convex_hull       </span></a>
 <a class="sourceLine" id="cb5-12" title="12"><span class="co">## [31] st_coordinates        st_crop               st_crs               </span></a>
 <a class="sourceLine" id="cb5-13" title="13"><span class="co">## [34] st_crs&lt;-              st_difference         st_filter            </span></a>
-<a class="sourceLine" id="cb5-14" title="14"><span class="co">## [37] st_geometry           st_geometry&lt;-         st_interpolate_aw    </span></a>
-<a class="sourceLine" id="cb5-15" title="15"><span class="co">## [40] st_intersection       st_intersects         st_is                </span></a>
-<a class="sourceLine" id="cb5-16" title="16"><span class="co">## [43] st_is_valid           st_join               st_line_merge        </span></a>
-<a class="sourceLine" id="cb5-17" title="17"><span class="co">## [46] st_m_range            st_make_valid         st_nearest_points    </span></a>
-<a class="sourceLine" id="cb5-18" title="18"><span class="co">## [49] st_node               st_normalize          st_point_on_surface  </span></a>
-<a class="sourceLine" id="cb5-19" title="19"><span class="co">## [52] st_polygonize         st_precision          st_reverse           </span></a>
-<a class="sourceLine" id="cb5-20" title="20"><span class="co">## [55] st_sample             st_segmentize         st_set_precision     </span></a>
-<a class="sourceLine" id="cb5-21" title="21"><span class="co">## [58] st_shift_longitude    st_simplify           st_snap              </span></a>
-<a class="sourceLine" id="cb5-22" title="22"><span class="co">## [61] st_sym_difference     st_transform          st_triangulate       </span></a>
-<a class="sourceLine" id="cb5-23" title="23"><span class="co">## [64] st_union              st_voronoi            st_wrap_dateline     </span></a>
-<a class="sourceLine" id="cb5-24" title="24"><span class="co">## [67] st_write              st_z_range            st_zm                </span></a>
-<a class="sourceLine" id="cb5-25" title="25"><span class="co">## [70] transform            </span></a>
+<a class="sourceLine" id="cb5-14" title="14"><span class="co">## [37] st_geometry           st_geometry&lt;-         st_inscribed_circle  </span></a>
+<a class="sourceLine" id="cb5-15" title="15"><span class="co">## [40] st_interpolate_aw     st_intersection       st_intersects        </span></a>
+<a class="sourceLine" id="cb5-16" title="16"><span class="co">## [43] st_is                 st_is_valid           st_join              </span></a>
+<a class="sourceLine" id="cb5-17" title="17"><span class="co">## [46] st_line_merge         st_m_range            st_make_valid        </span></a>
+<a class="sourceLine" id="cb5-18" title="18"><span class="co">## [49] st_nearest_points     st_node               st_normalize         </span></a>
+<a class="sourceLine" id="cb5-19" title="19"><span class="co">## [52] st_point_on_surface   st_polygonize         st_precision         </span></a>
+<a class="sourceLine" id="cb5-20" title="20"><span class="co">## [55] st_reverse            st_sample             st_segmentize        </span></a>
+<a class="sourceLine" id="cb5-21" title="21"><span class="co">## [58] st_set_precision      st_shift_longitude    st_simplify          </span></a>
+<a class="sourceLine" id="cb5-22" title="22"><span class="co">## [61] st_snap               st_sym_difference     st_transform         </span></a>
+<a class="sourceLine" id="cb5-23" title="23"><span class="co">## [64] st_triangulate        st_union              st_voronoi           </span></a>
+<a class="sourceLine" id="cb5-24" title="24"><span class="co">## [67] st_wrap_dateline      st_write              st_z_range           </span></a>
+<a class="sourceLine" id="cb5-25" title="25"><span class="co">## [70] st_zm                 transform            </span></a>
 <a class="sourceLine" id="cb5-26" title="26"><span class="co">## see &#39;?methods&#39; for accessing help and source code</span></a></code></pre></div>
 <p>It is also possible to create <code>data.frame</code> objects with geometry list-columns that are not of class <code>sf</code>, e.g. by</p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb6-1" title="1">nc.no_sf &lt;-<span class="st"> </span><span class="kw">as.data.frame</span>(nc)</a>
@@ -574,20 +543,20 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <p>The column in the <code>sf</code> data.frame that contains the geometries is a list, of class <code>sfc</code>. We can retrieve the geometry list-column in this case by <code>nc$geom</code> or <code>nc[[15]]</code>, but the more general way uses <code>st_geometry</code>:</p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb7-1" title="1">(nc_geom &lt;-<span class="st"> </span><span class="kw">st_geometry</span>(nc))</a>
 <a class="sourceLine" id="cb7-2" title="2"><span class="co">## Geometry set for 100 features </span></a>
-<a class="sourceLine" id="cb7-3" title="3"><span class="co">## geometry type:  MULTIPOLYGON</span></a>
-<a class="sourceLine" id="cb7-4" title="4"><span class="co">## dimension:      XY</span></a>
-<a class="sourceLine" id="cb7-5" title="5"><span class="co">## bbox:           xmin: -84.32385 ymin: 33.88199 xmax: -75.45698 ymax: 36.58965</span></a>
-<a class="sourceLine" id="cb7-6" title="6"><span class="co">## geographic CRS: NAD27</span></a>
+<a class="sourceLine" id="cb7-3" title="3"><span class="co">## Geometry type: MULTIPOLYGON</span></a>
+<a class="sourceLine" id="cb7-4" title="4"><span class="co">## Dimension:     XY</span></a>
+<a class="sourceLine" id="cb7-5" title="5"><span class="co">## Bounding box:  xmin: -84.32385 ymin: 33.88199 xmax: -75.45698 ymax: 36.58965</span></a>
+<a class="sourceLine" id="cb7-6" title="6"><span class="co">## Geodetic CRS:  NAD27</span></a>
 <a class="sourceLine" id="cb7-7" title="7"><span class="co">## First 5 geometries:</span></a>
 <a class="sourceLine" id="cb7-8" title="8"><span class="co">## MULTIPOLYGON (((-81.47276 36.23436, -81.54084 3...</span></a>
 <a class="sourceLine" id="cb7-9" title="9"><span class="co">## MULTIPOLYGON (((-81.23989 36.36536, -81.24069 3...</span></a>
 <a class="sourceLine" id="cb7-10" title="10"><span class="co">## MULTIPOLYGON (((-80.45634 36.24256, -80.47639 3...</span></a>
 <a class="sourceLine" id="cb7-11" title="11"><span class="co">## MULTIPOLYGON (((-76.00897 36.3196, -76.01735 36...</span></a>
 <a class="sourceLine" id="cb7-12" title="12"><span class="co">## MULTIPOLYGON (((-77.21767 36.24098, -77.23461 3...</span></a></code></pre></div>
-<p>Geometries are printed in abbreviated form, but we can can view a complete geometry by selecting it, e.g. the first one by</p>
+<p>Geometries are printed in abbreviated form, but we can view a complete geometry by selecting it, e.g. the first one by</p>
 <div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb8-1" title="1">nc_geom[[<span class="dv">1</span>]]</a>
 <a class="sourceLine" id="cb8-2" title="2"><span class="co">## MULTIPOLYGON (((-81.47276 36.23436, -81.54084 36.27251, -81.56198 36.27359, -81.63306 36.34069, -81.74107 36.39178, -81.69828 36.47178, -81.7028 36.51934, -81.67 36.58965, -81.3453 36.57286, -81.34754 36.53791, -81.32478 36.51368, -81.31332 36.4807, -81.26624 36.43721, -81.26284 36.40504, -81.24069 36.37942, -81.23989 36.36536, -81.26424 36.35241, -81.32899 36.3635, -81.36137 36.35316, -81.36569 36.33905, -81.35413 36.29972, -81.36745 36.2787, -81.40639 36.28505, -81.41233 36.26729, -81.43104 36.26072, -81.45289 36.23959, -81.47276 36.23436)))</span></a></code></pre></div>
-<p>The way this is printed is called <em>well-known text</em>, and is part of the standards. The word <code>MULTIPOLYGON</code> is followed by three parenthesis, because it can consist of multiple polygons, in the form of <code>MULTIPOLYGON(POL1,POL2)</code>, where <code>POL1</code> might consist of an exterior ring and zero or more interior rings, as of <code>(EXT1,HOLE1,HOLE2)</code>. Sets of coordinates are held together with parenthesis, so we get <code>((crds_ext)(crds_hole1)(crds_hole2))</code> where <code>crds_</code> is a comma-separated set of coordinates of a ring. This leads to the case above, where <code>MULTIPOLYGON(((crds_ext)))</code> refers to the exterior ring (1), without holes (2), of the first polygon (3) - hence three parentheses.</p>
+<p>The way this is printed is called <em>well-known text</em>, and is part of the standards. The word <code>MULTIPOLYGON</code> is followed by three parentheses, because it can consist of multiple polygons, in the form of <code>MULTIPOLYGON(POL1,POL2)</code>, where <code>POL1</code> might consist of an exterior ring and zero or more interior rings, as of <code>(EXT1,HOLE1,HOLE2)</code>. Sets of coordinates are held together with parentheses, so we get <code>((crds_ext)(crds_hole1)(crds_hole2))</code> where <code>crds_</code> is a comma-separated set of coordinates of a ring. This leads to the case above, where <code>MULTIPOLYGON(((crds_ext)))</code> refers to the exterior ring (1), without holes (2), of the first polygon (3) - hence three parentheses.</p>
 <p>We can see there is a single polygon with no rings:</p>
 <div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb9-1" title="1"><span class="kw">par</span>(<span class="dt">mar =</span> <span class="kw">c</span>(<span class="dv">0</span>,<span class="dv">0</span>,<span class="dv">1</span>,<span class="dv">0</span>))</a>
 <a class="sourceLine" id="cb9-2" title="2"><span class="kw">plot</span>(nc[<span class="dv">1</span>], <span class="dt">reset =</span> <span class="ot">FALSE</span>) <span class="co"># reset = FALSE: we want to add to a plot with a legend</span></a>
@@ -620,18 +589,18 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <a class="sourceLine" id="cb13-9" title="9"><span class="co">## [22] st_buffer             st_cast               st_centroid          </span></a>
 <a class="sourceLine" id="cb13-10" title="10"><span class="co">## [25] st_collection_extract st_convex_hull        st_coordinates       </span></a>
 <a class="sourceLine" id="cb13-11" title="11"><span class="co">## [28] st_crop               st_crs                st_crs&lt;-             </span></a>
-<a class="sourceLine" id="cb13-12" title="12"><span class="co">## [31] st_difference         st_geometry           st_intersection      </span></a>
-<a class="sourceLine" id="cb13-13" title="13"><span class="co">## [34] st_intersects         st_is                 st_is_valid          </span></a>
-<a class="sourceLine" id="cb13-14" title="14"><span class="co">## [37] st_line_merge         st_m_range            st_make_valid        </span></a>
-<a class="sourceLine" id="cb13-15" title="15"><span class="co">## [40] st_nearest_points     st_node               st_normalize         </span></a>
-<a class="sourceLine" id="cb13-16" title="16"><span class="co">## [43] st_point_on_surface   st_polygonize         st_precision         </span></a>
-<a class="sourceLine" id="cb13-17" title="17"><span class="co">## [46] st_reverse            st_sample             st_segmentize        </span></a>
-<a class="sourceLine" id="cb13-18" title="18"><span class="co">## [49] st_set_precision      st_shift_longitude    st_simplify          </span></a>
-<a class="sourceLine" id="cb13-19" title="19"><span class="co">## [52] st_snap               st_sym_difference     st_transform         </span></a>
-<a class="sourceLine" id="cb13-20" title="20"><span class="co">## [55] st_triangulate        st_union              st_voronoi           </span></a>
-<a class="sourceLine" id="cb13-21" title="21"><span class="co">## [58] st_wrap_dateline      st_write              st_z_range           </span></a>
-<a class="sourceLine" id="cb13-22" title="22"><span class="co">## [61] st_zm                 str                   summary              </span></a>
-<a class="sourceLine" id="cb13-23" title="23"><span class="co">## [64] vec_cast.sfc          vec_ptype2.sfc       </span></a>
+<a class="sourceLine" id="cb13-12" title="12"><span class="co">## [31] st_difference         st_geometry           st_inscribed_circle  </span></a>
+<a class="sourceLine" id="cb13-13" title="13"><span class="co">## [34] st_intersection       st_intersects         st_is                </span></a>
+<a class="sourceLine" id="cb13-14" title="14"><span class="co">## [37] st_is_valid           st_line_merge         st_m_range           </span></a>
+<a class="sourceLine" id="cb13-15" title="15"><span class="co">## [40] st_make_valid         st_nearest_points     st_node              </span></a>
+<a class="sourceLine" id="cb13-16" title="16"><span class="co">## [43] st_normalize          st_point_on_surface   st_polygonize        </span></a>
+<a class="sourceLine" id="cb13-17" title="17"><span class="co">## [46] st_precision          st_reverse            st_sample            </span></a>
+<a class="sourceLine" id="cb13-18" title="18"><span class="co">## [49] st_segmentize         st_set_precision      st_shift_longitude   </span></a>
+<a class="sourceLine" id="cb13-19" title="19"><span class="co">## [52] st_simplify           st_snap               st_sym_difference    </span></a>
+<a class="sourceLine" id="cb13-20" title="20"><span class="co">## [55] st_transform          st_triangulate        st_union             </span></a>
+<a class="sourceLine" id="cb13-21" title="21"><span class="co">## [58] st_voronoi            st_wrap_dateline      st_write             </span></a>
+<a class="sourceLine" id="cb13-22" title="22"><span class="co">## [61] st_z_range            st_zm                 str                  </span></a>
+<a class="sourceLine" id="cb13-23" title="23"><span class="co">## [64] summary               vec_cast.sfc          vec_ptype2.sfc       </span></a>
 <a class="sourceLine" id="cb13-24" title="24"><span class="co">## see &#39;?methods&#39; for accessing help and source code</span></a></code></pre></div>
 <p>Coordinate reference systems (<code>st_crs</code> and <code>st_transform</code>) are discussed in the section on <a href="#crs">coordinate reference systems</a>. <code>st_as_wkb</code> and <code>st_as_text</code> convert geometry list-columns into well-known-binary or well-known-text, explained <a href="#wkb">below</a>. <code>st_bbox</code> retrieves the coordinate bounding box.</p>
 <p>Attributes include</p>
@@ -675,10 +644,10 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb15-1" title="1">(mix &lt;-<span class="st"> </span><span class="kw">st_sfc</span>(<span class="kw">st_geometrycollection</span>(<span class="kw">list</span>(<span class="kw">st_point</span>(<span class="dv">1</span><span class="op">:</span><span class="dv">2</span>))),</a>
 <a class="sourceLine" id="cb15-2" title="2">    <span class="kw">st_geometrycollection</span>(<span class="kw">list</span>(<span class="kw">st_linestring</span>(<span class="kw">matrix</span>(<span class="dv">1</span><span class="op">:</span><span class="dv">4</span>,<span class="dv">2</span>))))))</a>
 <a class="sourceLine" id="cb15-3" title="3"><span class="co">## Geometry set for 2 features </span></a>
-<a class="sourceLine" id="cb15-4" title="4"><span class="co">## geometry type:  GEOMETRYCOLLECTION</span></a>
-<a class="sourceLine" id="cb15-5" title="5"><span class="co">## dimension:      XY</span></a>
-<a class="sourceLine" id="cb15-6" title="6"><span class="co">## bbox:           xmin: 1 ymin: 2 xmax: 2 ymax: 4</span></a>
-<a class="sourceLine" id="cb15-7" title="7"><span class="co">## CRS:            NA</span></a>
+<a class="sourceLine" id="cb15-4" title="4"><span class="co">## Geometry type: GEOMETRYCOLLECTION</span></a>
+<a class="sourceLine" id="cb15-5" title="5"><span class="co">## Dimension:     XY</span></a>
+<a class="sourceLine" id="cb15-6" title="6"><span class="co">## Bounding box:  xmin: 1 ymin: 2 xmax: 2 ymax: 4</span></a>
+<a class="sourceLine" id="cb15-7" title="7"><span class="co">## CRS:           NA</span></a>
 <a class="sourceLine" id="cb15-8" title="8"><span class="co">## GEOMETRYCOLLECTION (POINT (1 2))</span></a>
 <a class="sourceLine" id="cb15-9" title="9"><span class="co">## GEOMETRYCOLLECTION (LINESTRING (1 3, 2 4))</span></a>
 <a class="sourceLine" id="cb15-10" title="10"><span class="kw">class</span>(mix)</a>
@@ -687,10 +656,10 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <p>The second <code>GEOMETRY</code>, indicates that the geometries in the geometry list-column are of varying type:</p>
 <div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb16-1" title="1">(mix &lt;-<span class="st"> </span><span class="kw">st_sfc</span>(<span class="kw">st_point</span>(<span class="dv">1</span><span class="op">:</span><span class="dv">2</span>), <span class="kw">st_linestring</span>(<span class="kw">matrix</span>(<span class="dv">1</span><span class="op">:</span><span class="dv">4</span>,<span class="dv">2</span>))))</a>
 <a class="sourceLine" id="cb16-2" title="2"><span class="co">## Geometry set for 2 features </span></a>
-<a class="sourceLine" id="cb16-3" title="3"><span class="co">## geometry type:  GEOMETRY</span></a>
-<a class="sourceLine" id="cb16-4" title="4"><span class="co">## dimension:      XY</span></a>
-<a class="sourceLine" id="cb16-5" title="5"><span class="co">## bbox:           xmin: 1 ymin: 2 xmax: 2 ymax: 4</span></a>
-<a class="sourceLine" id="cb16-6" title="6"><span class="co">## CRS:            NA</span></a>
+<a class="sourceLine" id="cb16-3" title="3"><span class="co">## Geometry type: GEOMETRY</span></a>
+<a class="sourceLine" id="cb16-4" title="4"><span class="co">## Dimension:     XY</span></a>
+<a class="sourceLine" id="cb16-5" title="5"><span class="co">## Bounding box:  xmin: 1 ymin: 2 xmax: 2 ymax: 4</span></a>
+<a class="sourceLine" id="cb16-6" title="6"><span class="co">## CRS:           NA</span></a>
 <a class="sourceLine" id="cb16-7" title="7"><span class="co">## POINT (1 2)</span></a>
 <a class="sourceLine" id="cb16-8" title="8"><span class="co">## LINESTRING (1 3, 2 4)</span></a>
 <a class="sourceLine" id="cb16-9" title="9"><span class="kw">class</span>(mix)</a>
@@ -792,12 +761,12 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <p>As we’ve seen above, reading spatial data from an external file can be done by</p>
 <div class="sourceCode" id="cb23"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb23-1" title="1">filename &lt;-<span class="st"> </span><span class="kw">system.file</span>(<span class="st">&quot;shape/nc.shp&quot;</span>, <span class="dt">package=</span><span class="st">&quot;sf&quot;</span>)</a>
 <a class="sourceLine" id="cb23-2" title="2">nc &lt;-<span class="st"> </span><span class="kw">st_read</span>(filename)</a>
-<a class="sourceLine" id="cb23-3" title="3"><span class="co">## Reading layer `nc&#39; from data source `/tmp/RtmptpFtGS/Rinst253762c85271e/sf/shape/nc.shp&#39; using driver `ESRI Shapefile&#39;</span></a>
+<a class="sourceLine" id="cb23-3" title="3"><span class="co">## Reading layer `nc&#39; from data source `/tmp/Rtmpl6EaFo/Rinst6231414d3e82f/sf/shape/nc.shp&#39; using driver `ESRI Shapefile&#39;</span></a>
 <a class="sourceLine" id="cb23-4" title="4"><span class="co">## Simple feature collection with 100 features and 14 fields</span></a>
-<a class="sourceLine" id="cb23-5" title="5"><span class="co">## geometry type:  MULTIPOLYGON</span></a>
-<a class="sourceLine" id="cb23-6" title="6"><span class="co">## dimension:      XY</span></a>
-<a class="sourceLine" id="cb23-7" title="7"><span class="co">## bbox:           xmin: -84.32385 ymin: 33.88199 xmax: -75.45698 ymax: 36.58965</span></a>
-<a class="sourceLine" id="cb23-8" title="8"><span class="co">## geographic CRS: NAD27</span></a></code></pre></div>
+<a class="sourceLine" id="cb23-5" title="5"><span class="co">## Geometry type: MULTIPOLYGON</span></a>
+<a class="sourceLine" id="cb23-6" title="6"><span class="co">## Dimension:     XY</span></a>
+<a class="sourceLine" id="cb23-7" title="7"><span class="co">## Bounding box:  xmin: -84.32385 ymin: 33.88199 xmax: -75.45698 ymax: 36.58965</span></a>
+<a class="sourceLine" id="cb23-8" title="8"><span class="co">## Geodetic CRS:  NAD27</span></a></code></pre></div>
 <p>we can suppress the output by adding argument <code>quiet=TRUE</code> or by using the otherwise nearly identical but more quiet</p>
 <div class="sourceCode" id="cb24"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb24-1" title="1">nc &lt;-<span class="st"> </span><span class="kw">read_sf</span>(filename)</a></code></pre></div>
 <p>Writing takes place in the same fashion, using <code>st_write</code>:</p>
@@ -924,10 +893,10 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <a class="sourceLine" id="cb35-3" title="3"><span class="co">## from=&quot;Spatial&quot;, to=&quot;sf&quot;</span></a>
 <a class="sourceLine" id="cb35-4" title="4"><span class="co">## from=&quot;sf&quot;, to=&quot;Spatial&quot;</span></a>
 <a class="sourceLine" id="cb35-5" title="5"><span class="kw">methods</span>(st_as_sf)</a>
-<a class="sourceLine" id="cb35-6" title="6"><span class="co">##  [1] st_as_sf.Spatial*      st_as_sf.data.frame*   st_as_sf.lpp*         </span></a>
-<a class="sourceLine" id="cb35-7" title="7"><span class="co">##  [4] st_as_sf.map*          st_as_sf.owin*         st_as_sf.ppp*         </span></a>
-<a class="sourceLine" id="cb35-8" title="8"><span class="co">##  [7] st_as_sf.psp*          st_as_sf.s2_geography* st_as_sf.sf*          </span></a>
-<a class="sourceLine" id="cb35-9" title="9"><span class="co">## [10] st_as_sf.sfc*         </span></a>
+<a class="sourceLine" id="cb35-6" title="6"><span class="co">##  [1] st_as_sf.SpatVector*   st_as_sf.Spatial*      st_as_sf.data.frame*  </span></a>
+<a class="sourceLine" id="cb35-7" title="7"><span class="co">##  [4] st_as_sf.lpp*          st_as_sf.map*          st_as_sf.owin*        </span></a>
+<a class="sourceLine" id="cb35-8" title="8"><span class="co">##  [7] st_as_sf.ppp*          st_as_sf.psp*          st_as_sf.s2_geography*</span></a>
+<a class="sourceLine" id="cb35-9" title="9"><span class="co">## [10] st_as_sf.sf*           st_as_sf.sfc*         </span></a>
 <a class="sourceLine" id="cb35-10" title="10"><span class="co">## see &#39;?methods&#39; for accessing help and source code</span></a>
 <a class="sourceLine" id="cb35-11" title="11"><span class="kw">methods</span>(st_as_sfc)</a>
 <a class="sourceLine" id="cb35-12" title="12"><span class="co">##  [1] st_as_sfc.SpatialLines*       st_as_sfc.SpatialMultiPoints*</span></a>
@@ -939,7 +908,7 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <a class="sourceLine" id="cb35-18" title="18"><span class="co">## [13] st_as_sfc.map*                st_as_sfc.owin*              </span></a>
 <a class="sourceLine" id="cb35-19" title="19"><span class="co">## [15] st_as_sfc.pq_geometry*        st_as_sfc.psp*               </span></a>
 <a class="sourceLine" id="cb35-20" title="20"><span class="co">## [17] st_as_sfc.raw*                st_as_sfc.s2_geography*      </span></a>
-<a class="sourceLine" id="cb35-21" title="21"><span class="co">## [19] st_as_sfc.tess*               st_as_sfc.wk_wkb*            </span></a>
+<a class="sourceLine" id="cb35-21" title="21"><span class="co">## [19] st_as_sfc.tess*              </span></a>
 <a class="sourceLine" id="cb35-22" title="22"><span class="co">## see &#39;?methods&#39; for accessing help and source code</span></a>
 <a class="sourceLine" id="cb35-23" title="23"><span class="co"># anticipate that sp::CRS will expand proj4strings:</span></a>
 <a class="sourceLine" id="cb35-24" title="24">p4s &lt;-<span class="st"> &quot;+proj=longlat +datum=NAD27 +no_defs +ellps=clrk66 +nadgrids=@conus,@alaska,@ntv2_0.gsb,@ntv1_can.dat&quot;</span></a>
@@ -949,7 +918,7 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <a class="sourceLine" id="cb35-28" title="28"><span class="kw">attr</span>(nc, <span class="st">&quot;sf_column&quot;</span>) =<span class="st"> &quot;geometry&quot;</span></a>
 <a class="sourceLine" id="cb35-29" title="29">nc.sp &lt;-<span class="st"> </span><span class="kw">as</span>(nc, <span class="st">&quot;Spatial&quot;</span>)</a>
 <a class="sourceLine" id="cb35-30" title="30"><span class="co">## Warning in showSRID(uprojargs, format = &quot;PROJ&quot;, multiline = &quot;NO&quot;, prefer_proj</span></a>
-<a class="sourceLine" id="cb35-31" title="31"><span class="co">## = prefer_proj): Discarded datum Unknown based on Clarke 1866 ellipsoid in CRS</span></a>
+<a class="sourceLine" id="cb35-31" title="31"><span class="co">## = prefer_proj): Discarded datum Unknown based on Clarke 1866 ellipsoid in Proj4</span></a>
 <a class="sourceLine" id="cb35-32" title="32"><span class="co">## definition</span></a>
 <a class="sourceLine" id="cb35-33" title="33"><span class="kw">class</span>(nc.sp)</a>
 <a class="sourceLine" id="cb35-34" title="34"><span class="co">## [1] &quot;SpatialPolygonsDataFrame&quot;</span></a>
@@ -1082,13 +1051,13 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <a class="sourceLine" id="cb47-3" title="3">        <span class="dt">CNTY_ID =</span> <span class="st">&quot;identity&quot;</span>, <span class="dt">NAME =</span> <span class="st">&quot;identity&quot;</span>, <span class="dt">FIPS =</span> <span class="st">&quot;identity&quot;</span>, <span class="dt">FIPSNO =</span> <span class="st">&quot;identity&quot;</span>,</a>
 <a class="sourceLine" id="cb47-4" title="4">        <span class="dt">CRESS_ID =</span> <span class="st">&quot;identity&quot;</span>, <span class="dt">BIR74 =</span> <span class="st">&quot;aggregate&quot;</span>, <span class="dt">SID74 =</span> <span class="st">&quot;aggregate&quot;</span>, <span class="dt">NWBIR74 =</span> <span class="st">&quot;aggregate&quot;</span>,</a>
 <a class="sourceLine" id="cb47-5" title="5">        <span class="dt">BIR79 =</span> <span class="st">&quot;aggregate&quot;</span>, <span class="dt">SID79 =</span> <span class="st">&quot;aggregate&quot;</span>, <span class="dt">NWBIR79 =</span> <span class="st">&quot;aggregate&quot;</span>))</a>
-<a class="sourceLine" id="cb47-6" title="6"><span class="co">## Reading layer `nc&#39; from data source `/tmp/RtmptpFtGS/Rinst253762c85271e/sf/shape/nc.shp&#39; using driver `ESRI Shapefile&#39;</span></a>
+<a class="sourceLine" id="cb47-6" title="6"><span class="co">## Reading layer `nc&#39; from data source `/tmp/Rtmpl6EaFo/Rinst6231414d3e82f/sf/shape/nc.shp&#39; using driver `ESRI Shapefile&#39;</span></a>
 <a class="sourceLine" id="cb47-7" title="7"><span class="co">## Simple feature collection with 100 features and 14 fields</span></a>
 <a class="sourceLine" id="cb47-8" title="8"><span class="co">## Attribute-geometry relationship: 0 constant, 8 aggregate, 6 identity</span></a>
-<a class="sourceLine" id="cb47-9" title="9"><span class="co">## geometry type:  MULTIPOLYGON</span></a>
-<a class="sourceLine" id="cb47-10" title="10"><span class="co">## dimension:      XY</span></a>
-<a class="sourceLine" id="cb47-11" title="11"><span class="co">## bbox:           xmin: -84.32385 ymin: 33.88199 xmax: -75.45698 ymax: 36.58965</span></a>
-<a class="sourceLine" id="cb47-12" title="12"><span class="co">## geographic CRS: NAD27</span></a>
+<a class="sourceLine" id="cb47-9" title="9"><span class="co">## Geometry type: MULTIPOLYGON</span></a>
+<a class="sourceLine" id="cb47-10" title="10"><span class="co">## Dimension:     XY</span></a>
+<a class="sourceLine" id="cb47-11" title="11"><span class="co">## Bounding box:  xmin: -84.32385 ymin: 33.88199 xmax: -75.45698 ymax: 36.58965</span></a>
+<a class="sourceLine" id="cb47-12" title="12"><span class="co">## Geodetic CRS:  NAD27</span></a>
 <a class="sourceLine" id="cb47-13" title="13"><span class="kw">st_agr</span>(nc)</a>
 <a class="sourceLine" id="cb47-14" title="14"><span class="co">##      AREA PERIMETER     CNTY_   CNTY_ID      NAME      FIPS    FIPSNO  CRESS_ID </span></a>
 <a class="sourceLine" id="cb47-15" title="15"><span class="co">## aggregate aggregate  identity  identity  identity  identity  identity  identity </span></a>
