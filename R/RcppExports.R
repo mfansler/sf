@@ -57,8 +57,8 @@ CPL_wrap_dateline <- function(sfc, opt, quiet = TRUE) {
     .Call('_sf_CPL_wrap_dateline', PACKAGE = 'sf', sfc, opt, quiet)
 }
 
-CPL_get_rgdal_drivers <- function(dummy) {
-    .Call('_sf_CPL_get_rgdal_drivers', PACKAGE = 'sf', dummy)
+CPL_get_gdal_drivers <- function(dummy) {
+    .Call('_sf_CPL_get_gdal_drivers', PACKAGE = 'sf', dummy)
 }
 
 CPL_sfc_from_wkt <- function(wkt) {
@@ -105,8 +105,8 @@ CPL_get_layers <- function(datasource, options, do_count = FALSE) {
     .Call('_sf_CPL_get_layers', PACKAGE = 'sf', datasource, options, do_count)
 }
 
-CPL_read_ogr <- function(datasource, layer, query, options, quiet, toTypeUser, fid_column_name, drivers, wkt_filter, promote_to_multi = TRUE, int64_as_string = FALSE, dsn_exists = TRUE, dsn_isdb = FALSE) {
-    .Call('_sf_CPL_read_ogr', PACKAGE = 'sf', datasource, layer, query, options, quiet, toTypeUser, fid_column_name, drivers, wkt_filter, promote_to_multi, int64_as_string, dsn_exists, dsn_isdb)
+CPL_read_ogr <- function(datasource, layer, query, options, quiet, toTypeUser, fid_column_name, drivers, wkt_filter, promote_to_multi = TRUE, int64_as_string = FALSE, dsn_exists = TRUE, dsn_isdb = FALSE, width = 80L) {
+    .Call('_sf_CPL_read_ogr', PACKAGE = 'sf', datasource, layer, query, options, quiet, toTypeUser, fid_column_name, drivers, wkt_filter, promote_to_multi, int64_as_string, dsn_exists, dsn_isdb, width)
 }
 
 CPL_gdalinfo <- function(obj, options, oo) {
@@ -157,8 +157,8 @@ CPL_gdal_warper <- function(infile, outfile, options, oo, doo, quiet = TRUE) {
     .Call('_sf_CPL_gdal_warper', PACKAGE = 'sf', infile, outfile, options, oo, doo, quiet)
 }
 
-CPL_write_ogr <- function(obj, dsn, layer, driver, dco, lco, geom, dim, fids, quiet, append, delete_dsn = FALSE, delete_layer = FALSE, write_geometries = TRUE) {
-    .Call('_sf_CPL_write_ogr', PACKAGE = 'sf', obj, dsn, layer, driver, dco, lco, geom, dim, fids, quiet, append, delete_dsn, delete_layer, write_geometries)
+CPL_write_ogr <- function(obj, dsn, layer, driver, dco, lco, geom, dim, fids, ConfigOptions, quiet, append, delete_dsn = FALSE, delete_layer = FALSE, write_geometries = TRUE, width = 80L) {
+    .Call('_sf_CPL_write_ogr', PACKAGE = 'sf', obj, dsn, layer, driver, dco, lco, geom, dim, fids, ConfigOptions, quiet, append, delete_dsn, delete_layer, write_geometries, width)
 }
 
 CPL_geos_binop <- function(sfc0, sfc1, op, par = 0.0, pattern = "", prepared = FALSE) {
@@ -243,6 +243,14 @@ CPL_hex_to_raw <- function(cx) {
 
 CPL_raw_to_hex <- function(raw) {
     .Call('_sf_CPL_raw_to_hex', PACKAGE = 'sf', raw)
+}
+
+read_mdim <- function(file, array_names, oo) {
+    .Call('_sf_read_mdim', PACKAGE = 'sf', file, array_names, oo)
+}
+
+write_mdim <- function(x, file, dimensions, units) {
+    .Call('_sf_write_mdim', PACKAGE = 'sf', x, file, dimensions, units)
 }
 
 opp_sfc <- function(geom, value, mult, crs) {

@@ -188,6 +188,15 @@ rename.sf <- function(.data, ...) {
 		stop("internal error: can't find `agr` columns") # nocov
 
 	vars_loc = loc[loc %in% agr_loc]
+
+	# https://github.com/r-spatial/sf/issues/1472
+	# but only fixes for the single sfc column case
+	sfcs = which(sapply(.data, inherits, "sfc"))
+	if (length(vars_loc) == 1 && any(vars_loc > sfcs[1])) {
+		w = which(vars_loc > sfcs)
+		vars_loc[w] = vars_loc[w] - 1
+	}
+
 	names(agr)[vars_loc] = names(vars_loc)
 
 	sf_column_loc_loc = match(sf_column_loc, loc)
@@ -523,6 +532,7 @@ register_all_s3_methods = function() {
 	register_s3_method("spatstat.geom", "as.psp", "sfc_MULTILINESTRING")
 	register_s3_method("spatstat.geom", "as.psp", "sfc")
 	register_s3_method("spatstat.geom", "as.psp", "sf")
+	register_s3_method("s2", "as_s2_geography", "sfg")
 	register_s3_method("s2", "as_s2_geography", "sfc")
 	register_s3_method("s2", "as_s2_geography", "sf")
 	register_vctrs_methods()

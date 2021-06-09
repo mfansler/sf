@@ -560,6 +560,8 @@ Rcpp::List CPL_transform(Rcpp::List sfc, Rcpp::List crs,
 	}
 
 	Rcpp::List ret = sfc_from_ogr(g, true); // destroys g;
+	// how to return the target CRS when only a transformation pipeline is provided? Not by:
+	// ret.attr("crs") = create_crs(ct->GetTargetCS(), true);
 	ct->DestroyCT(ct);
 	if (dest)
 		dest->Release();
@@ -580,7 +582,7 @@ Rcpp::List CPL_wrap_dateline(Rcpp::List sfc, Rcpp::CharacterVector opt, bool qui
 }
 
 // [[Rcpp::export]]
-Rcpp::List CPL_get_rgdal_drivers(int dummy) {
+Rcpp::List CPL_get_gdal_drivers(int dummy) {
 
 	int ndr = GetGDALDriverManager()->GetDriverCount();
 	Rcpp::CharacterVector name(ndr);

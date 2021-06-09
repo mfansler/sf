@@ -330,23 +330,24 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <p>Features are represented by records in an <code>sf</code> object, and have feature attributes (all non-geometry fields) and feature geometry. Since <code>sf</code> objects are a subclass of <code>data.frame</code> or <code>tbl_df</code>, operations on feature attributes work identical to how they work on <code>data.frame</code>s, e.g.</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">library</span>(sf)</a>
 <a class="sourceLine" id="cb1-2" title="2">nc &lt;-<span class="st"> </span><span class="kw">st_read</span>(<span class="kw">system.file</span>(<span class="st">&quot;shape/nc.shp&quot;</span>, <span class="dt">package=</span><span class="st">&quot;sf&quot;</span>))</a>
-<a class="sourceLine" id="cb1-3" title="3"><span class="co">## Reading layer `nc&#39; from data source `/tmp/Rtmpl6EaFo/Rinst6231414d3e82f/sf/shape/nc.shp&#39; using driver `ESRI Shapefile&#39;</span></a>
-<a class="sourceLine" id="cb1-4" title="4"><span class="co">## Simple feature collection with 100 features and 14 fields</span></a>
-<a class="sourceLine" id="cb1-5" title="5"><span class="co">## Geometry type: MULTIPOLYGON</span></a>
-<a class="sourceLine" id="cb1-6" title="6"><span class="co">## Dimension:     XY</span></a>
-<a class="sourceLine" id="cb1-7" title="7"><span class="co">## Bounding box:  xmin: -84.32385 ymin: 33.88199 xmax: -75.45698 ymax: 36.58965</span></a>
-<a class="sourceLine" id="cb1-8" title="8"><span class="co">## Geodetic CRS:  NAD27</span></a>
-<a class="sourceLine" id="cb1-9" title="9">nc &lt;-<span class="st"> </span><span class="kw">st_transform</span>(nc, <span class="dv">2264</span>)</a>
-<a class="sourceLine" id="cb1-10" title="10">nc[<span class="dv">1</span>,]</a>
-<a class="sourceLine" id="cb1-11" title="11"><span class="co">## Simple feature collection with 1 feature and 14 fields</span></a>
-<a class="sourceLine" id="cb1-12" title="12"><span class="co">## Geometry type: MULTIPOLYGON</span></a>
-<a class="sourceLine" id="cb1-13" title="13"><span class="co">## Dimension:     XY</span></a>
-<a class="sourceLine" id="cb1-14" title="14"><span class="co">## Bounding box:  xmin: 1193283 ymin: 913341.9 xmax: 1340555 ymax: 1044158</span></a>
-<a class="sourceLine" id="cb1-15" title="15"><span class="co">## Projected CRS: NAD83 / North Carolina (ftUS)</span></a>
-<a class="sourceLine" id="cb1-16" title="16"><span class="co">##    AREA PERIMETER CNTY_ CNTY_ID NAME  FIPS FIPSNO CRESS_ID BIR74 SID74 NWBIR74</span></a>
-<a class="sourceLine" id="cb1-17" title="17"><span class="co">## 1 0.114     1.442  1825    1825 Ashe 37009  37009        5  1091     1      10</span></a>
-<a class="sourceLine" id="cb1-18" title="18"><span class="co">##   BIR79 SID79 NWBIR79                       geometry</span></a>
-<a class="sourceLine" id="cb1-19" title="19"><span class="co">## 1  1364     0      19 MULTIPOLYGON (((1270814 913...</span></a></code></pre></div>
+<a class="sourceLine" id="cb1-3" title="3"><span class="co">## Reading layer `nc&#39; from data source </span></a>
+<a class="sourceLine" id="cb1-4" title="4"><span class="co">##   `/tmp/RtmpYZf9Mh/Rinst6f5476aaf80e/sf/shape/nc.shp&#39; using driver `ESRI Shapefile&#39;</span></a>
+<a class="sourceLine" id="cb1-5" title="5"><span class="co">## Simple feature collection with 100 features and 14 fields</span></a>
+<a class="sourceLine" id="cb1-6" title="6"><span class="co">## Geometry type: MULTIPOLYGON</span></a>
+<a class="sourceLine" id="cb1-7" title="7"><span class="co">## Dimension:     XY</span></a>
+<a class="sourceLine" id="cb1-8" title="8"><span class="co">## Bounding box:  xmin: -84.32385 ymin: 33.88199 xmax: -75.45698 ymax: 36.58965</span></a>
+<a class="sourceLine" id="cb1-9" title="9"><span class="co">## Geodetic CRS:  NAD27</span></a>
+<a class="sourceLine" id="cb1-10" title="10">nc &lt;-<span class="st"> </span><span class="kw">st_transform</span>(nc, <span class="dv">2264</span>)</a>
+<a class="sourceLine" id="cb1-11" title="11">nc[<span class="dv">1</span>,]</a>
+<a class="sourceLine" id="cb1-12" title="12"><span class="co">## Simple feature collection with 1 feature and 14 fields</span></a>
+<a class="sourceLine" id="cb1-13" title="13"><span class="co">## Geometry type: MULTIPOLYGON</span></a>
+<a class="sourceLine" id="cb1-14" title="14"><span class="co">## Dimension:     XY</span></a>
+<a class="sourceLine" id="cb1-15" title="15"><span class="co">## Bounding box:  xmin: 1193283 ymin: 913341.9 xmax: 1340555 ymax: 1044158</span></a>
+<a class="sourceLine" id="cb1-16" title="16"><span class="co">## Projected CRS: NAD83 / North Carolina (ftUS)</span></a>
+<a class="sourceLine" id="cb1-17" title="17"><span class="co">##    AREA PERIMETER CNTY_ CNTY_ID NAME  FIPS FIPSNO CRESS_ID BIR74 SID74 NWBIR74</span></a>
+<a class="sourceLine" id="cb1-18" title="18"><span class="co">## 1 0.114     1.442  1825    1825 Ashe 37009  37009        5  1091     1      10</span></a>
+<a class="sourceLine" id="cb1-19" title="19"><span class="co">##   BIR79 SID79 NWBIR79                       geometry</span></a>
+<a class="sourceLine" id="cb1-20" title="20"><span class="co">## 1  1364     0      19 MULTIPOLYGON (((1270814 913...</span></a></code></pre></div>
 <p>prints the first record.</p>
 <p>Many of the tidyverse/dplyr verbs have methods for <code>sf</code> objects. This means that given that both <code>sf</code> and <code>dplyr</code> are loaded, manipulations such as selecting a single attribute will return an <code>sf</code> object:</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">library</span>(dplyr)</a>

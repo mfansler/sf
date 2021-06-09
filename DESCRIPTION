@@ -1,5 +1,5 @@
 Package: sf
-Version: 0.9-8
+Version: 1.0-0
 Title: Simple Features for R
 Authors@R: 
     c(person(given = "Edzer",
@@ -41,7 +41,11 @@ Authors@R:
              role = "ctb"),
       person(given = "Dan",
              family = "Baston",
-             role = "ctb"))
+             role = "ctb"),
+      person(given = "Dewey",
+             family = "Dunnington",
+             role = "ctb")
+			 )
 Description: Support for simple features, a standardized way to
     encode spatial vector data. Binds to 'GDAL' for reading and writing
     data, to 'GEOS' for geometrical operations, and to 'PROJ' for
@@ -52,16 +56,15 @@ URL: https://r-spatial.github.io/sf/, https://github.com/r-spatial/sf/
 BugReports: https://github.com/r-spatial/sf/issues/
 Depends: methods, R (>= 3.3.0)
 Imports: classInt (>= 0.4-1), DBI (>= 0.8), graphics, grDevices, grid,
-        magrittr, Rcpp (>= 0.12.18), stats, tools, units (>= 0.6-0),
-        utils
+        magrittr, Rcpp (>= 0.12.18), s2 (>= 1.0.5), stats, tools, units
+        (>= 0.6-0), utils
 Suggests: blob, covr, dplyr (>= 0.8-3), ggplot2, knitr, lwgeom (>=
         0.2-1), maps, mapview, microbenchmark, odbc, pillar, pool,
         raster, rgdal, rgeos, rlang, rmarkdown, RPostgres (>= 1.1.0),
-        RPostgreSQL, RSQLite, s2 (>= 1.0.1), sp (>= 1.2-4), spatstat
-        (>= 2.0-1), spatstat.geom, spatstat.core, spatstat.linnet,
-        spatstat.utils, stars (>= 0.2-0), terra, testthat, tibble (>=
-        1.4.1), tidyr (>= 1.0-0), tidyselect (>= 1.0.0), tmap (>= 2.0),
-        vctrs
+        RPostgreSQL, RSQLite, sp (>= 1.2-4), spatstat (>= 2.0-1),
+        spatstat.geom, spatstat.core, spatstat.linnet, spatstat.utils,
+        stars (>= 0.2-0), terra, testthat, tibble (>= 1.4.1), tidyr (>=
+        1.0-0), tidyselect (>= 1.0.0), tmap (>= 2.0), vctrs, wk
 LinkingTo: Rcpp
 VignetteBuilder: knitr
 Encoding: UTF-8
@@ -80,7 +83,7 @@ Collate: 'RcppExports.R' 'init.R' 'crs.R' 'bbox.R' 'read.R' 'db.R'
         'shift_longitude.R' 'make_grid.R' 's2.R' 'terra.R'
         'geos-overlayng.R'
 NeedsCompilation: yes
-Packaged: 2021-03-16 16:48:25 UTC; edzer
+Packaged: 2021-06-08 15:21:43 UTC; edzer
 Author: Edzer Pebesma [aut, cre] (<https://orcid.org/0000-0001-8049-7069>),
   Roger Bivand [ctb] (<https://orcid.org/0000-0003-2392-6140>),
   Etienne Racine [ctb],
@@ -92,7 +95,8 @@ Author: Edzer Pebesma [aut, cre] (<https://orcid.org/0000-0001-8049-7069>),
   Jeroen Ooms [ctb] (<https://orcid.org/0000-0002-4035-0289>),
   Kirill Müller [ctb],
   Thomas Lin Pedersen [ctb],
-  Dan Baston [ctb]
+  Dan Baston [ctb],
+  Dewey Dunnington [ctb]
 Maintainer: Edzer Pebesma <edzer.pebesma@uni-muenster.de>
 Repository: CRAN
-Date/Publication: 2021-03-17 10:50:03 UTC
+Date/Publication: 2021-06-09 18:10:02 UTC

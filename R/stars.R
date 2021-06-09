@@ -295,7 +295,9 @@ gdal_polygonize = function(x, mask = NULL, file = tempfile(), driver = "GTiff", 
 #' @export
 gdal_rasterize = function(sf, x, gt, file, driver = "GTiff", options = character()) {
 	gdal_write(x, file = file, driver = driver, geotransform = gt)
-	CPL_rasterize(file, driver, st_geometry(sf), as.double(as.data.frame(sf)[[1]]), options, NA_real_);
+	geoms = which(sapply(sf, inherits, "sfc"))
+	values = as.double(t(as.matrix(as.data.frame(sf)[-geoms])))
+	CPL_rasterize(file, driver, st_geometry(sf), values, options, NA_real_);
 }
 
 #' @export
@@ -305,4 +307,21 @@ gdal_rasterize = function(sf, x, gt, file, driver = "GTiff", options = character
 #' @param bilinear logical; use bilinear interpolation, rather than nearest neighbor?
 gdal_extract = function(f, pts, bilinear = FALSE) {
 	CPL_extract(f, pts, as.logical(bilinear))
+}
+
+#' @name gdal
+#' @param file file name
+#' @param array_name array name
+#' @param options open options
+#' @export
+gdal_read_mdim = function(file, array_name = character(0), options = character(0)) {
+	read_mdim(file, array_name, options)
+}
+
+#' @name gdal
+#' @param dimension_values list with dimension values
+#' @param units character; units names (udunits conform) corresponding to dimension_values
+#' @export
+gdal_write_mdim = function(x, file, dimension_values, units) {
+	write_mdim(x, file, dimension_values, units)
 }
