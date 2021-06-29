@@ -1,4 +1,14 @@
+# version 1.0-1
+
+* fix regression in `st_intersection()`: when using s2 attributes were assigned wrongly; #1704
+
+* `crs` (sf) to `CRS` (sp) conversion no longer needs validation by `rgdal`; https://github.com/edzer/sp/issues/107
+
+* retrieve ESRI's WKT version of CRS by `st_crs(id)$WKT1_ESRI`; #1690 
+
 # version 1.0-0
+
+* add `s2` to Imports:
 
 * add Dewey Dunnington to contributors
 
