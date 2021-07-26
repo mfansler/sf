@@ -22,6 +22,8 @@ std::vector<OGRFieldType> SetupFields(OGRLayer *poLayer, Rcpp::List obj, bool up
 			ret[i] = OFTDate;
 		else if (strcmp(cls[i], "POSIXct") == 0)
 			ret[i] = OFTDateTime;
+		else if (strcmp(cls[i], "list") == 0) // list with raw vectors; #1721
+			ret[i] = OFTBinary;
 		else { // #nocov start
 			Rcpp::Rcout << "Field " << nm[i] << " of type " << cls[i] << " not supported." << std::endl;
 			Rcpp::stop("Layer creation failed.\n");
@@ -139,6 +141,22 @@ void SetFields(OGRFeature *poFeature, std::vector<OGRFieldType> tp, Rcpp::List o
 						(int) rd[3], (int) rd[2], (int) rd[1],
 						(float) rd[0], 100); // nTZFlag 0: unkown; 1: local; 100: GMT
 				} break;
+			case OFTBinary: 
+#if GDAL_VERSION_NUM > 3000000
+				{
+				Rcpp::List lv;
+				lv = obj[j];
+				Rcpp::RawVector rv;
+				rv = lv(0);
+				if (rv.size() == 0)
+					SetNull(poFeature, j); // #nocov
+				else {
+					const void *ptr = &(rv[0]);
+					int size = rv.size();
+					poFeature->SetField(j, size, ptr);
+				}
+				} break;
+#endif
 			default:
 				// we should never get here! // #nocov start
 				Rcpp::Rcout << "field with unsupported type ignored" << std::endl; 

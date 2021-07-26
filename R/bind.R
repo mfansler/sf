@@ -18,13 +18,18 @@
 rbind.sf = function(..., deparse.level = 1) {
 	dots = list(...)
 	dots = dots[!sapply(dots, is.null)]
+	nr = sapply(dots, NROW)
+	sf_column = if (any(nr > 0))
+			attr(dots[[ which(nr > 0)[1] ]], "sf_column")
+		else
+			NULL
 	crs0 = st_crs(dots[[1]])
 	if (length(dots) > 1L) { # check all crs are equal...
 		equal_crs = vapply(dots[-1L], function(x) st_crs(x) == crs0, TRUE)
 		if (!all(equal_crs))
 			stop("arguments have different crs", call. = FALSE)
 	}
-	ret = st_sf(rbind.data.frame(...), crs = crs0)
+	ret = st_sf(rbind.data.frame(...), crs = crs0, sf_column_name = sf_column)
 	st_geometry(ret) = st_sfc(st_geometry(ret)) # might need to reclass to GEOMETRY
 	bb = do.call(rbind, lapply(dots, st_bbox))
 	bb = bb_wrap(c(min(bb[,1L], na.rm = TRUE), min(bb[,2L], na.rm = TRUE),

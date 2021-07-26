@@ -543,26 +543,26 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <a class="sourceLine" id="cb22-4" title="4">  uk_buffer_sf =<span class="st"> </span><span class="kw">st_buffer</span>(uk_projected, <span class="dt">dist =</span> <span class="dv">20000</span>)</a>
 <a class="sourceLine" id="cb22-5" title="5">})</a>
 <a class="sourceLine" id="cb22-6" title="6"><span class="co">##    user  system elapsed </span></a>
-<a class="sourceLine" id="cb22-7" title="7"><span class="co">##   0.049   0.000   0.048</span></a>
+<a class="sourceLine" id="cb22-7" title="7"><span class="co">##   0.045   0.004   0.049</span></a>
 <a class="sourceLine" id="cb22-8" title="8"><span class="co"># sf way with few than the 30 segments in the buffer</span></a>
 <a class="sourceLine" id="cb22-9" title="9"><span class="kw">system.time</span>({</a>
 <a class="sourceLine" id="cb22-10" title="10">  uk_projected =<span class="st"> </span><span class="kw">st_transform</span>(uk_sfc, <span class="dv">27700</span>)</a>
 <a class="sourceLine" id="cb22-11" title="11">  uk_buffer_sf2 =<span class="st"> </span><span class="kw">st_buffer</span>(uk_projected, <span class="dt">dist =</span> <span class="dv">20000</span>, <span class="dt">nQuadSegs =</span> <span class="dv">4</span>)</a>
 <a class="sourceLine" id="cb22-12" title="12">})</a>
 <a class="sourceLine" id="cb22-13" title="13"><span class="co">##    user  system elapsed </span></a>
-<a class="sourceLine" id="cb22-14" title="14"><span class="co">##   0.041   0.000   0.041</span></a>
+<a class="sourceLine" id="cb22-14" title="14"><span class="co">##   0.041   0.000   0.042</span></a>
 <a class="sourceLine" id="cb22-15" title="15"><span class="co"># s2 with default cell size</span></a>
 <a class="sourceLine" id="cb22-16" title="16"><span class="kw">system.time</span>({</a>
 <a class="sourceLine" id="cb22-17" title="17">  uk_buffer =<span class="st"> </span><span class="kw">s2_buffer_cells</span>(uk, <span class="dt">distance =</span> <span class="dv">20000</span>)</a>
 <a class="sourceLine" id="cb22-18" title="18">})</a>
 <a class="sourceLine" id="cb22-19" title="19"><span class="co">##    user  system elapsed </span></a>
-<a class="sourceLine" id="cb22-20" title="20"><span class="co">##   0.033   0.000   0.033</span></a>
+<a class="sourceLine" id="cb22-20" title="20"><span class="co">##   0.034   0.000   0.034</span></a>
 <a class="sourceLine" id="cb22-21" title="21"><span class="co"># s2 with 10000 cells</span></a>
 <a class="sourceLine" id="cb22-22" title="22"><span class="kw">system.time</span>({</a>
 <a class="sourceLine" id="cb22-23" title="23">  uk_buffer2 =<span class="st"> </span><span class="kw">s2_buffer_cells</span>(uk, <span class="dt">distance =</span> <span class="dv">20000</span>, <span class="dt">max_cells =</span> <span class="dv">10000</span>)</a>
 <a class="sourceLine" id="cb22-24" title="24">})</a>
 <a class="sourceLine" id="cb22-25" title="25"><span class="co">##    user  system elapsed </span></a>
-<a class="sourceLine" id="cb22-26" title="26"><span class="co">##   0.252   0.000   0.252</span></a>
+<a class="sourceLine" id="cb22-26" title="26"><span class="co">##    0.26    0.00    0.26</span></a>
 <a class="sourceLine" id="cb22-27" title="27"><span class="co"># s2 with 100 cells</span></a>
 <a class="sourceLine" id="cb22-28" title="28"><span class="kw">system.time</span>({</a>
 <a class="sourceLine" id="cb22-29" title="29">  uk_buffer2 =<span class="st"> </span><span class="kw">s2_buffer_cells</span>(uk, <span class="dt">distance =</span> <span class="dv">20000</span>, <span class="dt">max_cells =</span> <span class="dv">100</span>)</a>

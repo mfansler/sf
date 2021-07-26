@@ -1,3 +1,21 @@
+# version 1.0-2
+
+* `st_read()` and `st_write()` using GDAL handle binary attributes (OFTBinary fields) ; #1721
+
+* a `pivot_longer` method is added for `sf` objects (the `data.frame` method works, but raises a warning)
+
+* `rbind.sf` preserves primary geometry column; #1717
+
+* `configure` constrains using `--static` to `Darwin` platform; #1702, #1712, #1713
+
+* old-style `crs` objects created with sf < 0.9-0 generate a message, and will cause a warning in the future.
+
+* when `st_crs()` is called with a WKT2 as text input, its `input` field will be replaced with the CRS name (if it has one).
+
+* GEOS (>= 3.9.0) operations use `GEOSGeom_setPrecision_r` to set precision of geometries; #1535
+
+* `st_read()` with specified `query` ignores argument `layers`, and warns if it is given; #1444
+
 # version 1.0-1
 
 * fix regression in `st_intersection()`: when using s2 attributes were assigned wrongly; #1704

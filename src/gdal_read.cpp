@@ -54,6 +54,7 @@ Rcpp::List allocate_out_list(OGRFeatureDefn *poFDefn, int n_features, bool int64
 			case OFTRealList:
 			case OFTIntegerList:
 			case OFTInteger64List:
+			case OFTBinary:
 				out[i] = Rcpp::List(n_features);
 				break;
 			case OFTString:
@@ -370,6 +371,17 @@ Rcpp::List sf_from_ogrlayer(OGRLayer *poLayer, bool quiet, bool int64_as_string,
 					}
 					}
 					break;
+				case OFTBinary: {
+					Rcpp::List lv;
+					lv = out[iField];
+					int n;
+					const GByte *bl = poFeature->GetFieldAsBinary(iField, &n);
+					Rcpp::RawVector rv(n);
+					for (int j = 0; j < rv.size(); j++)
+						rv[j] = bl[j];
+					lv[i] = rv;
+					}
+					break;
 				default: // break through: anything else to be converted to string?
 				case OFTString: {
 					Rcpp::CharacterVector cv;
@@ -506,7 +518,7 @@ Rcpp::List CPL_read_ogr(Rcpp::CharacterVector datasource, Rcpp::CharacterVector 
 		Rcpp::stop("Cannot open %s; The file doesn't seem to exist.", datasource);
 	}
 
-	if (layer.size() == 0) { // no layer specified
+	if (layer.size() == 0 && Rcpp::CharacterVector::is_na(query[0])) { // no layer specified
 		switch (poDS->GetLayerCount()) {
 			case 0: { // error:
 				Rcpp::stop("No layers in datasource.");
@@ -536,6 +548,8 @@ Rcpp::List CPL_read_ogr(Rcpp::CharacterVector datasource, Rcpp::CharacterVector 
 		poLayer = poDS->ExecuteSQL(query[0], NULL, NULL);
 		if (poLayer == NULL)
 			Rcpp::stop("Query execution failed, cannot open layer.\n"); // #nocov
+		if (layer.size())
+			Rcpp::warning("argument layer is ignored when query is specified\n"); // #nocov
 	} else
 		poLayer = 	poDS->GetLayerByName(layer[0]);
 	if (poLayer == NULL) {
@@ -561,11 +575,19 @@ Rcpp::List CPL_read_ogr(Rcpp::CharacterVector datasource, Rcpp::CharacterVector 
 	}
 
 	if (! quiet) {
-		Rcpp::Rcout << "Reading layer `" << layer[0] << "' from data source ";
-		if (LENGTH(datasource[0]) > (width - (34 + LENGTH(layer[0]))))
-			Rcpp::Rcout << std::endl << "  ";
+		if (! Rcpp::CharacterVector::is_na(query[0]))
+			Rcpp::Rcout << "Reading query `" << query[0] << "' from data source ";
+		else
+			Rcpp::Rcout << "Reading layer `" << layer[0] << "' from data source ";
+		// if (LENGTH(datasource[0]) > (width - (34 + LENGTH(layer[0]))))
+		Rcpp::String ds(datasource(0));
+		if (layer.size()) { 
+			Rcpp::String la(layer(0));
+			if (strlen(ds.get_cstring()) > (width - (34 + strlen(la.get_cstring()))))
+				Rcpp::Rcout << std::endl << "  ";
+		}
 		Rcpp::Rcout << "`" << datasource[0] << "' ";
-		if (LENGTH(datasource[0]) > (width - 25))
+		if (((int) strlen(ds.get_cstring())) > (width - 25))
 			Rcpp::Rcout << std::endl << "  ";
 		Rcpp::Rcout << "using driver `" << poDS->GetDriverName() << "'" << std::endl;                       // #nocov
 	}
