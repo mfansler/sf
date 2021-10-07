@@ -3,23 +3,12 @@
 \name{s2}
 \alias{s2}
 \alias{sf_use_s2}
-\alias{st_as_sfc.s2_geography}
-\alias{st_as_sf.s2_geography}
 \alias{st_as_s2}
 \alias{st_as_s2.sf}
 \alias{st_as_s2.sfc}
 \title{functions for spherical geometry, using s2 package}
 \usage{
 sf_use_s2(use_s2)
-
-\method{st_as_sfc}{s2_geography}(
-  x,
-  ...,
-  crs = st_crs(4326),
-  endian = match(.Platform$endian, c("big", "little")) - 1L
-)
-
-\method{st_as_sf}{s2_geography}(x, ..., crs = st_crs(4326))
 
 st_as_s2(x, ...)
 
@@ -34,10 +23,6 @@ for geographical coordinate operations}
 \item{x}{object of class \code{sf}, \code{sfc} or \code{sfg}}
 
 \item{...}{passed on}
-
-\item{crs}{coordinate reference system; object of class \code{crs}}
-
-\item{endian}{integer; 0 or 1: defaults to the endian of the native machine}
 
 \item{oriented}{logical; if \code{FALSE}, polygons that
 cover more than half of the globe are inverted; if \code{TRUE}, no reversal

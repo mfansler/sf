@@ -139,66 +139,114 @@ st_viewport = function(x, ..., bbox = st_bbox(x), asp) {
 
 #' @export
 st_as_grob.sfc_POINT <- function(x, pch = 1, size = unit(1, "char"), default.units = "native", name = NULL, gp = gpar(), vp = NULL, ...) {
-	x <- matrix(unlist(x, use.names = FALSE), ncol = length(x))
-	pointsGrob(x[1, ], x[2, ], pch = pch, size = size, default.units = default.units, name = name, gp = gp, vp = vp)
+	if (any(is_e <- st_is_empty(x))) {
+		gp = gp[!is_e]
+		x = x[!is_e]
+	}
+	if (length(x)) {
+		x <- matrix(unlist(x, use.names = FALSE), ncol = length(x))
+		pointsGrob(x[1, ], x[2, ], pch = pch, size = size,
+				   default.units = default.units, name = name, gp = gp, vp = vp)
+	} else
+		nullGrob()
 }
 #' @export
 #' @importFrom grid gpar
 st_as_grob.sfc_MULTIPOINT <- function(x, pch = 1, size = unit(1, "char"), default.units = "native", name = NULL, gp = gpar(), vp = NULL, ...) {
-	x <- unclass(x)
-	n_points <- vapply(x, nrow, integer(1))
-	gp <- expand_gp(gp, n_points)
-	if (length(pch) != 1) pch <- rep(rep(pch, length.out = length(x)), n_points)
-	if (length(size) != 1) size <- rep(rep(size, length.out = length(x)), n_points)
-	x <- do.call(rbind, x)
-	pointsGrob(x[, 1], x[, 2], pch = pch, size = size, default.units = default.units, name = name, gp = gp, vp = vp)
+	if (any(is_e <- st_is_empty(x))) {
+		gp = gp[!is_e]
+		x = x[!is_e]
+	}
+	if (length(x)) {
+		x <- unclass(x)
+		n_points <- vapply(x, nrow, integer(1))
+		gp <- expand_gp(gp, n_points)
+		if (length(pch) != 1) pch <- rep(rep(pch, length.out = length(x)), n_points)
+		if (length(size) != 1) size <- rep(rep(size, length.out = length(x)), n_points)
+		x <- do.call(rbind, x)
+		pointsGrob(x[, 1], x[, 2], pch = pch, size = size, 
+				   default.units = default.units, name = name, gp = gp, vp = vp)
+	} else
+		nullGrob()
 }
 #' @export
 st_as_grob.sfc_LINESTRING <- function(x, arrow = NULL, default.units = "native", name = NULL, gp = gpar(), vp = NULL, ...) {
-	x <- unclass(x)
-	n_points <- vapply(x, nrow, integer(1))
-	x <- do.call(rbind, x)
-	polylineGrob(x[, 1], x[, 2], id.lengths = n_points, arrow = arrow, default.units = default.units, name = name, gp = gp, vp = vp)
+	if (any(is_e <- st_is_empty(x))) {
+		gp = gp[!is_e]
+		x = x[!is_e]
+	}
+	if (length(x)) {
+		x <- unclass(x)
+		n_points <- vapply(x, nrow, integer(1))
+		x <- do.call(rbind, x)
+		polylineGrob(x[, 1], x[, 2], id.lengths = n_points, arrow = arrow, 
+					 default.units = default.units, name = name, gp = gp, vp = vp)
+	} else
+		nullGrob()
 }
 #' @export
 st_as_grob.sfc_MULTILINESTRING <- function(x, arrow = NULL, default.units = "native", name = NULL, gp = gpar(), vp = NULL, ...) {
-	x <- unclass(x)
-	n_lines <- vapply(x, length, integer(1))
-	gp <- expand_gp(gp, n_lines)
-	if (!is.null(arrow) && length(arrow) != 1) arrow <- rep(rep(arrow, length.out = length(x)), n_lines)
-	x <- unlist(x, recursive = FALSE)
-	n_points <- vapply(x, nrow, integer(1))
-	x <- do.call(rbind, x)
-	polylineGrob(x[, 1], x[, 2], id.lengths = n_points, arrow = arrow, default.units = default.units, name = name, gp = gp, vp = vp)
+	if (any(is_e <- st_is_empty(x))) {
+		gp = gp[!is_e]
+		x = x[!is_e]
+	}
+	if (length(x)) {
+		x <- unclass(x)
+		n_lines <- vapply(x, length, integer(1))
+		gp <- expand_gp(gp, n_lines)
+		if (!is.null(arrow) && length(arrow) != 1) arrow <- rep(rep(arrow, length.out = length(x)), n_lines)
+		x <- unlist(x, recursive = FALSE)
+		n_points <- vapply(x, nrow, integer(1))
+		x <- do.call(rbind, x)
+		polylineGrob(x[, 1], x[, 2], id.lengths = n_points, arrow = arrow, 
+					 default.units = default.units, name = name, gp = gp, vp = vp)
+	} else
+		nullGrob()
 }
 #' @export
 st_as_grob.sfc_POLYGON <- function(x, rule = "evenodd", default.units = "native", name = NULL, gp = gpar(), vp = NULL, ...) {
 	if (utils::packageVersion("grid") < "3.6") {
 		return(scalar_grobs(x, rule = rule, default.units = default.units, name = name, gp = gp, vp = vp, ...)) # nocov
 	}
-	x <- unclass(x) # nocov start
-	n_poly <- vapply(x, length, integer(1))
-	x <- unlist(x, recursive = FALSE)
-	n_points <- vapply(x, nrow, integer(1))
-	n_paths <- tapply(n_points, rep(seq_along(n_poly), n_poly), sum)
-	x <- do.call(rbind, x)
-	pathGrob(x[, 1], x[, 2], id.lengths = n_points, pathId.lengths = n_paths, rule = rule, default.units = default.units, name = name, gp = gp, vp = vp) # nocov end
+	if (any(is_e <- st_is_empty(x))) {
+		gp = gp[!is_e]
+		x = x[!is_e]
+	}
+	if (length(x)) {
+		x <- unclass(x) # nocov start
+		n_poly <- vapply(x, length, integer(1))
+		x <- unlist(x, recursive = FALSE)
+		n_points <- vapply(x, nrow, integer(1))
+		n_paths <- tapply(n_points, rep(seq_along(n_poly), n_poly), sum)
+		x <- do.call(rbind, x)
+		pathGrob(x[, 1], x[, 2], id.lengths = n_points, pathId.lengths = n_paths, 
+				 rule = rule, default.units = default.units, name = name, gp = gp, vp = vp) # nocov end
+	} else
+		nullGrob()
 }
 #' @export
 st_as_grob.sfc_MULTIPOLYGON <- function(x, rule = "evenodd", default.units = "native", name = NULL, gp = gpar(), vp = NULL, ...) {
 	if (utils::packageVersion("grid") < "3.6") {
 		return(scalar_grobs(x, rule = rule, default.units = default.units, name = name, gp = gp, vp = vp, ...)) # nocov
 	}
-	x <- unclass(x) # nocov start
-	n_poly <- vapply(x, length, integer(1))
-	gp <- expand_gp(gp, n_poly)
-	x <- unlist(x, recursive = FALSE)
-	n_poly <- vapply(x, length, integer(1))
-	x <- unlist(x, recursive = FALSE)
-	n_points <- vapply(x, nrow, integer(1))
-	n_paths <- tapply(n_points, rep(seq_along(n_poly), n_poly), sum)
-	x <- do.call(rbind, x)
-	pathGrob(x[, 1], x[, 2], id.lengths = n_points, pathId.lengths = n_paths, rule = rule, default.units = default.units, name = name, gp = gp, vp = vp) # nocov end
+	if (any(is_e <- st_is_empty(x))) {
+		gp = gp[!is_e]
+		x = x[!is_e]
+	}
+	if (length(x)) {
+		x <- unclass(x) # nocov start
+		n_poly <- vapply(x, length, integer(1))
+		gp <- expand_gp(gp, n_poly)
+		x <- unlist(x, recursive = FALSE)
+		n_poly <- vapply(x, length, integer(1))
+		x <- unlist(x, recursive = FALSE)
+		n_points <- vapply(x, nrow, integer(1))
+		n_paths <- tapply(n_points, rep(seq_along(n_poly), n_poly), sum)
+		x <- do.call(rbind, x)
+		pathGrob(x[, 1], x[, 2], id.lengths = n_points, pathId.lengths = n_paths, 
+				 rule = rule, default.units = default.units, name = name, gp = gp, vp = vp) # nocov end
+	} else
+		nullGrob()
 }
 #' @export
 st_as_grob.sfc_CIRCULARSTRING <- function(x, ...) {
@@ -227,10 +275,10 @@ st_as_grob.sfc <- function(x, pch = 1, size = unit(1, "char"), arrow = NULL, gp 
 			}
 		}
 	}
-	if (class(x)[1] %in% c('sfc_MULTIPOINT', 'sfc_MULTILINESTRING', 'sfc_MULTIPOLYGON')) {
-		return(st_as_grob(x, pch = pch, size = size, arrow = arrow, gp = gp, ...))
-	}
-	scalar_grobs(x, pch, size, arrow, gp, ...)
+	if (class(x)[1] %in% c('sfc_MULTIPOINT', 'sfc_MULTILINESTRING', 'sfc_MULTIPOLYGON'))
+		st_as_grob(x, pch = pch, size = size, arrow = arrow, gp = gp, ...)
+	else
+		scalar_grobs(x, pch, size, arrow, gp, ...)
 }
 
 scalar_grobs <- function(x, pch = 1, size = unit(1, "char"), arrow = NULL, gp = gpar(), ...) {

@@ -185,8 +185,8 @@ Rcpp::List CPL_crs_parameters(Rcpp::List crs) {
 	if (srs == NULL)
 		Rcpp::stop("crs not found"); // #nocov
 
-	Rcpp::List out(14);
-	Rcpp::CharacterVector names(14);
+	Rcpp::List out(15);
+	Rcpp::CharacterVector names(15);
 	out(0) = Rcpp::NumericVector::create(srs->GetSemiMajor());
 	names(0) = "SemiMajor";
 
@@ -279,6 +279,17 @@ Rcpp::List CPL_crs_parameters(Rcpp::List crs) {
 	out(13) = "";
 #endif
 	names(13) = "WKT1_ESRI";
+
+	// srid
+	if (srs->GetAuthorityName(NULL) != NULL && srs->GetAuthorityCode(NULL) != NULL) {
+		char str[101];
+		snprintf(str, (size_t) 100, "%s:%s",
+			srs->GetAuthorityName(NULL), srs->GetAuthorityCode(NULL));
+		Rcpp::CharacterVector v = str;
+		out(14) = v;
+	} else
+		out(14) = Rcpp::CharacterVector::create(NA_STRING);
+	names(14) = "srid";
 
 	set_error_handler();
 
@@ -555,7 +566,7 @@ Rcpp::List CPL_transform(Rcpp::List sfc, Rcpp::List crs,
 		if (dest)
 			dest->Release(); // #nocov start
 		sfc_from_ogr(g, true); // to destroy g
-		Rcpp::stop("OGRCreateCoordinateTransformation() returned NULL: PROJ available?"); // #nocov end
+		Rcpp::stop("OGRCreateCoordinateTransformation(): transformation not available"); // #nocov end
 	}
 	for (size_t i = 0; i < g.size(); i++) {
 		CPLPushErrorHandler(CPLQuietErrorHandler);

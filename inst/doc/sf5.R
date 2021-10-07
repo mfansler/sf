@@ -85,18 +85,18 @@ ggplot() +
 
 ## ---- eval = FALSE------------------------------------------------------------
 #  library(mapview)
-#  mapviewOptions(fgb = FALSE)
+#  mapviewOptions(fgb = FALSE) # needed when creating web pages
 #  mapview(nc["BIR74"], col.regions = sf.colors(10), fgb = FALSE)
 
 ## -----------------------------------------------------------------------------
 library(tmap)
 qtm(nc)
 
-## -----------------------------------------------------------------------------
-tmap_mode("view")
-tm_shape(nc) + tm_fill("BIR74", palette = sf.colors(5))
+## ----eval=FALSE---------------------------------------------------------------
+#  tmap_mode("view")
+#  tm_shape(nc) + tm_fill("BIR74", palette = sf.colors(5))
 
-## -----------------------------------------------------------------------------
-ttm()
-tmap_last()
+## ----eval=FALSE---------------------------------------------------------------
+#  ttm()
+#  tmap_last()
 

@@ -1,3 +1,19 @@
+# version 1.0-3
+
+* cope with how GEOS >= 3.10.0 handles illegal geometries (e.g., non-closed rings); #1807
+
+* `crs` objects have a `$srid` method to extract the SRID (as authority "name:code"); #1804
+
+* `st_as_grob()` methods for `sfc_*` objects correctly handle empty geometries; #1789 with help from Hiroaki Yutani
+
+* when writing objects with `NA` as CRS to GeoPackage, assign "Unknown Cartesian CRS" first - this is in line with using Cartesian geometry operations for objects with `NA` as CRS; #1776
+
+* add coerce method from `sgbp` to `sparseMatrix`; #1750
+
+* fix `st_cast()` for `GEOMETRYCOLLECTIONS` containing empty geometries; #1767
+
+* fix `st_is_valid()` for bogus polygons and projected coordinates; #1666, #1760; #1761
+
 # version 1.0-2
 
 * `st_read()` and `st_write()` using GDAL handle binary attributes (OFTBinary fields) ; #1721

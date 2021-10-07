@@ -63,6 +63,21 @@ RUN export DEBIAN_FRONTEND=noninteractive; apt-get -y update \
 	cmake \
 	libtiff5-dev
 
+# GEOS:
+ENV GEOS_VERSION 3.10.0beta2
+
+RUN wget http://download.osgeo.org/geos/geos-${GEOS_VERSION}.tar.bz2 \
+  && bzip2 -d geos-*bz2 \
+  && tar xf geos*tar \
+  && cd geos* \
+  && mkdir build \
+  && cd build \
+  && cmake .. \
+  && make \
+  && make install \
+  && cd ../.. \
+  && ldconfig
+
 #RUN git clone --depth 1 https://github.com/OSGeo/PROJ.git
 RUN wget http://download.osgeo.org/proj/proj-8.0.1.tar.gz
 RUN tar zxvf proj-8.0.1.tar.gz
@@ -86,8 +101,8 @@ RUN cd proj-8.0.1 \
 # GDAL:
 
 # https://download.osgeo.org/gdal/3.1.0/gdal-3.1.0rc2.tar.gz
-ENV GDAL_VERSION 3.3.0
-ENV GDAL_VERSION_NAME 3.3.0
+ENV GDAL_VERSION 3.3.2rc3
+ENV GDAL_VERSION_NAME 3.3.2rc3
 
 RUN wget http://download.osgeo.org/gdal/${GDAL_VERSION}/gdal-${GDAL_VERSION_NAME}.tar.gz \
   && tar -xf gdal-${GDAL_VERSION_NAME}.tar.gz \
@@ -107,19 +122,6 @@ RUN wget http://download.osgeo.org/gdal/${GDAL_VERSION}/gdal-${GDAL_VERSION_NAME
 #  && cd .. \
 #  && ldconfig
 
-# GEOS:
-ENV GEOS_VERSION 3.9.1
-
-RUN wget http://download.osgeo.org/geos/geos-${GEOS_VERSION}.tar.bz2 \
-  && bzip2 -d geos-*bz2 \
-  && tar xf geos*tar \
-  && cd geos* \
-  && ./configure \
-  && make \
-  && make install \
-  && cd .. \
-  && ldconfig
-
 # RUN svn  checkout svn://scm.r-forge.r-project.org/svnroot/rgdal/
 # RUN R CMD build rgdal/pkg --no-build-vignettes
 # RUN R CMD INSTALL rgdal_*.tar.gz 
@@ -132,38 +134,18 @@ RUN git clone --depth 10 https://github.com/r-spatial/stars.git
 #RUN git config --global user.email "edzer.pebesma@uni-muenster.de"
 
 RUN R CMD build --no-build-vignettes --no-manual lwgeom
-RUN (cd sf; git pull)
 RUN R CMD build --no-build-vignettes --no-manual sf
 # RUN pkg-config proj --modversion
 RUN R CMD INSTALL sf
 RUN R CMD INSTALL lwgeom
-RUN R CMD build --no-build-vignettes --no-manual stars
 RUN R CMD INSTALL stars
 
+RUN Rscript -e 'install.packages(c("XML", "tmaptools", "tmap", "mapview", "s2", "terra", "PCICt", "RNetCDF", "future.apply", "ggforce", "ggthemes", "gstat", "ncmeta", "pbapply", "plm", "spacetime", "xts", "zoo", "tidync", "ncdfgeom", "cubelyr", "clue"))'
 
-#RUN svn  checkout svn://scm.r-forge.r-project.org/svnroot/rgdal/
-# or:
-# svn checkout svn+ssh://edzer@scm.r-forge.r-project.org/svnroot/rgdal/
-#RUN R CMD build rgdal/pkg --no-build-vignettes
-#RUN R CMD INSTALL rgdal_*.tar.gz 
-#RUN R CMD check --no-vignettes --no-manual rgdal_*.tar.gz 
-#RUN Rscript -e 'install.packages(c("stars", "tmap"), repos = "https://cloud.r-project.org")'
-
-RUN Rscript -e 'install.packages("rgdal", repos="http://R-Forge.R-project.org")'
-# after rgdal:
-RUN Rscript -e 'install.packages(c("XML"))'
-RUN Rscript -e 'install.packages(c("tmaptools", "tmap", "mapview", "s2"))'
-RUN Rscript -e 'install.packages(c("terra"))'
-
-RUN (cd sf; git pull)
 RUN R CMD build --no-build-vignettes --no-manual sf
 RUN R CMD check --no-build-vignettes --no-manual --as-cran sf_*.tar.gz 
-#RUN R CMD check --no-build-vignettes --no-manual --as-cran lwgeom_*.tar.gz 
+RUN R CMD check --no-build-vignettes --no-manual --as-cran lwgeom_*.tar.gz 
 
 #RUN Rscript -e 'install.packages("starsdata", repos="http://gis-bigdata.uni-muenster.de/pebesma/")'
-#RUN Rscript -e 'install.packages(c("PCICt", "RNetCDF", "future.apply", "ggforce", "ggthemes", "gstat", "ncmeta", "pbapply", "plm", "spacetime", "xts", "zoo"))'
-#RUN Rscript -e 'install.packages(c("tidync", "ncdfgeom", "cubelyr"))'
-#RUN echo echo
-#RUN (cd stars; git pull)
-#RUN R CMD build --no-manual stars
-#RUN _R_CHECK_FORCE_SUGGESTS_=false R CMD check --no-build-vignettes --no-manual --as-cran stars_*.tar.gz 
+RUN R CMD build --no-manual stars
+RUN _R_CHECK_FORCE_SUGGESTS_=false R CMD check --no-build-vignettes --no-manual --as-cran stars_*.tar.gz 
