@@ -89,9 +89,10 @@ abline(0, 1)
 summary(as.vector(d1)-as.vector(d2))
 
 ## -----------------------------------------------------------------------------
-sf_use_s2(FALSE)
+sf_use_s2(TRUE)
 st_intersects(nc[1:3,], nc[1:3,]) # self-intersections + neighbours
-st_intersects(nc[1:3,], nc[1:3,], s2_model = "semi-open") # only self-intersections
+sf_use_s2(TRUE)
+st_intersects(nc[1:3,], nc[1:3,], model = "semi-open") # only self-intersections
 
 ## ---- fig.show='hold', out.width="50%"----------------------------------------
 uk = s2_data_countries("United Kingdom")

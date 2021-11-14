@@ -1,3 +1,9 @@
+# version 1.0-4
+
+* new function `st_delete()` deletes a data source, or layer(s) within a data source; #1828
+
+* fix memory leak in `WKT1_ESRI` retrieval; #1690
+
 # version 1.0-3
 
 * cope with how GEOS >= 3.10.0 handles illegal geometries (e.g., non-closed rings); #1807

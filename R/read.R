@@ -431,7 +431,7 @@ st_write.sf = function(obj, dsn, layer = NULL, ...,
 		# check arguments
 		cl <- as.list(match.call())[-1L]
 		if ("overwrite" %in% names(cl)) {
-			stop("Argument `overwite` in `st_write()` is deprecated, use `delete_layer` instead.", call. = FALSE)
+			stop("Argument `overwrite` in `st_write()` is deprecated, use `delete_layer` instead.", call. = FALSE)
 		}
 
 		check_append_delete(append, delete_layer)
@@ -717,4 +717,12 @@ check_append_delete <- function(append, delete) {
 	if (append && delete) {
 		stop("`delete_layer` and `append` cannot both be `TRUE`", call. = FALSE)
 	}
+}
+
+#' @name st_write
+#' @export
+#' @details st_delete deletes layer(s) in a data source, or a data source if layers are 
+#' omitted; it returns TRUE on success, FALSE on failure, invisibly.
+st_delete = function(dsn, layer = character(0), driver = guess_driver_can_write(dsn), quiet = FALSE) {
+	invisible(CPL_delete_ogr(dsn, layer, driver, quiet) == 0)
 }

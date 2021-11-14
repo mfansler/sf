@@ -353,13 +353,14 @@ In st_voronoi.sfc(st_geometry(x), st_sfc(envelope), dTolerance,  :
 <li>a straight line, cutting through the Earth’s surface, or</li>
 <li>a curved line following the Earth’s surface</li>
 </ul>
-<p>Starting with <code>sf</code> version 1.0, <code>sf</code> uses the new package <code>s2</code> (Dunnington, Pebesma, Rubak 2020) for spherical geometry, which has functions for computing pretty much all measures, predicates and transformations <em>on the sphere</em>. This means:</p>
+<p>Starting with <code>sf</code> version 1.0, if you provide a spatial object in a geographical coordinate reference system, <code>sf</code> uses the new package <code>s2</code> (Dunnington, Pebesma, Rubak 2020) for spherical geometry, which has functions for computing pretty much all measures, predicates and transformations <em>on the sphere</em>. This means:</p>
 <ul>
 <li>no more hodge-podge of some functions working on <span class="math inline">\(R^2\)</span>, with annoying messages, some on the ellipsoid</li>
 <li>a considerable speed increase for some functions</li>
 <li>no computations on the ellipsoid (which are considered more accurate, but are also slower)</li>
 </ul>
 <p>The <code>s2</code> package is really a wrapper around the C++ <a href="https://s2geometry.io">s2geometry</a> library which was written by Google, and which is used in many of its products (e.g. Google Maps, Google Earth Engine, Bigquery GIS) and has been translated in several other programming languages.</p>
+<p>With projected coordinates <code>sf</code> continues to work in <span class="math inline">\(R^2\)</span> as before.</p>
 </div>
 <div id="fundamental-differences" class="section level1">
 <h1>Fundamental differences</h1>
@@ -436,7 +437,7 @@ In st_voronoi.sfc(st_geometry(x), st_sfc(envelope), dTolerance,  :
 </div>
 <div id="switching-between-s2-and-geos" class="section level1">
 <h1>Switching between S2 and GEOS</h1>
-<p>The two-dimensional <span class="math inline">\(R^2\)</span> library that was formerly used by <code>sf</code> is <a href="https://trac.osgeo.org/geos/">GEOS</a>, and <code>sf</code> can be instrumented to use GEOS or <code>sf</code>. First we will ask if <code>s2</code> is being used by default:</p>
+<p>The two-dimensional <span class="math inline">\(R^2\)</span> library that was formerly used by <code>sf</code> is <a href="https://trac.osgeo.org/geos/">GEOS</a>, and <code>sf</code> can be instrumented to use GEOS or <code>s2</code>. First we will ask if <code>s2</code> is being used by default:</p>
 <div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb12-1" title="1"><span class="kw">sf_use_s2</span>()</a>
 <a class="sourceLine" id="cb12-2" title="2"><span class="co">## [1] TRUE</span></a></code></pre></div>
 <p>then we can switch it off (and use GEOS) by</p>
@@ -500,22 +501,22 @@ In st_voronoi.sfc(st_geometry(x), st_sfc(envelope), dTolerance,  :
 </div>
 <div id="predicates" class="section level1">
 <h1>Predicates</h1>
-<p>All unary and binary predicates are available in <code>s2</code>, except for <code>st_relate</code> with a pattern. In addition, when using the <code>s2</code> predicates, depending on the <code>s2_model</code>, intersections with neighbours are only reported when <code>s2_model</code> is <code>closed</code> (the default):</p>
-<div class="sourceCode" id="cb21"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb21-1" title="1"><span class="kw">sf_use_s2</span>(<span class="ot">FALSE</span>)</a>
-<a class="sourceLine" id="cb21-2" title="2"><span class="kw">st_intersects</span>(nc[<span class="dv">1</span><span class="op">:</span><span class="dv">3</span>,], nc[<span class="dv">1</span><span class="op">:</span><span class="dv">3</span>,]) <span class="co"># self-intersections + neighbours</span></a>
-<a class="sourceLine" id="cb21-3" title="3"><span class="co">## although coordinates are longitude/latitude, st_intersects assumes that they are planar</span></a>
+<p>All unary and binary predicates are available in <code>s2</code>, except for <code>st_relate</code> with a pattern. In addition, when using the <code>s2</code> predicates, depending on the <code>model</code>, intersections with neighbours are only reported when <code>model</code> is <code>closed</code> (the default):</p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb21-1" title="1"><span class="kw">sf_use_s2</span>(<span class="ot">TRUE</span>)</a>
+<a class="sourceLine" id="cb21-2" title="2"><span class="co">## Spherical geometry (s2) switched on</span></a>
+<a class="sourceLine" id="cb21-3" title="3"><span class="kw">st_intersects</span>(nc[<span class="dv">1</span><span class="op">:</span><span class="dv">3</span>,], nc[<span class="dv">1</span><span class="op">:</span><span class="dv">3</span>,]) <span class="co"># self-intersections + neighbours</span></a>
 <a class="sourceLine" id="cb21-4" title="4"><span class="co">## Sparse geometry binary predicate list of length 3, where the predicate</span></a>
 <a class="sourceLine" id="cb21-5" title="5"><span class="co">## was `intersects&#39;</span></a>
 <a class="sourceLine" id="cb21-6" title="6"><span class="co">##  1: 1, 2</span></a>
 <a class="sourceLine" id="cb21-7" title="7"><span class="co">##  2: 1, 2, 3</span></a>
 <a class="sourceLine" id="cb21-8" title="8"><span class="co">##  3: 2, 3</span></a>
-<a class="sourceLine" id="cb21-9" title="9"><span class="kw">st_intersects</span>(nc[<span class="dv">1</span><span class="op">:</span><span class="dv">3</span>,], nc[<span class="dv">1</span><span class="op">:</span><span class="dv">3</span>,], <span class="dt">s2_model =</span> <span class="st">&quot;semi-open&quot;</span>) <span class="co"># only self-intersections</span></a>
-<a class="sourceLine" id="cb21-10" title="10"><span class="co">## although coordinates are longitude/latitude, st_intersects assumes that they are planar</span></a>
+<a class="sourceLine" id="cb21-9" title="9"><span class="kw">sf_use_s2</span>(<span class="ot">TRUE</span>)</a>
+<a class="sourceLine" id="cb21-10" title="10"><span class="kw">st_intersects</span>(nc[<span class="dv">1</span><span class="op">:</span><span class="dv">3</span>,], nc[<span class="dv">1</span><span class="op">:</span><span class="dv">3</span>,], <span class="dt">model =</span> <span class="st">&quot;semi-open&quot;</span>) <span class="co"># only self-intersections</span></a>
 <a class="sourceLine" id="cb21-11" title="11"><span class="co">## Sparse geometry binary predicate list of length 3, where the predicate</span></a>
 <a class="sourceLine" id="cb21-12" title="12"><span class="co">## was `intersects&#39;</span></a>
-<a class="sourceLine" id="cb21-13" title="13"><span class="co">##  1: 1, 2</span></a>
-<a class="sourceLine" id="cb21-14" title="14"><span class="co">##  2: 1, 2, 3</span></a>
-<a class="sourceLine" id="cb21-15" title="15"><span class="co">##  3: 2, 3</span></a></code></pre></div>
+<a class="sourceLine" id="cb21-13" title="13"><span class="co">##  1: 1</span></a>
+<a class="sourceLine" id="cb21-14" title="14"><span class="co">##  2: 2</span></a>
+<a class="sourceLine" id="cb21-15" title="15"><span class="co">##  3: 3</span></a></code></pre></div>
 </div>
 <div id="transformations" class="section level1">
 <h1>Transformations</h1>
@@ -546,32 +547,32 @@ In st_voronoi.sfc(st_geometry(x), st_sfc(envelope), dTolerance,  :
 <a class="sourceLine" id="cb23-4" title="4">  uk_buffer_sf =<span class="st"> </span><span class="kw">st_buffer</span>(uk_projected, <span class="dt">dist =</span> <span class="dv">20000</span>)</a>
 <a class="sourceLine" id="cb23-5" title="5">})</a>
 <a class="sourceLine" id="cb23-6" title="6"><span class="co">##    user  system elapsed </span></a>
-<a class="sourceLine" id="cb23-7" title="7"><span class="co">##   0.047   0.000   0.047</span></a>
+<a class="sourceLine" id="cb23-7" title="7"><span class="co">##   0.050   0.000   0.051</span></a>
 <a class="sourceLine" id="cb23-8" title="8"><span class="co"># sf way with few than the 30 segments in the buffer</span></a>
 <a class="sourceLine" id="cb23-9" title="9"><span class="kw">system.time</span>({</a>
 <a class="sourceLine" id="cb23-10" title="10">  uk_projected =<span class="st"> </span><span class="kw">st_transform</span>(uk_sfc, <span class="dv">27700</span>)</a>
 <a class="sourceLine" id="cb23-11" title="11">  uk_buffer_sf2 =<span class="st"> </span><span class="kw">st_buffer</span>(uk_projected, <span class="dt">dist =</span> <span class="dv">20000</span>, <span class="dt">nQuadSegs =</span> <span class="dv">4</span>)</a>
 <a class="sourceLine" id="cb23-12" title="12">})</a>
 <a class="sourceLine" id="cb23-13" title="13"><span class="co">##    user  system elapsed </span></a>
-<a class="sourceLine" id="cb23-14" title="14"><span class="co">##   0.036   0.004   0.040</span></a>
+<a class="sourceLine" id="cb23-14" title="14"><span class="co">##   0.026   0.000   0.026</span></a>
 <a class="sourceLine" id="cb23-15" title="15"><span class="co"># s2 with default cell size</span></a>
 <a class="sourceLine" id="cb23-16" title="16"><span class="kw">system.time</span>({</a>
 <a class="sourceLine" id="cb23-17" title="17">  uk_buffer =<span class="st"> </span><span class="kw">s2_buffer_cells</span>(uk, <span class="dt">distance =</span> <span class="dv">20000</span>)</a>
 <a class="sourceLine" id="cb23-18" title="18">})</a>
 <a class="sourceLine" id="cb23-19" title="19"><span class="co">##    user  system elapsed </span></a>
-<a class="sourceLine" id="cb23-20" title="20"><span class="co">##   0.034   0.000   0.034</span></a>
+<a class="sourceLine" id="cb23-20" title="20"><span class="co">##   0.035   0.000   0.035</span></a>
 <a class="sourceLine" id="cb23-21" title="21"><span class="co"># s2 with 10000 cells</span></a>
 <a class="sourceLine" id="cb23-22" title="22"><span class="kw">system.time</span>({</a>
 <a class="sourceLine" id="cb23-23" title="23">  uk_buffer2 =<span class="st"> </span><span class="kw">s2_buffer_cells</span>(uk, <span class="dt">distance =</span> <span class="dv">20000</span>, <span class="dt">max_cells =</span> <span class="dv">10000</span>)</a>
 <a class="sourceLine" id="cb23-24" title="24">})</a>
 <a class="sourceLine" id="cb23-25" title="25"><span class="co">##    user  system elapsed </span></a>
-<a class="sourceLine" id="cb23-26" title="26"><span class="co">##   0.268   0.000   0.268</span></a>
+<a class="sourceLine" id="cb23-26" title="26"><span class="co">##    0.26    0.00    0.26</span></a>
 <a class="sourceLine" id="cb23-27" title="27"><span class="co"># s2 with 100 cells</span></a>
 <a class="sourceLine" id="cb23-28" title="28"><span class="kw">system.time</span>({</a>
 <a class="sourceLine" id="cb23-29" title="29">  uk_buffer2 =<span class="st"> </span><span class="kw">s2_buffer_cells</span>(uk, <span class="dt">distance =</span> <span class="dv">20000</span>, <span class="dt">max_cells =</span> <span class="dv">100</span>)</a>
 <a class="sourceLine" id="cb23-30" title="30">})</a>
 <a class="sourceLine" id="cb23-31" title="31"><span class="co">##    user  system elapsed </span></a>
-<a class="sourceLine" id="cb23-32" title="32"><span class="co">##   0.006   0.000   0.005</span></a></code></pre></div>
+<a class="sourceLine" id="cb23-32" title="32"><span class="co">##   0.005   0.000   0.005</span></a></code></pre></div>
 <p>The result of the previous benchmarks emphasise the point that there are trade-offs between geographic resolution and computational resources, something that web developers working on geographic services such as Google Maps understand well. In this case the default setting of 1000 cells, which runs slightly faster than the default transform -&gt; buffer workflow, is probably appropriate given the low resolution of the input geometry representing the UK.</p>
 </div>
 <div id="st_buffer-or-st_is_within_distance" class="section level2">
