@@ -81,6 +81,11 @@ Transform or convert coordinates of simple feature
 \details{
 Transforms coordinates of object to new projection. 
 Features that cannot be transformed are returned as empty geometries.
+Transforms using the \code{pipeline=} argument may fail if there is
+ambiguity in the axis order of the specified coordinate reference system;
+if you need the traditional GIS order, use \code{"OGC:CRS84"}, not
+\code{"EPSG:4326"}. Extra care is needed with the ESRI Shapefile format,
+because WKT1 does not store axis order unambigiously.
 
 The \code{st_transform} method for \code{sfg} objects assumes that the CRS of the object is available as an attribute of that name.
 
@@ -116,12 +121,13 @@ library(units)
 set_units(st_area(st_transform(nc[1,], 2264)), m^2)
 st_transform(structure(p1, proj4string = "+init=epsg:4326"), "+init=epsg:3857")
 st_wrap_dateline(st_sfc(st_linestring(rbind(c(-179,0),c(179,0))), crs = 4326))
-library(maps)
-wrld <- st_as_sf(maps::map("world", fill = TRUE, plot = FALSE))
-wrld_wrap <- st_wrap_dateline(wrld, options = c("WRAPDATELINE=YES", "DATELINEOFFSET=180"),
+if (require(maps, quietly = TRUE)) {
+ wrld <- st_as_sf(maps::map("world", fill = TRUE, plot = FALSE))
+ wrld_wrap <- st_wrap_dateline(wrld, options = c("WRAPDATELINE=YES", "DATELINEOFFSET=180"),
    quiet = TRUE)
-wrld_moll <- st_transform(wrld_wrap, "+proj=moll")
-plot(st_geometry(wrld_moll), col = "transparent")
+ wrld_moll <- st_transform(wrld_wrap, "+proj=moll")
+ plot(st_geometry(wrld_moll), col = "transparent")
+}
 sf_proj_info("datum")
 }
 \seealso{

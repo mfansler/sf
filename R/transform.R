@@ -56,6 +56,11 @@ sanity_check = function(x) {
 #' @param check logical; if \code{TRUE}, perform a sanity check on resulting polygons
 #' @details Transforms coordinates of object to new projection. 
 #' Features that cannot be transformed are returned as empty geometries.
+#' Transforms using the \code{pipeline=} argument may fail if there is
+#' ambiguity in the axis order of the specified coordinate reference system;
+#' if you need the traditional GIS order, use \code{"OGC:CRS84"}, not
+#' \code{"EPSG:4326"}. Extra care is needed with the ESRI Shapefile format,
+#' because WKT1 does not store axis order unambigiously.
 #'
 #' @seealso Projecting simple feature geometries 
 #' to projections not supported by GDAL may be done by 
@@ -162,12 +167,13 @@ st_wrap_dateline = function(x, options, quiet) UseMethod("st_wrap_dateline")
 #' @export
 #' @examples
 #' st_wrap_dateline(st_sfc(st_linestring(rbind(c(-179,0),c(179,0))), crs = 4326))
-#' library(maps)
-#' wrld <- st_as_sf(maps::map("world", fill = TRUE, plot = FALSE))
-#' wrld_wrap <- st_wrap_dateline(wrld, options = c("WRAPDATELINE=YES", "DATELINEOFFSET=180"),
+#' if (require(maps, quietly = TRUE)) {
+#'  wrld <- st_as_sf(maps::map("world", fill = TRUE, plot = FALSE))
+#'  wrld_wrap <- st_wrap_dateline(wrld, options = c("WRAPDATELINE=YES", "DATELINEOFFSET=180"),
 #'    quiet = TRUE)
-#' wrld_moll <- st_transform(wrld_wrap, "+proj=moll")
-#' plot(st_geometry(wrld_moll), col = "transparent")
+#'  wrld_moll <- st_transform(wrld_wrap, "+proj=moll")
+#'  plot(st_geometry(wrld_moll), col = "transparent")
+#' }
 #' @details For a discussion of using \code{options}, see \url{https://github.com/r-spatial/sf/issues/280} and \url{https://github.com/r-spatial/sf/issues/541}
 st_wrap_dateline.sfc = function(x, options = "WRAPDATELINE=YES", quiet = TRUE) {
 	if (is.na(st_crs(x)))

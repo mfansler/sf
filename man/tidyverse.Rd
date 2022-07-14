@@ -2,6 +2,7 @@
 % Please edit documentation in R/tidyverse.R, R/join.R
 \name{tidyverse}
 \alias{tidyverse}
+\alias{dplyr_reconstruct.sf}
 \alias{filter.sf}
 \alias{arrange.sf}
 \alias{group_by.sf}
@@ -16,6 +17,8 @@
 \alias{summarise}
 \alias{distinct.sf}
 \alias{gather.sf}
+\alias{pivot_longer.sf}
+\alias{pivot_wider.sf}
 \alias{spread.sf}
 \alias{sample_n.sf}
 \alias{sample_frac.sf}
@@ -32,6 +35,8 @@
 \alias{anti_join.sf}
 \title{Tidyverse methods for sf objects (remove .sf suffix!)}
 \usage{
+dplyr_reconstruct.sf(data, template)
+
 filter.sf(.data, ..., .dots)
 
 arrange.sf(.data, ..., .dots)
@@ -64,6 +69,38 @@ gather.sf(
   na.rm = FALSE,
   convert = FALSE,
   factor_key = FALSE
+)
+
+pivot_longer.sf(
+  data,
+  cols,
+  names_to = "name",
+  names_prefix = NULL,
+  names_sep = NULL,
+  names_pattern = NULL,
+  names_ptypes = NULL,
+  names_transform = NULL,
+  names_repair = "check_unique",
+  values_to = "value",
+  values_drop_na = FALSE,
+  values_ptypes = NULL,
+  values_transform = NULL,
+  ...
+)
+
+pivot_wider.sf(
+  data,
+  id_cols = NULL,
+  names_from,
+  names_prefix = "",
+  names_sep = "_",
+  names_glue = NULL,
+  names_sort = FALSE,
+  names_repair = "check_unique",
+  values_from,
+  values_fill = NULL,
+  values_fn = NULL,
+  ...
 )
 
 spread.sf(
@@ -119,6 +156,10 @@ semi_join.sf(x, y, by = NULL, copy = FALSE, suffix = c(".x", ".y"), ...)
 anti_join.sf(x, y, by = NULL, copy = FALSE, suffix = c(".x", ".y"), ...)
 }
 \arguments{
+\item{data}{see original function docs}
+
+\item{template}{see original function docs}
+
 \item{.data}{data object of class \link{sf}}
 
 \item{...}{other arguments}
@@ -137,8 +178,6 @@ more details.}
 
 \item{.keep_all}{see corresponding function in dplyr}
 
-\item{data}{see original function docs}
-
 \item{key}{see original function docs}
 
 \item{value}{see original function docs}
@@ -148,6 +187,44 @@ more details.}
 \item{convert}{see \link[tidyr]{separate_rows}}
 
 \item{factor_key}{see original function docs}
+
+\item{cols}{see original function docs}
+
+\item{names_to}{see original function docs}
+
+\item{names_prefix}{see original function docs}
+
+\item{names_sep}{see original function docs}
+
+\item{names_pattern}{see original function docs}
+
+\item{names_ptypes}{see original function docs}
+
+\item{names_transform}{see original function docs}
+
+\item{names_repair}{see original function docs}
+
+\item{values_to}{see original function docs}
+
+\item{values_drop_na}{see original function docs}
+
+\item{values_ptypes}{see original function docs}
+
+\item{values_transform}{see original function docs}
+
+\item{id_cols}{see original function docs}
+
+\item{names_from}{see original function docs}
+
+\item{names_glue}{see original function docs}
+
+\item{names_sort}{see original function docs}
+
+\item{values_from}{see original function docs}
+
+\item{values_fill}{see original function docs}
+
+\item{values_fn}{see original function docs}
 
 \item{fill}{see original function docs}
 
@@ -224,41 +301,70 @@ In case \code{do_union} is \code{FALSE}, \code{summarise} will simply combine ge
 \code{nest} assumes that a simple feature geometry list-column was among the columns that were nested.
 }
 \examples{
-library(dplyr)
-nc = st_read(system.file("shape/nc.shp", package="sf"))
-nc \%>\% filter(AREA > .1) \%>\% plot()
+if (require(dplyr, quietly = TRUE)) {
+ nc = read_sf(system.file("shape/nc.shp", package="sf"))
+ nc \%>\% filter(AREA > .1) \%>\% plot()
+ # plot 10 smallest counties in grey:
+ st_geometry(nc) \%>\% plot()
+ nc \%>\% select(AREA) \%>\% arrange(AREA) \%>\% slice(1:10) \%>\% plot(add = TRUE, col = 'grey')
+ title("the ten counties with smallest area")
+ nc2 <- nc \%>\% mutate(area10 = AREA/10)
+ nc \%>\% slice(1:2)
+}
 # plot 10 smallest counties in grey:
-st_geometry(nc) \%>\% plot()
-nc \%>\% select(AREA) \%>\% arrange(AREA) \%>\% slice(1:10) \%>\% plot(add = TRUE, col = 'grey')
-title("the ten counties with smallest area")
-nc$area_cl = cut(nc$AREA, c(0, .1, .12, .15, .25))
-nc \%>\% group_by(area_cl) \%>\% class()
-nc2 <- nc \%>\% mutate(area10 = AREA/10)
-nc \%>\% transmute(AREA = AREA/10, geometry = geometry) \%>\% class()
-nc \%>\% transmute(AREA = AREA/10) \%>\% class()
-nc \%>\% select(SID74, SID79) \%>\% names()
-nc \%>\% select(SID74, SID79, geometry) \%>\% names()
-nc \%>\% select(SID74, SID79) \%>\% class()
-nc \%>\% select(SID74, SID79, geometry) \%>\% class()
-nc2 <- nc \%>\% rename(area = AREA)
-nc \%>\% slice(1:2)
-nc$area_cl = cut(nc$AREA, c(0, .1, .12, .15, .25))
-nc.g <- nc \%>\% group_by(area_cl)
-nc.g \%>\% summarise(mean(AREA))
-nc.g \%>\% summarise(mean(AREA)) \%>\% plot(col = grey(3:6 / 7))
-nc \%>\% as.data.frame \%>\% summarise(mean(AREA))
-nc[c(1:100, 1:10), ] \%>\% distinct() \%>\% nrow()
-library(tidyr)
-nc \%>\% select(SID74, SID79) \%>\% gather("VAR", "SID", -geometry) \%>\% summary()
-library(tidyr)
-nc$row = 1:100 # needed for spread to work
-nc \%>\% select(SID74, SID79, geometry, row) \%>\%
+if (require(dplyr, quietly = TRUE)) {
+ st_geometry(nc) \%>\% plot()
+ nc \%>\% select(AREA) \%>\% arrange(AREA) \%>\% slice(1:10) \%>\% plot(add = TRUE, col = 'grey')
+ title("the ten counties with smallest area")
+}
+if (require(dplyr, quietly = TRUE)) {
+ nc$area_cl = cut(nc$AREA, c(0, .1, .12, .15, .25))
+ nc \%>\% group_by(area_cl) \%>\% class()
+}
+if (require(dplyr, quietly = TRUE)) {
+ nc2 <- nc \%>\% mutate(area10 = AREA/10)
+}
+if (require(dplyr, quietly = TRUE)) {
+ nc \%>\% transmute(AREA = AREA/10, geometry = geometry) \%>\% class()
+ nc \%>\% transmute(AREA = AREA/10) \%>\% class()
+}
+if (require(dplyr, quietly = TRUE)) {
+ nc \%>\% select(SID74, SID79) \%>\% names()
+ nc \%>\% select(SID74, SID79, geometry) \%>\% names()
+ nc \%>\% select(SID74, SID79) \%>\% class()
+ nc \%>\% select(SID74, SID79, geometry) \%>\% class()
+}
+if (require(dplyr, quietly = TRUE)) {
+ nc2 <- nc \%>\% rename(area = AREA)
+}
+if (require(dplyr, quietly = TRUE)) {
+ nc \%>\% slice(1:2)
+}
+if (require(dplyr, quietly = TRUE)) {
+ nc$area_cl = cut(nc$AREA, c(0, .1, .12, .15, .25))
+ nc.g <- nc \%>\% group_by(area_cl)
+ nc.g \%>\% summarise(mean(AREA))
+ nc.g \%>\% summarise(mean(AREA)) \%>\% plot(col = grey(3:6 / 7))
+ nc \%>\% as.data.frame \%>\% summarise(mean(AREA))
+}
+if (require(dplyr, quietly = TRUE)) {
+ nc[c(1:100, 1:10), ] \%>\% distinct() \%>\% nrow()
+}
+if (require(tidyr, quietly = TRUE) && require(dplyr, quietly = TRUE)) {
+ nc \%>\% select(SID74, SID79) \%>\% gather("VAR", "SID", -geometry) \%>\% summary()
+}
+if (require(tidyr, quietly = TRUE) && require(dplyr, quietly = TRUE)) {
+ nc$row = 1:100 # needed for spread to work
+ nc \%>\% select(SID74, SID79, geometry, row) \%>\%
 	gather("VAR", "SID", -geometry, -row) \%>\%
 	spread(VAR, SID) \%>\% head()
-storms.sf = st_as_sf(storms, coords = c("long", "lat"), crs = 4326)
-x <- storms.sf \%>\% group_by(name, year) \%>\% nest
-trs = lapply(x$data, function(tr) st_cast(st_combine(tr), "LINESTRING")[[1]]) \%>\%
+}
+if (require(tidyr, quietly = TRUE) && require(dplyr, quietly = TRUE)) {
+ storms.sf = st_as_sf(storms, coords = c("long", "lat"), crs = 4326)
+ x <- storms.sf \%>\% group_by(name, year) \%>\% nest
+ trs = lapply(x$data, function(tr) st_cast(st_combine(tr), "LINESTRING")[[1]]) \%>\%
     st_sfc(crs = 4326)
-trs.sf = st_sf(x[,1:2], trs)
-plot(trs.sf["year"], axes = TRUE)
+ trs.sf = st_sf(x[,1:2], trs)
+ plot(trs.sf["year"], axes = TRUE)
+}
 }

@@ -43,22 +43,42 @@ gdal_write = function(x, ..., file, driver = "GTiff", options = character(0), ty
 		from = c(0, 0) # nocov end
 	} else {
 		mat = x[[1]]
+		dm = dim(mat)
+		if (is.factor(mat)) {
+			rgba = NULL
+			ex = attr(mat, "exclude")
+			if (is.null(ex))
+				lev = c("", levels(mat)) # add "" for value 0: R factors start at 1
+			else {
+				if (any(ex)) {
+					lev = vector("character", length(ex)) # fills with ""
+					lev[!ex] = levels(mat)
+					rgba = if (!is.null(co <- attr(mat, "rgba"))) {
+						n = length(ex)
+						coltab = cbind(rep(0., n), rep(0, n), rep(0, n), rep(255, n))
+						coltab[!ex,] = co
+						coltab 
+					}
+					values = which(!ex) - 1
+					mat = values[as.numeric(mat)]
+				} else
+					lev = levels(mat)
+			}
+			mat = structure(mat, class = NULL, levels = lev, dim = dm, rgba = rgba)
+		}
 		only_create = FALSE # write x too
 		if (! update) {
 			if (!all(from == 0))
 				stop("cannot write sub-rasters only")
-			if (!all(dims == dim(mat)))
+			if (!all(dims == dm))
 				stop("dimensions don't match")
 		}
-		dm = dim(mat)
 		dim(mat) = c(dm[1], prod(dm[-1])) # flatten to 2-D matrix
 	}
 	if (length(dims) == 2)
 		dims = c(dims, 1) # one band
-	else { # add band descriptions?
-		if (is.character(d[[3]]$values))
-			attr(mat, "descriptions") = d[[3]]$values
-	}
+	else if (is.character(d[[3]]$values)) # add band descriptions?
+		attr(mat, "descriptions") = d[[3]]$values
 
 	CPL_write_gdal(mat, file, driver, options, type, dims, from, geotransform,
 		st_crs(x)[[2]], as.double(NA_value), create = !update, only_create = only_create)
@@ -212,8 +232,7 @@ gdal_metadata = function(file, domain_item = character(0), options = character(0
 split_strings = function(md, split = "=") {
 	splt = strsplit(md, split)
 	lst = lapply(splt, function(x) if (length(x) <= 1) NA_character_ else x[[2]])
-	structure(lst, names = sapply(splt, function(x) x[[1]]))
-	structure(lst, class = "gdal_metadata")
+	structure(lst, names = sapply(splt, function(x) x[[1]]), class = "gdal_metadata")
 }
 
 #' @param name logical; retrieve name of subdataset? If \code{FALSE}, retrieve description
@@ -340,3 +359,22 @@ gdal_create = function(f, nxy, values, crs, xlim, ylim) {
 	CPL_create(as.character(f), as.integer(nxy), as.double(values), crs$wkt, as.double(xlim), as.double(ylim))
 }
 
+#' add or remove overviews to/from a raster image
+#'
+#' add or remove overviews to/from a raster image
+#' @param file character; file name
+#' @param overviews integer; overview levels
+#' @param method character; method to create overview; one of: nearest, average, rms, gauss, cubic, cubicspline, lanczos, average_mp, average_magphase, mode
+#' @param layers integer; layers to create overviews for (default: all)
+#' @param options character; dataset opening options
+#' @param clean logical; if \code{TRUE} only remove overviews, do not add
+#' @param read_only logical; if \code{TRUE}, add overviews to another file with extension \code{.ovr} added to \code{file}
+#' @return \code{TRUE}, invisibly, on success
+#' @seealso \link{gdal_utils} for access to other gdal utilities that have a C API
+#' @export
+gdal_addo = function(file, overviews = c(2,4,8,16), method = "NEAREST", layers = integer(0), 
+					 options = character(0), clean = FALSE, read_only = FALSE) {
+	stopifnot(length(method) == 1, is.character(method), is.numeric(overviews))
+	invisible(CPL_gdaladdo(file, method, as.integer(overviews), as.integer(layers), as.character(options), 
+				 as.logical(clean)[1], as.logical(read_only)[1]))
+}

@@ -1,6 +1,6 @@
 
-R version 4.1.2 (2021-11-01) -- "Bird Hippie"
-Copyright (C) 2021 The R Foundation for Statistical Computing
+R version 4.2.0 (2022-04-22) -- "Vigorous Calisthenics"
+Copyright (C) 2022 The R Foundation for Statistical Computing
 Platform: x86_64-pc-linux-gnu (64-bit)
 
 R is free software and comes with ABSOLUTELY NO WARRANTY.
@@ -27,7 +27,7 @@ Type 'q()' to quit R.
 Error in gdal_metadata(tif, "wrongDomain") : 
   domain_item[1] not found in available metadata domains
 > gdal_metadata(tif, c("IMAGE_STRUCTURE"))
-[[1]]
+$INTERLEAVE
 [1] "BAND"
 
 attr(,"class")
@@ -35,7 +35,7 @@ attr(,"class")
 > try(length(gdal_metadata(tif, c("DERIVED_SUBDATASETS")))) # fails on Fedora 26
 [1] 2
 > 
-> if (require(stars)) {
+> if (require(stars, quietly = TRUE)) {
 +   tif = system.file("tif/geomatrix.tif", package = "sf")
 +   r = read_stars(tif)
 +   d = (st_dimensions(r))
@@ -91,8 +91,6 @@ attr(,"class")
 +     }
 +   }
 + }
-Loading required package: stars
-Loading required package: abind
 [1] TRUE
 [1] TRUE
 Geometry set for 20 features 
@@ -263,4 +261,4 @@ First 10 features:
 > 
 > proc.time()
    user  system elapsed 
-  1.652   0.091   1.736 
+  2.299   0.112   2.402 

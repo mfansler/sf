@@ -1,24 +1,29 @@
 context("sf: write")
 
+if (require(sp, quietly = TRUE)) {
 data(meuse, package = "sp")
 meuse <- st_as_sf(meuse, coords = c("x", "y"), crs = 28992)
 drvs <- st_drivers()$name[sapply(st_drivers()$name,
 	function(x) is_driver_can(x, operation = "write"))] %>% as.character()
+}
 
 test_that("sf can write to all writable formats", {
+	skip_if_not_installed("sp")
 	# write to all formats available
 	tf <- tempfile()
 	excluded_drivers = c("gps", # requires options
 				"gtm", # doesn't handle attributes
 				"nc",  # requires appropriate datum -> but writes in 4326, see below
 				"map", # doesn't support points
-				"ods") # generates valgrind error
+				"ods", # generates valgrind error
+				"gpx") # needs specially named attributes
     for (ext in setdiff(names(extension_map[extension_map %in% drvs]), excluded_drivers)) {
         expect_silent(st_write(meuse, paste0(tf, ".", ext), quiet = TRUE))
 	}
 })
 
 test_that("sf can write to netcdf", {
+	skip_if_not_installed("sp")
 	skip_on_os("windows")
 	tf <- tempfile()
 	if ("netCDF" %in% drvs) {
@@ -27,6 +32,7 @@ test_that("sf can write to netcdf", {
 })
 
 test_that("sf can write units (#264)", {
+	skip_if_not_installed("sp")
     tf <- tempfile(fileext = ".gpkg")
     meuse[["length"]] <- meuse[["cadmium"]]
     units(meuse$length) <- units::as_units("km")
@@ -89,6 +95,7 @@ test_that("delete and update work (#304)", {
 })
 
 test_that("layer is deleted when fails to create features (#549)", {
+	skip_if_not_installed("sp")
 	skip_on_os("mac")
 	shp <- tempfile(fileext = ".shp")
 	x <- st_sf(a = 1:2, geom = st_sfc(st_point(0:1), st_multipoint(matrix(1:4,2,2))))

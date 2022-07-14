@@ -20,7 +20,7 @@
 #' @param lty line type
 #' @param lwd line width
 #' @param col color for plotting features; if \code{length(col)} does not equal 1 or \code{nrow(x)}, a warning is emitted that colors will be recycled. Specifying \code{col} suppresses plotting the legend key.
-#' @param border color of polygon border(s)
+#' @param border color of polygon border(s); using \code{NA} hides them
 #' @param add logical; add to current plot? Note that when using \code{add=TRUE}, you may have to set \code{reset=FALSE} in the first plot command.
 #' @param type plot type: 'p' for points, 'l' for lines, 'b' for both
 #' @param reset logical; if \code{FALSE}, keep the plot in a mode that allows adding further map elements; if \code{TRUE} restore original mode after plotting \code{sf} objects with attributes; see details.
@@ -405,10 +405,11 @@ p_bind = function(lst) {
 
 #' @name plot
 #' @param rule see \link[graphics]{polypath}; for \code{winding}, exterior ring direction should be opposite that of the holes; with \code{evenodd}, plotting is robust against misspecified ring directions
+#' @param xpd see \link[graphics]{par}; sets polygon clipping strategy; only implemented for POLYGON and MULTIPOLYGON
 #' @export
 plot.sfc_POLYGON = function(x, y, ..., lty = 1, lwd = 1, col = NA, cex = 1, pch = NA, border = 1,
-		add = FALSE, rule = "evenodd") {
-# FIXME: take care of lend, ljoin, xpd, and lmitre
+		add = FALSE, rule = "evenodd", xpd = par("xpd")) {
+# FIXME: take care of lend, ljoin, and lmitre
 	stopifnot(missing(y))
 	if (! add)
 		plot_sf(x, ...)
@@ -419,7 +420,7 @@ plot.sfc_POLYGON = function(x, y, ..., lty = 1, lwd = 1, col = NA, cex = 1, pch 
 	non_empty = ! st_is_empty(x)
 	lapply(seq_along(x), function(i)
 	  if (non_empty[i])
-		polypath(p_bind(x[[i]]), border = border[i], lty = lty[i], lwd = lwd[i], col = col[i], rule = rule))
+		polypath(p_bind(x[[i]]), border = border[i], lty = lty[i], lwd = lwd[i], col = col[i], rule = rule, xpd = xpd))
 #	if (any(!is.na(pch))) {
 #		pch = rep(pch, length.out = length(x))
 #		cex = rep(cex, length.out = length(x))
@@ -433,8 +434,9 @@ plot.sfc_POLYGON = function(x, y, ..., lty = 1, lwd = 1, col = NA, cex = 1, pch 
 #' @name plot
 #' @method plot sfc_MULTIPOLYGON
 #' @export
-plot.sfc_MULTIPOLYGON = function(x, y, ..., lty = 1, lwd = 1, col = NA, border = 1, add = FALSE, rule = "evenodd") {
-# FIXME: take care of lend, ljoin, xpd, and lmitre
+plot.sfc_MULTIPOLYGON = function(x, y, ..., lty = 1, lwd = 1, col = NA, border = 1, add = FALSE, 
+		rule = "evenodd", xpd = par("xpd")) {
+# FIXME: take care of lend, ljoin, and lmitre
 	stopifnot(missing(y))
 	if (! add)
 		plot_sf(x, ...)
@@ -446,7 +448,7 @@ plot.sfc_MULTIPOLYGON = function(x, y, ..., lty = 1, lwd = 1, col = NA, border =
 	lapply(seq_along(x), function(i)
 	  if (non_empty[i])
 		lapply(x[[i]], function(L)
-			polypath(p_bind(L), border = border[i], lty = lty[i], lwd = lwd[i], col = col[i], rule = rule)))
+			polypath(p_bind(L), border = border[i], lty = lty[i], lwd = lwd[i], col = col[i], rule = rule, xpd = xpd)))
 	invisible(NULL)
 }
 

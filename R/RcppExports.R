@@ -113,6 +113,10 @@ CPL_gdalinfo <- function(obj, options, oo) {
     .Call('_sf_CPL_gdalinfo', PACKAGE = 'sf', obj, options, oo)
 }
 
+CPL_gdaladdo <- function(obj, method, overviews, bands, oo, clean = FALSE, read_only = FALSE) {
+    .Call('_sf_CPL_gdaladdo', PACKAGE = 'sf', obj, method, overviews, bands, oo, clean, read_only)
+}
+
 CPL_gdalwarp <- function(src, dst, options, oo, doo, quiet = TRUE, overwrite = FALSE) {
     .Call('_sf_CPL_gdalwarp', PACKAGE = 'sf', src, dst, options, oo, doo, quiet, overwrite)
 }
@@ -173,8 +177,8 @@ CPL_geos_is_valid_reason <- function(sfc) {
     .Call('_sf_CPL_geos_is_valid_reason', PACKAGE = 'sf', sfc)
 }
 
-CPL_geos_make_valid <- function(sfc) {
-    .Call('_sf_CPL_geos_make_valid', PACKAGE = 'sf', sfc)
+CPL_geos_make_valid <- function(sfc, method, keep_collapsed) {
+    .Call('_sf_CPL_geos_make_valid', PACKAGE = 'sf', sfc, method, keep_collapsed)
 }
 
 CPL_geos_is_valid <- function(sfc, NA_on_exception = TRUE) {
@@ -323,6 +327,18 @@ CPL_proj_info <- function(type) {
 
 CPL_xy2sfc <- function(cc, dim, to_points, which) {
     .Call('_sf_CPL_xy2sfc', PACKAGE = 'sf', cc, dim, to_points, which)
+}
+
+sfc_is_null <- function(sfc) {
+    .Call('_sf_sfc_is_null', PACKAGE = 'sf', sfc)
+}
+
+sfc_unique_sfg_dims_and_types <- function(sfc) {
+    .Call('_sf_sfc_unique_sfg_dims_and_types', PACKAGE = 'sf', sfc)
+}
+
+sfc_is_empty <- function(sfc) {
+    .Call('_sf_sfc_is_empty', PACKAGE = 'sf', sfc)
 }
 
 points_cpp <- function(pts, gdim = "XY") {
