@@ -38,7 +38,8 @@ pathGrob <- NULL
 		}
 	} # nocov end
 	load_gdal() 
-	assign(".sf.use_s2", Sys.getenv("_SF_USE_S2") != "false", envir=.sf_cache)
+	if ((s2 <- Sys.getenv("_SF_USE_S2")) != "")
+		options(sf_use_s2 = s2 != "false")
 }
 
 .onUnload = function(libname, pkgname) {
@@ -49,7 +50,8 @@ pathGrob <- NULL
 	m = paste0("Linking to GEOS ", strsplit(CPL_geos_version(TRUE), "-")[[1]][1],
 		", GDAL ", CPL_gdal_version(), ", PROJ ", CPL_proj_version(),
 		"; sf_use_s2() is ", sf_use_s2())
-	packageStartupMessage(m)
+	m = strwrap(m, width = getOption("width"))
+	packageStartupMessage(paste0(m, collapse = "\n"))
 	if (length(grep(CPL_geos_version(FALSE, TRUE), CPL_geos_version(TRUE))) != 1) { # nocov start
 		packageStartupMessage("WARNING: different compile-time and runtime versions for GEOS found:")
 		packageStartupMessage(paste(

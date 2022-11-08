@@ -1,5 +1,5 @@
 Package: sf
-Version: 1.0-8
+Version: 1.0-9
 Title: Simple Features for R
 Authors@R: 
     c(person(given = "Edzer",
@@ -57,7 +57,7 @@ URL: https://r-spatial.github.io/sf/, https://github.com/r-spatial/sf/
 BugReports: https://github.com/r-spatial/sf/issues/
 Depends: methods, R (>= 3.3.0)
 Imports: classInt (>= 0.4-1), DBI (>= 0.8), graphics, grDevices, grid,
-        magrittr, Rcpp (>= 0.12.18), s2 (>= 1.0.7), stats, tools, units
+        magrittr, Rcpp (>= 0.12.18), s2 (>= 1.1.0), stats, tools, units
         (>= 0.7-0), utils
 Suggests: blob, covr, dplyr (>= 0.8-3), ggplot2, knitr, lwgeom (>=
         0.2-1), maps, mapview, Matrix, microbenchmark, odbc, pbapply,
@@ -70,7 +70,7 @@ Suggests: blob, covr, dplyr (>= 0.8-3), ggplot2, knitr, lwgeom (>=
 LinkingTo: Rcpp
 VignetteBuilder: knitr
 Encoding: UTF-8
-RoxygenNote: 7.1.2
+RoxygenNote: 7.2.1
 SystemRequirements: C++11, GDAL (>= 2.0.1), GEOS (>= 3.4.0), PROJ (>=
         4.8.0), sqlite3
 Collate: 'RcppExports.R' 'init.R' 'crs.R' 'bbox.R' 'read.R' 'db.R'
@@ -83,9 +83,9 @@ Collate: 'RcppExports.R' 'init.R' 'crs.R' 'bbox.R' 'read.R' 'db.R'
         'spatstat.R' 'stars.R' 'crop.R' 'gdal_utils.R' 'nearest.R'
         'normalize.R' 'defunct.R' 'z_range.R' 'm_range.R'
         'shift_longitude.R' 'make_grid.R' 's2.R' 'terra.R'
-        'geos-overlayng.R'
+        'geos-overlayng.R' 'break_antimeridian.R'
 NeedsCompilation: yes
-Packaged: 2022-07-13 13:42:53 UTC; edzer
+Packaged: 2022-11-08 08:12:50 UTC; edzer
 Author: Edzer Pebesma [aut, cre] (<https://orcid.org/0000-0001-8049-7069>),
   Roger Bivand [ctb] (<https://orcid.org/0000-0003-2392-6140>),
   Etienne Racine [ctb],
@@ -101,4 +101,4 @@ Author: Edzer Pebesma [aut, cre] (<https://orcid.org/0000-0001-8049-7069>),
   Dewey Dunnington [ctb] (<https://orcid.org/0000-0002-9415-4582>)
 Maintainer: Edzer Pebesma <edzer.pebesma@uni-muenster.de>
 Repository: CRAN
-Date/Publication: 2022-07-14 11:40:02 UTC
+Date/Publication: 2022-11-08 14:20:02 UTC

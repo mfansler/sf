@@ -1,16 +1,23 @@
-FROM ubuntu:20.04
+FROM ubuntu:22.04
 # minimal docker file to get sp and sf running on ubunty 16.04 image,
 # using gdal/geos/proj from ppa:ubuntugis/ubuntugis-unstable
+# 
 
 MAINTAINER "edzerpebesma" edzer.pebesma@uni-muenster.de
 
-RUN apt-get update && apt-get install -y software-properties-common
-RUN add-apt-repository ppa:ubuntugis/ubuntugis-unstable
+# update indices
+RUN apt-get update -qq
+# install two helper packages we need
+RUN apt-get install -y --no-install-recommends software-properties-common dirmngr
+# add the signing key (by Michael Rutter) for these repos
+# To verify key, run gpg --show-keys /etc/apt/trusted.gpg.d/cran_ubuntu_key.asc
+# Fingerprint: E298A3A825C0D65DFD57CBB651716619E084DAB9
 
-RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E298A3A825C0D65DFD57CBB651716619E084DAB9
-RUN echo "deb https://cloud.r-project.org/bin/linux/ubuntu focal-cran40/" >> /etc/apt/sources.list
+RUN export DEBIAN_FRONTEND=noninteractive; apt-get install -y wget
+RUN wget -qO- https://cloud.r-project.org/bin/linux/ubuntu/marutter_pubkey.asc | tee -a /etc/apt/trusted.gpg.d/cran_ubuntu_key.asc
+# add the R 4.0 repo from CRAN -- adjust 'focal' to 'groovy' or 'bionic' as needed
 
-RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E084DAB9
+RUN add-apt-repository "deb https://cloud.r-project.org/bin/linux/ubuntu $(lsb_release -cs)-cran40/"
 
 RUN apt-get update
 RUN apt-get upgrade -y
@@ -28,7 +35,8 @@ RUN export DEBIAN_FRONTEND=noninteractive; apt-get -y update \
 	libproj-dev \
 	libudunits2-dev
 
-RUN apt-get install -y texinfo \
+RUN export DEBIAN_FRONTEND=noninteractive; apt-get install -y \
+       texinfo \
        texlive-base \
        texlive-extra-utils \
        texlive-fonts-extra \
@@ -109,6 +117,12 @@ RUN Rscript -e 'install.packages(c("RPostgres"), dependencies = FALSE, repos = "
 
 RUN cd sf && git pull
 RUN PROJ_LIB=/usr/share/proj R CMD INSTALL sf_*tar.gz
-RUN PROJ_LIB=/usr/share/proj R CMD check --as-cran sf_*tar.gz
+
+RUN Rscript -e 'install.packages(c("RPostgreSQL"), dependencies = FALSE, repos = "https://cloud.r-project.org")'
+RUN cd sf && git  pull
+# RUN R CMD INSTALL sf
+# RUN R -e 'library(sf);library(testthat);source("sf/tests/testthat/test_tm.R")'
+RUN R CMD build --no-build-vignettes sf
+RUN _R_CHECK_FORCE_SUGGESTS_=false PROJ_LIB=/usr/share/proj R CMD check --as-cran sf_*tar.gz
 
 CMD ["/bin/bash"]

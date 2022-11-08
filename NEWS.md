@@ -1,3 +1,19 @@
+# version 1.0-9
+
+* adjust for changes how R-devel handles `POSIXlt`; #2028
+
+* add `st_break_antimeridian()`; #1983, #1991 by Roger Bivand
+
+* add `Fibonacci` as a spatial sampling type in `st_sample()`
+
+* use the global `options("sf_use_s2")` to determine whether to use s2, rather than a value in a local environment; #1977
+
+* fix utils `mdiminfo` and `mdimtranslate` in `gdal_utils()` 
+
+* extend arguments of `gdal_read_mdim()` needed by `stars::read_mdim()` if `stars` >= 0.5-7; add `gdal_write_mdim()`
+
+* add `drop_na()` method for `sf` objects; #1975
+
 # version 1.0-8
 
 * `st_drop_geometry.default()` returns `x` unmodified;

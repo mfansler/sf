@@ -21,6 +21,7 @@
 #' @details \code{st_buffer} computes a buffer around this geometry/each geometry. If any of \code{endCapStyle},
 #' \code{joinStyle}, or \code{mitreLimit} are set to non-default values ('ROUND', 'ROUND', 1.0 respectively) then
 #' the underlying 'buffer with style' GEOS function is used.
+#' If a negative buffer returns empty polygons instead of shrinking, set st_use_s2() to FALSE
 #' See \href{https://postgis.net/docs/ST_Buffer.html}{postgis.net/docs/ST_Buffer.html} for details.
 #' @examples
 #'
@@ -95,7 +96,7 @@ st_buffer.sfc = function(x, dist, nQuadSegs = 30,
 	if (longlat && sf_use_s2()) {
 #		if (!missing(nQuadSegs) || !missing(endCapStyle) || !missing(joinStyle) ||
 #				!missing(mitreLimit) || !missing(singleSide))
-#			warning("all bufer style parameters are ignored; set st_use_s2(FALSE) first to use them")
+#			warning("all buffer style parameters are ignored; set st_use_s2(FALSE) first to use them")
 		if (inherits(dist, "units")) {
 			if (!inherits(try(units(dist) <- as_units("rad"), silent = TRUE), "try-error"))
 				return(st_as_sfc(s2::s2_buffer_cells(x, dist, radius = 1, ...),
@@ -170,6 +171,7 @@ st_boundary.sf = function(x) {
 #' @name geos_unary
 #' @export
 #' @details \code{st_convex_hull} creates the convex hull of a set of points
+#' @seealso [grDevices::chull()] for a more efficient algorithm for calculating the convex hull
 #' @examples
 #' nc = st_read(system.file("shape/nc.shp", package="sf"))
 #' nc_g = st_geometry(nc)
