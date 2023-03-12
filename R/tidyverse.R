@@ -25,7 +25,11 @@ dplyr_reconstruct.sf = function(data, template) {
 
 group_split.sf <- function(.tbl, ..., .keep = TRUE) {
 	 class(.tbl) = setdiff(class(.tbl), "sf")
-     lapply(dplyr::group_split(.tbl, ..., .keep = .keep), st_as_sf)
+	 if (inherits(.tbl, "rowwise_df")) {
+	 	lapply(dplyr::group_split(.tbl, ...), st_as_sf)
+	 } else {
+	 	lapply(dplyr::group_split(.tbl, ..., .keep = .keep), st_as_sf)	
+	 }
 }
 
 #' Tidyverse methods for sf objects (remove .sf suffix!)
@@ -567,10 +571,10 @@ unnest.sf = function(data, ..., .preserve = NULL) {
 #' @details see \link[pillar]{type_sum}
 type_sum.sfc <- function(x, ...) {
 	cls = substring(class(x)[1], 5)
-	if (is.na(st_is_longlat(x)))
-		cls
-	else
-		paste0(cls, " [", enc2utf8(as.character(units(st_crs(x, parameters = TRUE)$ud_unit))), "]")
+	u = st_crs(x)$ud_unit
+	if (!is.null(u)) # add [units]:
+		cls = paste0(cls, " [", enc2utf8(as.character(units(u))), "]")
+	cls
 }
 
 #' Summarize simple feature item for tibble

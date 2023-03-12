@@ -1,3 +1,35 @@
+# version 1.0-10
+
+* `gdal_utils()` has a `config_options` argument to set further GDAL options, just like `st_write()`; #2003
+
+* fix slow writing of logical vectors in `st_write()`; #1409; #1689
+
+* `st_drivers()` has an argument `regex` to filter on driver (long) name; #2090
+
+* drop C++11 as a system requirement
+
+* `c.sfc()` (and, consequently, `dplyr::bind_rows()`) gives an error if components have different CRS; #1884
+
+* data imported from `maps` are associated with the Clark 1866 ellipsoid; #2080
+
+* fix importing legacy `SpatialPolygon` objects without comments; #2063, #2069, https://github.com/rstudio/leaflet/issues/833
+
+* `st_read()` no longer errors on mixes of `XY` and `XYZ` geometries; #2046 #1592
+
+* in `plot.sf()`, when numeric `breaks` are given a legend key is always plotted; #2065
+
+* `st_crs()$axes` returns a `data.frame` with axes properties (name, orientation, conversion factor) when GDAL >= 3.0.0
+
+* clean up unit handling for geometry measures (length, area, distance) and crs; 
+
+* `st_crs(x)$ud_unit` returns `NULL` if units are unknown; #2049
+
+* `st_write()` substitutes an `NA` crs with `ENGCRS["Undefined Cartesian SRS with unknown unit"]`; #2049, #2054
+
+* `st_can_transform()` checks whether a transformation between two crs exists; see https://github.com/dieghernan/tidyterra/issues/64; #2049
+
+* the matrix returned by `st_coordinates()` has no row names, to reduce output size
+
 # version 1.0-9
 
 * adjust for changes how R-devel handles `POSIXlt`; #2028

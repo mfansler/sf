@@ -284,8 +284,9 @@ List get_rat(GDALRasterAttributeTable *tbl) {
 
 // [[Rcpp::export]]
 List CPL_read_gdal(CharacterVector fname, CharacterVector options, CharacterVector driver,
-		bool read_data, NumericVector NA_value, List RasterIO_parameters) {
-// reads and returns data set metadata, and if read_data is true, adds data array
+		bool read_data, NumericVector NA_value, List RasterIO_parameters, double max_cells) {
+// reads and returns data set metadata, and adds data array if read_data is true, or less 
+// than max_cells are to be read
 	GDALDataset *poDataset = (GDALDataset *) GDALOpenEx(fname[0], GA_ReadOnly,
 		driver.size() ? create_options(driver).data() : NULL,
 		options.size() ? create_options(options).data() : NULL,
@@ -409,6 +410,9 @@ List CPL_read_gdal(CharacterVector fname, CharacterVector options, CharacterVect
 	int nBufXSize = get_from_list(RasterIO_parameters, "nBufXSize", nXSize);
 	int nBufYSize = get_from_list(RasterIO_parameters, "nBufYSize", nYSize);
 
+	if (max_cells > 0) 
+		read_data = (bands.size() * nBufXSize * nBufYSize) < max_cells;
+
 	// resampling method:
 	GDALRasterIOExtraArg resample;
 	INIT_RASTERIO_EXTRA_ARG(resample);
@@ -457,7 +461,8 @@ List CPL_read_gdal(CharacterVector fname, CharacterVector options, CharacterVect
 		_["ranges"] = ranges,
 		_["blocksizes"] = blocksizes,
 		_["descriptions"] = descriptions,
-		_["default_geotransform"] = default_geotransform
+		_["default_geotransform"] = default_geotransform,
+		_["proxy"] = LogicalVector::create(!read_data)
 	);
 	if (read_data) {
 		ReturnList.attr("data") = read_gdal_data(poDataset, nodatavalue, nXOff, nYOff,
@@ -486,7 +491,7 @@ List CPL_read_gdal(CharacterVector fname, CharacterVector options, CharacterVect
 // [[Rcpp::export]]
 void CPL_write_gdal(NumericMatrix x, CharacterVector fname, CharacterVector driver,
 		CharacterVector options, CharacterVector Type, IntegerVector dims, IntegerVector from,
-		NumericVector gt, CharacterVector p4s, NumericVector na_val,
+		NumericVector gt, CharacterVector p4s, NumericVector na_val, NumericVector scale_offset,
 		bool create = true, bool only_create = false) {
 
 	// figure out driver:
@@ -507,6 +512,10 @@ void CPL_write_gdal(NumericMatrix x, CharacterVector fname, CharacterVector driv
 		stop("Type should have length 1"); // #nocov
 	if (Type[0] == "Byte")
 		eType = GDT_Byte; // #nocov
+#if GDAL_VERSION_NUM >= 3070000
+	else if (Type[0] == "Int8")
+		eType = GDT_Int8; // #nocov
+#endif
 	else if (Type[0] == "UInt16")
 		eType = GDT_UInt16; // #nocov
 	else if (Type[0] == "Int16")
@@ -531,6 +540,9 @@ void CPL_write_gdal(NumericMatrix x, CharacterVector fname, CharacterVector driv
 		stop("from should have length two"); // #nocov
 	if (na_val.length() != 1)
 		stop("na_val should have length 1"); // #nocov
+	if (scale_offset.size() != 2)
+		stop("scale_offset should have length 2");
+	bool set_scale_offset = (scale_offset[0] != 1.0 || scale_offset[1] != 0.0);
 
 	// create dataset:
 	GDALDataset *poDstDS;
@@ -575,6 +587,15 @@ void CPL_write_gdal(NumericMatrix x, CharacterVector fname, CharacterVector driv
 					warning("SetNoDataValue not supported by driver"); // #nocov
 					break; // #nocov
 				}
+			}
+		}
+		// set scale_offset
+		if (set_scale_offset) {
+			for (int band = 1; band <= dims(2); band++) { // unlike x & y, band is 1-based
+				GDALRasterBand *poBand = poDstDS->GetRasterBand( band );
+				if (poBand->SetScale(scale_offset[0]) != CE_None ||
+						poBand->SetOffset(scale_offset[1]) != CE_None)
+					warning("writing scale and/or offset failed (not supported by driver)"); // #nocov
 			}
 		}
 		// set descriptions:
@@ -628,6 +649,14 @@ void CPL_write_gdal(NumericMatrix x, CharacterVector fname, CharacterVector driv
 				x(_, i) = nv;
 			}
 			checkUserInterrupt();
+		}
+		if (set_scale_offset) {
+			for (int i = 0; i < x.ncol(); i++) {
+				NumericVector nv = x(_, i);
+				for (int j = 0; j < x.nrow(); j++)
+					nv[j] = (nv[j] - scale_offset[1]) / scale_offset[0]; // raw = (units - offset) / scale
+				x(_, i) = nv;
+			}
 		}
 		// write values:
 		// write the whole lot:

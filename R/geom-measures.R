@@ -45,11 +45,10 @@ st_area.sfc = function(x, ...) {
 		}
 	} else {
 		a = CPL_area(x) # ignores units: units of coordinates
-		if (! is.na(st_crs(x))) {
-			units(a) = crs_parameters(st_crs(x))$ud_unit^2 # coord units
-			if (!is.null(to_m <- st_crs(x)$to_meter))
-				a = a * to_m^2
-		}
+		if (!is.null(u <- st_crs(x)$ud_unit))
+			units(a) = u^2 # coord units
+		if (!is.null(to_m <- st_crs(x)$to_meter) && !is.na(to_m) && !inherits(a, "units"))
+			a = set_units(a * to_m^2, "m^2", mode = "standard")
 		a
 	}
 }
@@ -94,12 +93,10 @@ st_length = function(x, ...) {
 	} else {
 		ret = CPL_length(x)
 		ret[is.nan(ret)] = NA
-		crs = st_crs(x)
-		if (! is.na(crs)) {
-			units(ret) = crs_parameters(crs)$ud_unit
-			if (!is.null(to_m <- st_crs(x)$to_meter))
-				ret = ret * to_m
-		}
+		if (!is.null(u <- st_crs(x)$ud_unit))
+			units(ret) = u
+		if (!is.null(to_m <- st_crs(x)$to_meter) && !is.na(to_m) && !inherits(ret, "units"))
+			ret = set_units(ret * to_m, "m", mode = "standard")
 		ret
 	}
 }
@@ -118,11 +115,11 @@ message_longlat = function(caller) {
 #' @param y object of class \code{sf}, \code{sfc} or \code{sfg}, defaults to \code{x}
 #' @param ... passed on to \link[s2]{s2_distance} or \link[s2]{s2_distance_matrix}
 #' @param dist_fun deprecated
-#' @param by_element logical; if \code{TRUE}, return a vector with distance between the first elements of \code{x} and \code{y}, the second, etc. if \code{FALSE}, return the dense matrix with all pairwise distances.
+#' @param by_element logical; if \code{TRUE}, return a vector with distance between the first elements of \code{x} and \code{y}, the second, etc; an error is raised if \code{x} and \code{y} are not the same length. If \code{FALSE}, return the dense matrix with all pairwise distances.
 #' @param which character; for Cartesian coordinates only: one of \code{Euclidean}, \code{Hausdorff} or \code{Frechet}; for geodetic coordinates, great circle distances are computed; see details
 #' @param par for \code{which} equal to \code{Hausdorff} or \code{Frechet}, optionally use a value between 0 and 1 to densify the geometry
 #' @param tolerance ignored if \code{st_is_longlat(x)} is \code{FALSE}; otherwise, if set to a positive value, the first distance smaller than \code{tolerance} will be returned, and true distance may be smaller; this may speed up computation. In meters, or a \code{units} object convertible to meters.
-#' @return If \code{by_element} is \code{FALSE} \code{st_distance} returns a dense numeric matrix of dimension length(x) by length(y); otherwise it returns a numeric vector of length \code{x} or \code{y}, the shorter one being recycled. Distances involving empty geometries are \code{NA}.
+#' @return If \code{by_element} is \code{FALSE} \code{st_distance} returns a dense numeric matrix of dimension length(x) by length(y); otherwise it returns a numeric vector the same length as \code{x} and \code{y} with an error raised if the lengths of \code{x} and \code{y} are unequal. Distances involving empty geometries are \code{NA}.
 #' @details great circle distance calculations use by default spherical distances (\link[s2]{s2_distance} or \link[s2]{s2_distance_matrix}); if \code{sf_use_s2()} is \code{FALSE}, ellipsoidal distances are computed using \link[lwgeom]{st_geod_distance} which uses function \code{geod_inverse} from GeographicLib (part of PROJ); see Karney, Charles FF, 2013, Algorithms for geodesics, Journal of Geodesy 87(1), 43--55
 #' @examples
 #' p = st_sfc(st_point(c(0,0)), st_point(c(0,1)), st_point(c(0,2)))
@@ -165,7 +162,7 @@ st_distance = function(x, y, ..., dist_fun, by_element = FALSE,
 					lwgeom::st_geod_distance(st_sfc(x, crs = crs), st_sfc(y, crs = crs),
 						tolerance = tolerance)
 				d = mapply(dist_ll, x, y, tolerance = tolerance)
-				units(d) = units(crs_parameters(st_crs(x))$SemiMajor)
+				units(d) = units(st_crs(x)$SemiMajor)
 				d
 			} else
 				lwgeom::st_geod_distance(x, y, tolerance)
@@ -175,10 +172,7 @@ st_distance = function(x, y, ..., dist_fun, by_element = FALSE,
 				if (inherits(x, "sfc_POINT") && inherits(y, "sfc_POINT") && which == "Euclidean") {
 					xc = st_coordinates(x)
 					yc = st_coordinates(y)
-					d = sqrt((xc[,1] - yc[,1])^2 + (xc[,2] - yc[,2])^2)
-					if (! is.na(st_crs(x)))
-						units(d) = crs_parameters(st_crs(x))$ud_unit
-					d
+					sqrt((xc[,1] - yc[,1])^2 + (xc[,2] - yc[,2])^2)
 				} else
 					mapply(st_distance, x, y, by_element = FALSE, which = which, par = par)
 			} else {
@@ -187,8 +181,8 @@ st_distance = function(x, y, ..., dist_fun, by_element = FALSE,
 				else
 					CPL_geos_dist(x, y, which, par)
 			}
-		if (! is.na(st_crs(x)))
-			units(d) = crs_parameters(st_crs(x))$ud_unit
+		if (!is.null(u <- st_crs(x)$ud_unit))
+			units(d) = u
 		d
 	}
 }

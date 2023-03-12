@@ -103,6 +103,18 @@ static void __countErrorHandler(const char *fmt, void *userdata) {
 }
 
 static void __emptyNoticeHandler(const char *fmt, void *userdata) { }
+
+static void __checkInterruptFn(void*) {
+	R_CheckUserInterrupt();
+}
+
+
+static void __checkInterrupt() {
+	// Adapted from Rcpp/Interrupt.h
+	if (!R_ToplevelExec(__checkInterruptFn, nullptr)) {
+		GEOS_interruptRequest();
+	}
+}
 // #nocov end
 
 GEOSContextHandle_t CPL_geos_init(void) {
@@ -110,6 +122,8 @@ GEOSContextHandle_t CPL_geos_init(void) {
 	GEOSContextHandle_t ctxt = GEOS_init_r();
 	GEOSContext_setNoticeHandler_r(ctxt, __warningHandler);
 	GEOSContext_setErrorHandler_r(ctxt, __errorHandler);
+	GEOS_interruptRegisterCallback(__checkInterrupt);
+
 	return ctxt;
 #else
 	return initGEOS_r((GEOSMessageHandler) __warningHandler, (GEOSMessageHandler) __errorHandler);
@@ -267,7 +281,8 @@ log_fn which_geom_fn(const std::string op) {
 		return GEOSCovers_r;
 	else if (op == "covered_by")
 		return GEOSCoveredBy_r;
-	Rcpp::stop("wrong value for op"); // unlikely to happen unless user wants to #nocov
+	Rcpp::stop("wrong value for op: please report as issue"); // unlikely to happen unless user wants to #nocov
+	return GEOSCoveredBy_r; // never reached; satisfy -Wreturn-type #nocov
 }
 
 log_prfn which_prep_geom_fn(const std::string op) {
@@ -294,6 +309,7 @@ log_prfn which_prep_geom_fn(const std::string op) {
 	else if (op == "covered_by")
 		return GEOSPreparedCoveredBy_r;
 	Rcpp::stop("wrong value for op"); // unlikely to happen unless user wants to #nocov
+	return GEOSPreparedCoveredBy_r; // never reached; satisfy -Wreturn-type #nocov
 }
 
 /*
@@ -1066,10 +1082,12 @@ Rcpp::List CPL_geos_nearest_points(Rcpp::List sfc0, Rcpp::List sfc1, bool pairwi
 		out = sfc_from_geometry(hGEOSCtxt, ls, dim);
 	} else {
 		std::vector<GeomPtr> ls(sfc0.size() * sfc1.size());
-		for (size_t i = 0; i < gmv0.size(); i++)
+		for (size_t i = 0; i < gmv0.size(); i++) {
 			for (size_t j = 0; j < gmv1.size(); j++)
 				ls[(i * gmv1.size()) + j] =
 					geos_ptr(GEOSGeom_createLineString_r(hGEOSCtxt, GEOSNearestPoints_r(hGEOSCtxt, gmv0[i].get(), gmv1[j].get())), hGEOSCtxt); // converts as LINESTRING
+			R_CheckUserInterrupt();
+		}
 		out = sfc_from_geometry(hGEOSCtxt, ls, dim);
 	}
 

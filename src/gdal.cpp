@@ -112,6 +112,24 @@ void handle_error(OGRErr err) {
 	}
 }
 
+void set_config_options(Rcpp::CharacterVector ConfigOptions) {
+	if (ConfigOptions.size()) {
+		if (ConfigOptions.attr("names") == R_NilValue)
+			Rcpp::stop("config_options should be a character vector with names, as in c(key=\"value\")");
+		Rcpp::CharacterVector names = ConfigOptions.attr("names");
+		for (int i = 0; i < ConfigOptions.size(); i++)
+			CPLSetConfigOption(names[i], ConfigOptions[i]);
+	}
+}
+
+void unset_config_options(Rcpp::CharacterVector ConfigOptions) {
+	if (ConfigOptions.size()) {
+		Rcpp::CharacterVector names = ConfigOptions.attr("names");
+		for (int i = 0; i < ConfigOptions.size(); i++)
+			CPLSetConfigOption(names[i], NULL);
+	}
+}
+
 Rcpp::CharacterVector wkt_from_spatial_reference(const OGRSpatialReference *srs) { // FIXME: add options?
 	char *cp;
 #if GDAL_VERSION_MAJOR >= 3
@@ -185,8 +203,8 @@ Rcpp::List CPL_crs_parameters(Rcpp::List crs) {
 	if (srs == NULL)
 		Rcpp::stop("crs not found"); // #nocov
 
-	Rcpp::List out(15);
-	Rcpp::CharacterVector names(15);
+	Rcpp::List out(16);
+	Rcpp::CharacterVector names(16);
 	out(0) = Rcpp::NumericVector::create(srs->GetSemiMajor());
 	names(0) = "SemiMajor";
 
@@ -292,6 +310,39 @@ Rcpp::List CPL_crs_parameters(Rcpp::List crs) {
 	} else
 		out(14) = Rcpp::CharacterVector::create(NA_STRING);
 	names(14) = "srid";
+
+	// axes, 15:
+#if GDAL_VERSION_NUM > 3000000
+	int ac = srs->GetAxesCount();
+#else
+	int ac = 0;
+#endif
+	Rcpp::CharacterVector nms(ac);
+	Rcpp::IntegerVector orientation(ac);
+	Rcpp::NumericVector convfactor(ac);
+#if GDAL_VERSION_NUM > 3000000
+	for (int i = 0; i < ac; i++) {
+		double pdfConvFactor;
+		OGRAxisOrientation peOrientation;
+		const char *ret = srs->GetAxis(srs->IsGeographic() ? "GEOGCS" : "PROJCS", 
+						i, &peOrientation, &pdfConvFactor);
+		if (ret != NULL) {
+			nms[i] = ret;
+			orientation[i] = (int) peOrientation;
+			convfactor[i] = pdfConvFactor;
+		} else {
+			nms[i] = NA_STRING;
+			orientation[i] = NA_INTEGER;
+			convfactor[i] = NA_REAL;
+		}
+	}
+#endif
+	Rcpp::DataFrame axes_df = Rcpp::DataFrame::create(
+		Rcpp::_["name"] = nms,
+		Rcpp::_["orientation"] = orientation,
+		Rcpp::_["convfactor"] = convfactor);
+	out(15) = axes_df;
+	names(15) = "axes";
 
 	set_error_handler();
 
@@ -527,6 +578,28 @@ Rcpp::List CPL_curve_to_linestring(Rcpp::List sfc) { // need to pass more parame
 	}
 	return sfc_from_ogr(out, true); // destroys out;
 } // #nocov end
+
+// [[Rcpp::export]]
+Rcpp::LogicalVector CPL_can_transform(Rcpp::List src, Rcpp::List dst) {
+	if (src.size() != 2 || dst.size() != 2)
+		return false;
+	Rcpp::CharacterVector src_cv = src[0];
+	Rcpp::CharacterVector dst_cv = dst[0];
+	if (Rcpp::CharacterVector::is_na(src_cv[0]) || Rcpp::CharacterVector::is_na(dst_cv[0]))
+		return false;
+	OGRSpatialReference *srs_src = OGRSrs_from_crs(src);
+	OGRSpatialReference *srs_dst = OGRSrs_from_crs(dst);
+	unset_error_handler();
+	OGRCoordinateTransformation *ct = OGRCreateCoordinateTransformation(srs_src, srs_dst);
+	set_error_handler();
+	delete srs_src;
+	delete srs_dst;
+	if (ct) {
+		ct->DestroyCT(ct);
+		return true;
+	} else
+		return false;
+}
 
 // [[Rcpp::export]]
 Rcpp::List CPL_transform(Rcpp::List sfc, Rcpp::List crs,

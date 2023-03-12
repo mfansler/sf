@@ -143,6 +143,18 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// CPL_can_transform
+Rcpp::LogicalVector CPL_can_transform(Rcpp::List src, Rcpp::List dst);
+RcppExport SEXP _sf_CPL_can_transform(SEXP srcSEXP, SEXP dstSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::List >::type src(srcSEXP);
+    Rcpp::traits::input_parameter< Rcpp::List >::type dst(dstSEXP);
+    rcpp_result_gen = Rcpp::wrap(CPL_can_transform(src, dst));
+    return rcpp_result_gen;
+END_RCPP
+}
 // CPL_transform
 Rcpp::List CPL_transform(Rcpp::List sfc, Rcpp::List crs, Rcpp::NumericVector AOI, Rcpp::CharacterVector pipeline, bool reverse, double desired_accuracy, bool allow_ballpark);
 RcppExport SEXP _sf_CPL_transform(SEXP sfcSEXP, SEXP crsSEXP, SEXP AOISEXP, SEXP pipelineSEXP, SEXP reverseSEXP, SEXP desired_accuracySEXP, SEXP allow_ballparkSEXP) {
@@ -334,21 +346,22 @@ BEGIN_RCPP
 END_RCPP
 }
 // CPL_gdalinfo
-Rcpp::CharacterVector CPL_gdalinfo(Rcpp::CharacterVector obj, Rcpp::CharacterVector options, Rcpp::CharacterVector oo);
-RcppExport SEXP _sf_CPL_gdalinfo(SEXP objSEXP, SEXP optionsSEXP, SEXP ooSEXP) {
+Rcpp::CharacterVector CPL_gdalinfo(Rcpp::CharacterVector obj, Rcpp::CharacterVector options, Rcpp::CharacterVector oo, Rcpp::CharacterVector co);
+RcppExport SEXP _sf_CPL_gdalinfo(SEXP objSEXP, SEXP optionsSEXP, SEXP ooSEXP, SEXP coSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< Rcpp::CharacterVector >::type obj(objSEXP);
     Rcpp::traits::input_parameter< Rcpp::CharacterVector >::type options(optionsSEXP);
     Rcpp::traits::input_parameter< Rcpp::CharacterVector >::type oo(ooSEXP);
-    rcpp_result_gen = Rcpp::wrap(CPL_gdalinfo(obj, options, oo));
+    Rcpp::traits::input_parameter< Rcpp::CharacterVector >::type co(coSEXP);
+    rcpp_result_gen = Rcpp::wrap(CPL_gdalinfo(obj, options, oo, co));
     return rcpp_result_gen;
 END_RCPP
 }
 // CPL_gdaladdo
-Rcpp::LogicalVector CPL_gdaladdo(Rcpp::CharacterVector obj, Rcpp::CharacterVector method, Rcpp::IntegerVector overviews, Rcpp::IntegerVector bands, Rcpp::CharacterVector oo, bool clean, bool read_only);
-RcppExport SEXP _sf_CPL_gdaladdo(SEXP objSEXP, SEXP methodSEXP, SEXP overviewsSEXP, SEXP bandsSEXP, SEXP ooSEXP, SEXP cleanSEXP, SEXP read_onlySEXP) {
+Rcpp::LogicalVector CPL_gdaladdo(Rcpp::CharacterVector obj, Rcpp::CharacterVector method, Rcpp::IntegerVector overviews, Rcpp::IntegerVector bands, Rcpp::CharacterVector oo, Rcpp::CharacterVector co, bool clean, bool read_only);
+RcppExport SEXP _sf_CPL_gdaladdo(SEXP objSEXP, SEXP methodSEXP, SEXP overviewsSEXP, SEXP bandsSEXP, SEXP ooSEXP, SEXP coSEXP, SEXP cleanSEXP, SEXP read_onlySEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -357,15 +370,16 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type overviews(overviewsSEXP);
     Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type bands(bandsSEXP);
     Rcpp::traits::input_parameter< Rcpp::CharacterVector >::type oo(ooSEXP);
+    Rcpp::traits::input_parameter< Rcpp::CharacterVector >::type co(coSEXP);
     Rcpp::traits::input_parameter< bool >::type clean(cleanSEXP);
     Rcpp::traits::input_parameter< bool >::type read_only(read_onlySEXP);
-    rcpp_result_gen = Rcpp::wrap(CPL_gdaladdo(obj, method, overviews, bands, oo, clean, read_only));
+    rcpp_result_gen = Rcpp::wrap(CPL_gdaladdo(obj, method, overviews, bands, oo, co, clean, read_only));
     return rcpp_result_gen;
 END_RCPP
 }
 // CPL_gdalwarp
-Rcpp::LogicalVector CPL_gdalwarp(Rcpp::CharacterVector src, Rcpp::CharacterVector dst, Rcpp::CharacterVector options, Rcpp::CharacterVector oo, Rcpp::CharacterVector doo, bool quiet, bool overwrite);
-RcppExport SEXP _sf_CPL_gdalwarp(SEXP srcSEXP, SEXP dstSEXP, SEXP optionsSEXP, SEXP ooSEXP, SEXP dooSEXP, SEXP quietSEXP, SEXP overwriteSEXP) {
+Rcpp::LogicalVector CPL_gdalwarp(Rcpp::CharacterVector src, Rcpp::CharacterVector dst, Rcpp::CharacterVector options, Rcpp::CharacterVector oo, Rcpp::CharacterVector doo, Rcpp::CharacterVector co, bool quiet, bool overwrite);
+RcppExport SEXP _sf_CPL_gdalwarp(SEXP srcSEXP, SEXP dstSEXP, SEXP optionsSEXP, SEXP ooSEXP, SEXP dooSEXP, SEXP coSEXP, SEXP quietSEXP, SEXP overwriteSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -374,15 +388,16 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< Rcpp::CharacterVector >::type options(optionsSEXP);
     Rcpp::traits::input_parameter< Rcpp::CharacterVector >::type oo(ooSEXP);
     Rcpp::traits::input_parameter< Rcpp::CharacterVector >::type doo(dooSEXP);
+    Rcpp::traits::input_parameter< Rcpp::CharacterVector >::type co(coSEXP);
     Rcpp::traits::input_parameter< bool >::type quiet(quietSEXP);
     Rcpp::traits::input_parameter< bool >::type overwrite(overwriteSEXP);
-    rcpp_result_gen = Rcpp::wrap(CPL_gdalwarp(src, dst, options, oo, doo, quiet, overwrite));
+    rcpp_result_gen = Rcpp::wrap(CPL_gdalwarp(src, dst, options, oo, doo, co, quiet, overwrite));
     return rcpp_result_gen;
 END_RCPP
 }
 // CPL_gdalrasterize
-Rcpp::LogicalVector CPL_gdalrasterize(Rcpp::CharacterVector src, Rcpp::CharacterVector dst, Rcpp::CharacterVector options, Rcpp::CharacterVector oo, Rcpp::CharacterVector doo, bool overwrite, bool quiet);
-RcppExport SEXP _sf_CPL_gdalrasterize(SEXP srcSEXP, SEXP dstSEXP, SEXP optionsSEXP, SEXP ooSEXP, SEXP dooSEXP, SEXP overwriteSEXP, SEXP quietSEXP) {
+Rcpp::LogicalVector CPL_gdalrasterize(Rcpp::CharacterVector src, Rcpp::CharacterVector dst, Rcpp::CharacterVector options, Rcpp::CharacterVector oo, Rcpp::CharacterVector doo, Rcpp::CharacterVector co, bool overwrite, bool quiet);
+RcppExport SEXP _sf_CPL_gdalrasterize(SEXP srcSEXP, SEXP dstSEXP, SEXP optionsSEXP, SEXP ooSEXP, SEXP dooSEXP, SEXP coSEXP, SEXP overwriteSEXP, SEXP quietSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -391,15 +406,16 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< Rcpp::CharacterVector >::type options(optionsSEXP);
     Rcpp::traits::input_parameter< Rcpp::CharacterVector >::type oo(ooSEXP);
     Rcpp::traits::input_parameter< Rcpp::CharacterVector >::type doo(dooSEXP);
+    Rcpp::traits::input_parameter< Rcpp::CharacterVector >::type co(coSEXP);
     Rcpp::traits::input_parameter< bool >::type overwrite(overwriteSEXP);
     Rcpp::traits::input_parameter< bool >::type quiet(quietSEXP);
-    rcpp_result_gen = Rcpp::wrap(CPL_gdalrasterize(src, dst, options, oo, doo, overwrite, quiet));
+    rcpp_result_gen = Rcpp::wrap(CPL_gdalrasterize(src, dst, options, oo, doo, co, overwrite, quiet));
     return rcpp_result_gen;
 END_RCPP
 }
 // CPL_gdaltranslate
-Rcpp::LogicalVector CPL_gdaltranslate(Rcpp::CharacterVector src, Rcpp::CharacterVector dst, Rcpp::CharacterVector options, Rcpp::CharacterVector oo, bool quiet);
-RcppExport SEXP _sf_CPL_gdaltranslate(SEXP srcSEXP, SEXP dstSEXP, SEXP optionsSEXP, SEXP ooSEXP, SEXP quietSEXP) {
+Rcpp::LogicalVector CPL_gdaltranslate(Rcpp::CharacterVector src, Rcpp::CharacterVector dst, Rcpp::CharacterVector options, Rcpp::CharacterVector oo, Rcpp::CharacterVector co, bool quiet);
+RcppExport SEXP _sf_CPL_gdaltranslate(SEXP srcSEXP, SEXP dstSEXP, SEXP optionsSEXP, SEXP ooSEXP, SEXP coSEXP, SEXP quietSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -407,14 +423,15 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< Rcpp::CharacterVector >::type dst(dstSEXP);
     Rcpp::traits::input_parameter< Rcpp::CharacterVector >::type options(optionsSEXP);
     Rcpp::traits::input_parameter< Rcpp::CharacterVector >::type oo(ooSEXP);
+    Rcpp::traits::input_parameter< Rcpp::CharacterVector >::type co(coSEXP);
     Rcpp::traits::input_parameter< bool >::type quiet(quietSEXP);
-    rcpp_result_gen = Rcpp::wrap(CPL_gdaltranslate(src, dst, options, oo, quiet));
+    rcpp_result_gen = Rcpp::wrap(CPL_gdaltranslate(src, dst, options, oo, co, quiet));
     return rcpp_result_gen;
 END_RCPP
 }
 // CPL_gdalvectortranslate
-Rcpp::LogicalVector CPL_gdalvectortranslate(Rcpp::CharacterVector src, Rcpp::CharacterVector dst, Rcpp::CharacterVector options, Rcpp::CharacterVector oo, Rcpp::CharacterVector doo, bool quiet);
-RcppExport SEXP _sf_CPL_gdalvectortranslate(SEXP srcSEXP, SEXP dstSEXP, SEXP optionsSEXP, SEXP ooSEXP, SEXP dooSEXP, SEXP quietSEXP) {
+Rcpp::LogicalVector CPL_gdalvectortranslate(Rcpp::CharacterVector src, Rcpp::CharacterVector dst, Rcpp::CharacterVector options, Rcpp::CharacterVector oo, Rcpp::CharacterVector doo, Rcpp::CharacterVector co, bool quiet);
+RcppExport SEXP _sf_CPL_gdalvectortranslate(SEXP srcSEXP, SEXP dstSEXP, SEXP optionsSEXP, SEXP ooSEXP, SEXP dooSEXP, SEXP coSEXP, SEXP quietSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -423,14 +440,15 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< Rcpp::CharacterVector >::type options(optionsSEXP);
     Rcpp::traits::input_parameter< Rcpp::CharacterVector >::type oo(ooSEXP);
     Rcpp::traits::input_parameter< Rcpp::CharacterVector >::type doo(dooSEXP);
+    Rcpp::traits::input_parameter< Rcpp::CharacterVector >::type co(coSEXP);
     Rcpp::traits::input_parameter< bool >::type quiet(quietSEXP);
-    rcpp_result_gen = Rcpp::wrap(CPL_gdalvectortranslate(src, dst, options, oo, doo, quiet));
+    rcpp_result_gen = Rcpp::wrap(CPL_gdalvectortranslate(src, dst, options, oo, doo, co, quiet));
     return rcpp_result_gen;
 END_RCPP
 }
 // CPL_gdalbuildvrt
-Rcpp::LogicalVector CPL_gdalbuildvrt(Rcpp::CharacterVector src, Rcpp::CharacterVector dst, Rcpp::CharacterVector options, Rcpp::CharacterVector oo, bool quiet);
-RcppExport SEXP _sf_CPL_gdalbuildvrt(SEXP srcSEXP, SEXP dstSEXP, SEXP optionsSEXP, SEXP ooSEXP, SEXP quietSEXP) {
+Rcpp::LogicalVector CPL_gdalbuildvrt(Rcpp::CharacterVector src, Rcpp::CharacterVector dst, Rcpp::CharacterVector options, Rcpp::CharacterVector oo, Rcpp::CharacterVector co, bool quiet);
+RcppExport SEXP _sf_CPL_gdalbuildvrt(SEXP srcSEXP, SEXP dstSEXP, SEXP optionsSEXP, SEXP ooSEXP, SEXP coSEXP, SEXP quietSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -438,14 +456,15 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< Rcpp::CharacterVector >::type dst(dstSEXP);
     Rcpp::traits::input_parameter< Rcpp::CharacterVector >::type options(optionsSEXP);
     Rcpp::traits::input_parameter< Rcpp::CharacterVector >::type oo(ooSEXP);
+    Rcpp::traits::input_parameter< Rcpp::CharacterVector >::type co(coSEXP);
     Rcpp::traits::input_parameter< bool >::type quiet(quietSEXP);
-    rcpp_result_gen = Rcpp::wrap(CPL_gdalbuildvrt(src, dst, options, oo, quiet));
+    rcpp_result_gen = Rcpp::wrap(CPL_gdalbuildvrt(src, dst, options, oo, co, quiet));
     return rcpp_result_gen;
 END_RCPP
 }
 // CPL_gdaldemprocessing
-Rcpp::LogicalVector CPL_gdaldemprocessing(Rcpp::CharacterVector src, Rcpp::CharacterVector dst, Rcpp::CharacterVector options, Rcpp::CharacterVector processing, Rcpp::CharacterVector colorfilename, Rcpp::CharacterVector oo, bool quiet);
-RcppExport SEXP _sf_CPL_gdaldemprocessing(SEXP srcSEXP, SEXP dstSEXP, SEXP optionsSEXP, SEXP processingSEXP, SEXP colorfilenameSEXP, SEXP ooSEXP, SEXP quietSEXP) {
+Rcpp::LogicalVector CPL_gdaldemprocessing(Rcpp::CharacterVector src, Rcpp::CharacterVector dst, Rcpp::CharacterVector options, Rcpp::CharacterVector processing, Rcpp::CharacterVector colorfilename, Rcpp::CharacterVector oo, Rcpp::CharacterVector co, bool quiet);
+RcppExport SEXP _sf_CPL_gdaldemprocessing(SEXP srcSEXP, SEXP dstSEXP, SEXP optionsSEXP, SEXP processingSEXP, SEXP colorfilenameSEXP, SEXP ooSEXP, SEXP coSEXP, SEXP quietSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -455,14 +474,15 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< Rcpp::CharacterVector >::type processing(processingSEXP);
     Rcpp::traits::input_parameter< Rcpp::CharacterVector >::type colorfilename(colorfilenameSEXP);
     Rcpp::traits::input_parameter< Rcpp::CharacterVector >::type oo(ooSEXP);
+    Rcpp::traits::input_parameter< Rcpp::CharacterVector >::type co(coSEXP);
     Rcpp::traits::input_parameter< bool >::type quiet(quietSEXP);
-    rcpp_result_gen = Rcpp::wrap(CPL_gdaldemprocessing(src, dst, options, processing, colorfilename, oo, quiet));
+    rcpp_result_gen = Rcpp::wrap(CPL_gdaldemprocessing(src, dst, options, processing, colorfilename, oo, co, quiet));
     return rcpp_result_gen;
 END_RCPP
 }
 // CPL_gdalnearblack
-Rcpp::LogicalVector CPL_gdalnearblack(Rcpp::CharacterVector src, Rcpp::CharacterVector dst, Rcpp::CharacterVector options, Rcpp::CharacterVector oo, Rcpp::CharacterVector doo, bool quiet);
-RcppExport SEXP _sf_CPL_gdalnearblack(SEXP srcSEXP, SEXP dstSEXP, SEXP optionsSEXP, SEXP ooSEXP, SEXP dooSEXP, SEXP quietSEXP) {
+Rcpp::LogicalVector CPL_gdalnearblack(Rcpp::CharacterVector src, Rcpp::CharacterVector dst, Rcpp::CharacterVector options, Rcpp::CharacterVector oo, Rcpp::CharacterVector doo, Rcpp::CharacterVector co, bool quiet);
+RcppExport SEXP _sf_CPL_gdalnearblack(SEXP srcSEXP, SEXP dstSEXP, SEXP optionsSEXP, SEXP ooSEXP, SEXP dooSEXP, SEXP coSEXP, SEXP quietSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -471,14 +491,15 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< Rcpp::CharacterVector >::type options(optionsSEXP);
     Rcpp::traits::input_parameter< Rcpp::CharacterVector >::type oo(ooSEXP);
     Rcpp::traits::input_parameter< Rcpp::CharacterVector >::type doo(dooSEXP);
+    Rcpp::traits::input_parameter< Rcpp::CharacterVector >::type co(coSEXP);
     Rcpp::traits::input_parameter< bool >::type quiet(quietSEXP);
-    rcpp_result_gen = Rcpp::wrap(CPL_gdalnearblack(src, dst, options, oo, doo, quiet));
+    rcpp_result_gen = Rcpp::wrap(CPL_gdalnearblack(src, dst, options, oo, doo, co, quiet));
     return rcpp_result_gen;
 END_RCPP
 }
 // CPL_gdalgrid
-Rcpp::LogicalVector CPL_gdalgrid(Rcpp::CharacterVector src, Rcpp::CharacterVector dst, Rcpp::CharacterVector options, Rcpp::CharacterVector oo, bool quiet);
-RcppExport SEXP _sf_CPL_gdalgrid(SEXP srcSEXP, SEXP dstSEXP, SEXP optionsSEXP, SEXP ooSEXP, SEXP quietSEXP) {
+Rcpp::LogicalVector CPL_gdalgrid(Rcpp::CharacterVector src, Rcpp::CharacterVector dst, Rcpp::CharacterVector options, Rcpp::CharacterVector oo, Rcpp::CharacterVector co, bool quiet);
+RcppExport SEXP _sf_CPL_gdalgrid(SEXP srcSEXP, SEXP dstSEXP, SEXP optionsSEXP, SEXP ooSEXP, SEXP coSEXP, SEXP quietSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -486,27 +507,29 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< Rcpp::CharacterVector >::type dst(dstSEXP);
     Rcpp::traits::input_parameter< Rcpp::CharacterVector >::type options(optionsSEXP);
     Rcpp::traits::input_parameter< Rcpp::CharacterVector >::type oo(ooSEXP);
+    Rcpp::traits::input_parameter< Rcpp::CharacterVector >::type co(coSEXP);
     Rcpp::traits::input_parameter< bool >::type quiet(quietSEXP);
-    rcpp_result_gen = Rcpp::wrap(CPL_gdalgrid(src, dst, options, oo, quiet));
+    rcpp_result_gen = Rcpp::wrap(CPL_gdalgrid(src, dst, options, oo, co, quiet));
     return rcpp_result_gen;
 END_RCPP
 }
 // CPL_gdalmdiminfo
-Rcpp::CharacterVector CPL_gdalmdiminfo(Rcpp::CharacterVector obj, Rcpp::CharacterVector options, Rcpp::CharacterVector oo);
-RcppExport SEXP _sf_CPL_gdalmdiminfo(SEXP objSEXP, SEXP optionsSEXP, SEXP ooSEXP) {
+Rcpp::CharacterVector CPL_gdalmdiminfo(Rcpp::CharacterVector obj, Rcpp::CharacterVector options, Rcpp::CharacterVector oo, Rcpp::CharacterVector co);
+RcppExport SEXP _sf_CPL_gdalmdiminfo(SEXP objSEXP, SEXP optionsSEXP, SEXP ooSEXP, SEXP coSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< Rcpp::CharacterVector >::type obj(objSEXP);
     Rcpp::traits::input_parameter< Rcpp::CharacterVector >::type options(optionsSEXP);
     Rcpp::traits::input_parameter< Rcpp::CharacterVector >::type oo(ooSEXP);
-    rcpp_result_gen = Rcpp::wrap(CPL_gdalmdiminfo(obj, options, oo));
+    Rcpp::traits::input_parameter< Rcpp::CharacterVector >::type co(coSEXP);
+    rcpp_result_gen = Rcpp::wrap(CPL_gdalmdiminfo(obj, options, oo, co));
     return rcpp_result_gen;
 END_RCPP
 }
 // CPL_gdalmdimtranslate
-Rcpp::LogicalVector CPL_gdalmdimtranslate(Rcpp::CharacterVector src, Rcpp::CharacterVector dst, Rcpp::CharacterVector options, Rcpp::CharacterVector oo, bool quiet);
-RcppExport SEXP _sf_CPL_gdalmdimtranslate(SEXP srcSEXP, SEXP dstSEXP, SEXP optionsSEXP, SEXP ooSEXP, SEXP quietSEXP) {
+Rcpp::LogicalVector CPL_gdalmdimtranslate(Rcpp::CharacterVector src, Rcpp::CharacterVector dst, Rcpp::CharacterVector options, Rcpp::CharacterVector oo, Rcpp::CharacterVector co, bool quiet);
+RcppExport SEXP _sf_CPL_gdalmdimtranslate(SEXP srcSEXP, SEXP dstSEXP, SEXP optionsSEXP, SEXP ooSEXP, SEXP coSEXP, SEXP quietSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -514,14 +537,15 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< Rcpp::CharacterVector >::type dst(dstSEXP);
     Rcpp::traits::input_parameter< Rcpp::CharacterVector >::type options(optionsSEXP);
     Rcpp::traits::input_parameter< Rcpp::CharacterVector >::type oo(ooSEXP);
+    Rcpp::traits::input_parameter< Rcpp::CharacterVector >::type co(coSEXP);
     Rcpp::traits::input_parameter< bool >::type quiet(quietSEXP);
-    rcpp_result_gen = Rcpp::wrap(CPL_gdalmdimtranslate(src, dst, options, oo, quiet));
+    rcpp_result_gen = Rcpp::wrap(CPL_gdalmdimtranslate(src, dst, options, oo, co, quiet));
     return rcpp_result_gen;
 END_RCPP
 }
 // CPL_gdal_warper
-Rcpp::LogicalVector CPL_gdal_warper(Rcpp::CharacterVector infile, Rcpp::CharacterVector outfile, Rcpp::IntegerVector options, Rcpp::CharacterVector oo, Rcpp::CharacterVector doo, bool quiet);
-RcppExport SEXP _sf_CPL_gdal_warper(SEXP infileSEXP, SEXP outfileSEXP, SEXP optionsSEXP, SEXP ooSEXP, SEXP dooSEXP, SEXP quietSEXP) {
+Rcpp::LogicalVector CPL_gdal_warper(Rcpp::CharacterVector infile, Rcpp::CharacterVector outfile, Rcpp::IntegerVector options, Rcpp::CharacterVector oo, Rcpp::CharacterVector doo, Rcpp::CharacterVector co, bool quiet);
+RcppExport SEXP _sf_CPL_gdal_warper(SEXP infileSEXP, SEXP outfileSEXP, SEXP optionsSEXP, SEXP ooSEXP, SEXP dooSEXP, SEXP coSEXP, SEXP quietSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -530,8 +554,9 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type options(optionsSEXP);
     Rcpp::traits::input_parameter< Rcpp::CharacterVector >::type oo(ooSEXP);
     Rcpp::traits::input_parameter< Rcpp::CharacterVector >::type doo(dooSEXP);
+    Rcpp::traits::input_parameter< Rcpp::CharacterVector >::type co(coSEXP);
     Rcpp::traits::input_parameter< bool >::type quiet(quietSEXP);
-    rcpp_result_gen = Rcpp::wrap(CPL_gdal_warper(infile, outfile, options, oo, doo, quiet));
+    rcpp_result_gen = Rcpp::wrap(CPL_gdal_warper(infile, outfile, options, oo, doo, co, quiet));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -1193,8 +1218,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // CPL_read_gdal
-List CPL_read_gdal(CharacterVector fname, CharacterVector options, CharacterVector driver, bool read_data, NumericVector NA_value, List RasterIO_parameters);
-RcppExport SEXP _sf_CPL_read_gdal(SEXP fnameSEXP, SEXP optionsSEXP, SEXP driverSEXP, SEXP read_dataSEXP, SEXP NA_valueSEXP, SEXP RasterIO_parametersSEXP) {
+List CPL_read_gdal(CharacterVector fname, CharacterVector options, CharacterVector driver, bool read_data, NumericVector NA_value, List RasterIO_parameters, double max_cells);
+RcppExport SEXP _sf_CPL_read_gdal(SEXP fnameSEXP, SEXP optionsSEXP, SEXP driverSEXP, SEXP read_dataSEXP, SEXP NA_valueSEXP, SEXP RasterIO_parametersSEXP, SEXP max_cellsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1204,13 +1229,14 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< bool >::type read_data(read_dataSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type NA_value(NA_valueSEXP);
     Rcpp::traits::input_parameter< List >::type RasterIO_parameters(RasterIO_parametersSEXP);
-    rcpp_result_gen = Rcpp::wrap(CPL_read_gdal(fname, options, driver, read_data, NA_value, RasterIO_parameters));
+    Rcpp::traits::input_parameter< double >::type max_cells(max_cellsSEXP);
+    rcpp_result_gen = Rcpp::wrap(CPL_read_gdal(fname, options, driver, read_data, NA_value, RasterIO_parameters, max_cells));
     return rcpp_result_gen;
 END_RCPP
 }
 // CPL_write_gdal
-void CPL_write_gdal(NumericMatrix x, CharacterVector fname, CharacterVector driver, CharacterVector options, CharacterVector Type, IntegerVector dims, IntegerVector from, NumericVector gt, CharacterVector p4s, NumericVector na_val, bool create, bool only_create);
-RcppExport SEXP _sf_CPL_write_gdal(SEXP xSEXP, SEXP fnameSEXP, SEXP driverSEXP, SEXP optionsSEXP, SEXP TypeSEXP, SEXP dimsSEXP, SEXP fromSEXP, SEXP gtSEXP, SEXP p4sSEXP, SEXP na_valSEXP, SEXP createSEXP, SEXP only_createSEXP) {
+void CPL_write_gdal(NumericMatrix x, CharacterVector fname, CharacterVector driver, CharacterVector options, CharacterVector Type, IntegerVector dims, IntegerVector from, NumericVector gt, CharacterVector p4s, NumericVector na_val, NumericVector scale_offset, bool create, bool only_create);
+RcppExport SEXP _sf_CPL_write_gdal(SEXP xSEXP, SEXP fnameSEXP, SEXP driverSEXP, SEXP optionsSEXP, SEXP TypeSEXP, SEXP dimsSEXP, SEXP fromSEXP, SEXP gtSEXP, SEXP p4sSEXP, SEXP na_valSEXP, SEXP scale_offsetSEXP, SEXP createSEXP, SEXP only_createSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< NumericMatrix >::type x(xSEXP);
@@ -1223,9 +1249,10 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< NumericVector >::type gt(gtSEXP);
     Rcpp::traits::input_parameter< CharacterVector >::type p4s(p4sSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type na_val(na_valSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type scale_offset(scale_offsetSEXP);
     Rcpp::traits::input_parameter< bool >::type create(createSEXP);
     Rcpp::traits::input_parameter< bool >::type only_create(only_createSEXP);
-    CPL_write_gdal(x, fname, driver, options, Type, dims, from, gt, p4s, na_val, create, only_create);
+    CPL_write_gdal(x, fname, driver, options, Type, dims, from, gt, p4s, na_val, scale_offset, create, only_create);
     return R_NilValue;
 END_RCPP
 }
@@ -1384,6 +1411,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_sf_CPL_multisurface_to_multipolygon", (DL_FUNC) &_sf_CPL_multisurface_to_multipolygon, 1},
     {"_sf_CPL_compoundcurve_to_linear", (DL_FUNC) &_sf_CPL_compoundcurve_to_linear, 1},
     {"_sf_CPL_curve_to_linestring", (DL_FUNC) &_sf_CPL_curve_to_linestring, 1},
+    {"_sf_CPL_can_transform", (DL_FUNC) &_sf_CPL_can_transform, 2},
     {"_sf_CPL_transform", (DL_FUNC) &_sf_CPL_transform, 7},
     {"_sf_CPL_wrap_dateline", (DL_FUNC) &_sf_CPL_wrap_dateline, 3},
     {"_sf_CPL_get_gdal_drivers", (DL_FUNC) &_sf_CPL_get_gdal_drivers, 1},
@@ -1399,19 +1427,19 @@ static const R_CallMethodDef CallEntries[] = {
     {"_sf_CPL_gdal_linestring_sample", (DL_FUNC) &_sf_CPL_gdal_linestring_sample, 2},
     {"_sf_CPL_get_layers", (DL_FUNC) &_sf_CPL_get_layers, 3},
     {"_sf_CPL_read_ogr", (DL_FUNC) &_sf_CPL_read_ogr, 14},
-    {"_sf_CPL_gdalinfo", (DL_FUNC) &_sf_CPL_gdalinfo, 3},
-    {"_sf_CPL_gdaladdo", (DL_FUNC) &_sf_CPL_gdaladdo, 7},
-    {"_sf_CPL_gdalwarp", (DL_FUNC) &_sf_CPL_gdalwarp, 7},
-    {"_sf_CPL_gdalrasterize", (DL_FUNC) &_sf_CPL_gdalrasterize, 7},
-    {"_sf_CPL_gdaltranslate", (DL_FUNC) &_sf_CPL_gdaltranslate, 5},
-    {"_sf_CPL_gdalvectortranslate", (DL_FUNC) &_sf_CPL_gdalvectortranslate, 6},
-    {"_sf_CPL_gdalbuildvrt", (DL_FUNC) &_sf_CPL_gdalbuildvrt, 5},
-    {"_sf_CPL_gdaldemprocessing", (DL_FUNC) &_sf_CPL_gdaldemprocessing, 7},
-    {"_sf_CPL_gdalnearblack", (DL_FUNC) &_sf_CPL_gdalnearblack, 6},
-    {"_sf_CPL_gdalgrid", (DL_FUNC) &_sf_CPL_gdalgrid, 5},
-    {"_sf_CPL_gdalmdiminfo", (DL_FUNC) &_sf_CPL_gdalmdiminfo, 3},
-    {"_sf_CPL_gdalmdimtranslate", (DL_FUNC) &_sf_CPL_gdalmdimtranslate, 5},
-    {"_sf_CPL_gdal_warper", (DL_FUNC) &_sf_CPL_gdal_warper, 6},
+    {"_sf_CPL_gdalinfo", (DL_FUNC) &_sf_CPL_gdalinfo, 4},
+    {"_sf_CPL_gdaladdo", (DL_FUNC) &_sf_CPL_gdaladdo, 8},
+    {"_sf_CPL_gdalwarp", (DL_FUNC) &_sf_CPL_gdalwarp, 8},
+    {"_sf_CPL_gdalrasterize", (DL_FUNC) &_sf_CPL_gdalrasterize, 8},
+    {"_sf_CPL_gdaltranslate", (DL_FUNC) &_sf_CPL_gdaltranslate, 6},
+    {"_sf_CPL_gdalvectortranslate", (DL_FUNC) &_sf_CPL_gdalvectortranslate, 7},
+    {"_sf_CPL_gdalbuildvrt", (DL_FUNC) &_sf_CPL_gdalbuildvrt, 6},
+    {"_sf_CPL_gdaldemprocessing", (DL_FUNC) &_sf_CPL_gdaldemprocessing, 8},
+    {"_sf_CPL_gdalnearblack", (DL_FUNC) &_sf_CPL_gdalnearblack, 7},
+    {"_sf_CPL_gdalgrid", (DL_FUNC) &_sf_CPL_gdalgrid, 6},
+    {"_sf_CPL_gdalmdiminfo", (DL_FUNC) &_sf_CPL_gdalmdiminfo, 4},
+    {"_sf_CPL_gdalmdimtranslate", (DL_FUNC) &_sf_CPL_gdalmdimtranslate, 6},
+    {"_sf_CPL_gdal_warper", (DL_FUNC) &_sf_CPL_gdal_warper, 7},
     {"_sf_CPL_write_ogr", (DL_FUNC) &_sf_CPL_write_ogr, 16},
     {"_sf_CPL_delete_ogr", (DL_FUNC) &_sf_CPL_delete_ogr, 4},
     {"_sf_CPL_geos_binop", (DL_FUNC) &_sf_CPL_geos_binop, 6},
@@ -1462,8 +1490,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_sf_CPL_get_metadata", (DL_FUNC) &_sf_CPL_get_metadata, 3},
     {"_sf_CPL_get_crs", (DL_FUNC) &_sf_CPL_get_crs, 2},
     {"_sf_CPL_inv_geotransform", (DL_FUNC) &_sf_CPL_inv_geotransform, 1},
-    {"_sf_CPL_read_gdal", (DL_FUNC) &_sf_CPL_read_gdal, 6},
-    {"_sf_CPL_write_gdal", (DL_FUNC) &_sf_CPL_write_gdal, 12},
+    {"_sf_CPL_read_gdal", (DL_FUNC) &_sf_CPL_read_gdal, 7},
+    {"_sf_CPL_write_gdal", (DL_FUNC) &_sf_CPL_write_gdal, 13},
     {"_sf_CPL_extract", (DL_FUNC) &_sf_CPL_extract, 3},
     {"_sf_CPL_create", (DL_FUNC) &_sf_CPL_create, 6},
     {"_sf_CPL_read_wkb", (DL_FUNC) &_sf_CPL_read_wkb, 3},

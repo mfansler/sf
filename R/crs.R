@@ -100,10 +100,9 @@ fix_crs = function(x) {
 st_crs.sfc = function(x, ..., parameters = FALSE) {
 	crs = fix_crs(attr(x, "crs"))
 	if (parameters) {
-		if (is.na(crs))
-			list()
-		else
-			crs_parameters(crs)
+		p = crs_parameters(crs)
+		p$ud_unit = crs_ud_unit(crs)
+		p
 	} else
 		crs
 }
@@ -262,7 +261,7 @@ st_is_longlat = function(x) {
 # a = "b" => a is the proj.4 unit (try: cs2cs -lu); "b" is the udunits2 unit
 udunits_from_proj = list(
 #   PROJ.4     UDUNITS
-	`km` =    as_units("km"),
+	`km` =     as_units("km"),
 	`m` =      as_units("m"),
 	`dm` =     as_units("dm"),
 	`cm` =     as_units("cm"),
@@ -282,26 +281,57 @@ udunits_from_proj = list(
 	`us-mi` =  as_units("US_survey_mile"),
 	`ind-yd` = as_units("ind_yd", check_is_valid = FALSE),
 	`ind-ft` = as_units("ind_ft", check_is_valid = FALSE),
-	`ind-ch` = as_units("ind_ch", check_is_valid = FALSE)
+	`ind-ch` = as_units("ind_ch", check_is_valid = FALSE),
+	`kilometre` =  as_units("km"),
+	`metre` =  as_units("m"),
+	`decimetre` =     as_units("dm"),
+	`centimetre` =     as_units("cm"),
+	`millimetre` =     as_units("mm"),
+	`nautical mile` = as_units("nautical_mile"),
+	`Statute mile` = as_units("mi"),
+ 	`US survey inch` =  as_units("us_in", check_is_valid = FALSE),
+	`US survey foot` =  as_units("US_survey_foot"),
+	`US survey yard` =  as_units("US_survey_yard"),
+	`US survey chain` =  as_units("chain"),
+	`US survey mile` =  as_units("US_survey_mile"),
+	`Indian yard (1937)` = as_units("ind_yd", check_is_valid = FALSE),
+	`Indian foot (1937)` = as_units("ind_ft", check_is_valid = FALSE),
+	`Indian chain` = as_units("ind_ch", check_is_valid = FALSE)
 )
 
-crs_parameters = function(x, with_units = TRUE) {
+crs_ud_unit = function(x) {
 	stopifnot(inherits(x, "crs"))
-	if(is.na(x)) return(list(NA))
+	if (is.na(x))
+		return(NULL)
 
-	ret = CPL_crs_parameters(x)
-	units(ret$SemiMajor) = as_units("m")
-	units(ret$SemiMinor) = as_units("m")
-	if (with_units)
-		ret$ud_unit = if (isTRUE(ret$IsGeographic))
-				as_units("arc_degree") # FIXME: is this always true?
-			else if (is.null(x$units))
-				as_units("m")
-			else if (is.character(udunits_from_proj[[x$units]]))
-				as_units(udunits_from_proj[[x$units]])
-			else
-				udunits_from_proj[[x$units]]
-	ret
+	epsg_units = x$units
+	x = crs_parameters(x)
+	if (isTRUE(x$IsGeographic))
+		as_units("arc_degree") # FIXME: is this always true?
+	else if (!is.null(x$units_gdal)) {
+		u = udunits_from_proj[[x$units_gdal]]
+		if (is.null(u)) {
+			u = try(as_units(x$units_gdal), silent = TRUE)
+			if (inherits(u, "try-error") && !is.null(epsg_units))
+				u = try(as_units(epsg_units)) # from epsg string
+			if (inherits(u, "try-error")) # still:
+				u = NULL
+		}
+		u
+	} else
+		NULL #2049
+}
+
+crs_parameters = function(x) {
+	stopifnot(inherits(x, "crs"))
+	if (is.na(x))
+		list()
+	else {
+		ret = CPL_crs_parameters(x)
+		units(ret$SemiMajor) = as_units("m")
+		units(ret$SemiMinor) = as_units("m")
+		ret
+	}
 }
 
 epsg = function(x) {
@@ -310,14 +340,14 @@ epsg = function(x) {
 	else if (grepl("^EPSG:", x[["input"]]))
 		as.integer(gsub("^EPSG:(\\d+)\\b.*$", "\\1", x[["input"]]))
 	else
-		crs_parameters(x, with_units = FALSE)[["epsg"]]
+		crs_parameters(x)[["epsg"]]
 }
 
 proj4string = function(x) {
 	if (is.na(x))
 		NA_character_
 	else
-		crs_parameters(x, with_units = FALSE)[["proj4string"]]
+		crs_parameters(x)[["proj4string"]]
 }
 
 
@@ -369,8 +399,9 @@ is.na.crs = function(x) {
 #' using the GDAL interface; named elements include
 #' \code{"SemiMajor"}, \code{"SemiMinor"}, \code{"InvFlattening"}, \code{"IsGeographic"},
 #' \code{"units_gdal"}, \code{"IsVertical"}, \code{"WktPretty"}, \code{"Wkt"},
-#' \code{"Name"}, \code{"proj4string"}, \code{"epsg"}, \code{"yx"} and
-#' \code{"ud_unit"} (this may be subject to changes in future GDAL versions).
+#' \code{"Name"}, \code{"proj4string"}, \code{"epsg"}, \code{"yx"}, 
+#' \code{"ud_unit"}, and \code{axes} (this may be subject to changes in future GDAL versions).
+#' \code{"ud_unit"} returns a valid \link[units]{units} object or \code{NULL} if units are missing.
 #' @export
 `$.crs` = function(x, name) {
 
@@ -378,12 +409,14 @@ is.na.crs = function(x) {
 		warning("CRS uses proj4string, which is deprecated.")
 		x = st_crs(x[["proj4string"]]) # FIXME: should this be only for some transition period? Add test?
 	}
-	if (is.na(x))
+	if (name == "ud_unit")
+		crs_ud_unit(x)
+	else if (is.na(x))
 		NA_character_
 	else if (is.numeric(name) || name %in% names(x))
 		x[[name]]
 	else {
-		p = crs_parameters(x, with_units = (name == "ud_unit"))
+		p = crs_parameters(x)
 		if (name %in% names(p))
 			p[[name]]
 		else {
