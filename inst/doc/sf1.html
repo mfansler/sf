@@ -607,7 +607,7 @@ contained in the <code>sf</code> package:</p>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="do">## Linking to GEOS 3.11.1, GDAL 3.6.2, PROJ 9.1.1; sf_use_s2() is TRUE</span></span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>nc <span class="ot">&lt;-</span> <span class="fu">st_read</span>(<span class="fu">system.file</span>(<span class="st">&quot;shape/nc.shp&quot;</span>, <span class="at">package=</span><span class="st">&quot;sf&quot;</span>))</span>
 <span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="do">## Reading layer `nc&#39; from data source </span></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="do">##   `/tmp/RtmpMzW26D/Rinst2bde7232b4335/sf/shape/nc.shp&#39; using driver `ESRI Shapefile&#39;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="do">##   `/tmp/RtmputZ1TO/Rinst36b22637c8c46/sf/shape/nc.shp&#39; using driver `ESRI Shapefile&#39;</span></span>
 <span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="do">## Simple feature collection with 100 features and 14 fields</span></span>
 <span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="do">## Geometry type: MULTIPOLYGON</span></span>
 <span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="do">## Dimension:     XY</span></span>
@@ -660,30 +660,31 @@ and an abridged version of the geometry</p>
 <span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a><span class="do">## [25] st_bbox                      st_boundary                 </span></span>
 <span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a><span class="do">## [27] st_break_antimeridian        st_buffer                   </span></span>
 <span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a><span class="do">## [29] st_cast                      st_centroid                 </span></span>
-<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a><span class="do">## [31] st_collection_extract        st_convex_hull              </span></span>
-<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a><span class="do">## [33] st_coordinates               st_crop                     </span></span>
-<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a><span class="do">## [35] st_crs                       st_crs&lt;-                    </span></span>
-<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a><span class="do">## [37] st_difference                st_drop_geometry            </span></span>
-<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a><span class="do">## [39] st_filter                    st_geometry                 </span></span>
-<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a><span class="do">## [41] st_geometry&lt;-                st_inscribed_circle         </span></span>
-<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a><span class="do">## [43] st_interpolate_aw            st_intersection             </span></span>
-<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a><span class="do">## [45] st_intersects                st_is                       </span></span>
-<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a><span class="do">## [47] st_is_valid                  st_join                     </span></span>
-<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a><span class="do">## [49] st_line_merge                st_m_range                  </span></span>
-<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a><span class="do">## [51] st_make_valid                st_minimum_rotated_rectangle</span></span>
-<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a><span class="do">## [53] st_nearest_points            st_node                     </span></span>
-<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a><span class="do">## [55] st_normalize                 st_point_on_surface         </span></span>
-<span id="cb5-30"><a href="#cb5-30" aria-hidden="true" tabindex="-1"></a><span class="do">## [57] st_polygonize                st_precision                </span></span>
-<span id="cb5-31"><a href="#cb5-31" aria-hidden="true" tabindex="-1"></a><span class="do">## [59] st_reverse                   st_sample                   </span></span>
-<span id="cb5-32"><a href="#cb5-32" aria-hidden="true" tabindex="-1"></a><span class="do">## [61] st_segmentize                st_set_precision            </span></span>
-<span id="cb5-33"><a href="#cb5-33" aria-hidden="true" tabindex="-1"></a><span class="do">## [63] st_shift_longitude           st_simplify                 </span></span>
-<span id="cb5-34"><a href="#cb5-34" aria-hidden="true" tabindex="-1"></a><span class="do">## [65] st_snap                      st_sym_difference           </span></span>
-<span id="cb5-35"><a href="#cb5-35" aria-hidden="true" tabindex="-1"></a><span class="do">## [67] st_transform                 st_triangulate              </span></span>
-<span id="cb5-36"><a href="#cb5-36" aria-hidden="true" tabindex="-1"></a><span class="do">## [69] st_union                     st_voronoi                  </span></span>
-<span id="cb5-37"><a href="#cb5-37" aria-hidden="true" tabindex="-1"></a><span class="do">## [71] st_wrap_dateline             st_write                    </span></span>
-<span id="cb5-38"><a href="#cb5-38" aria-hidden="true" tabindex="-1"></a><span class="do">## [73] st_z_range                   st_zm                       </span></span>
-<span id="cb5-39"><a href="#cb5-39" aria-hidden="true" tabindex="-1"></a><span class="do">## [75] transform                   </span></span>
-<span id="cb5-40"><a href="#cb5-40" aria-hidden="true" tabindex="-1"></a><span class="do">## see &#39;?methods&#39; for accessing help and source code</span></span></code></pre></div>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a><span class="do">## [31] st_collection_extract        st_concave_hull             </span></span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a><span class="do">## [33] st_convex_hull               st_coordinates              </span></span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a><span class="do">## [35] st_crop                      st_crs                      </span></span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a><span class="do">## [37] st_crs&lt;-                     st_difference               </span></span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a><span class="do">## [39] st_drop_geometry             st_filter                   </span></span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a><span class="do">## [41] st_geometry                  st_geometry&lt;-               </span></span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a><span class="do">## [43] st_inscribed_circle          st_interpolate_aw           </span></span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a><span class="do">## [45] st_intersection              st_intersects               </span></span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a><span class="do">## [47] st_is                        st_is_valid                 </span></span>
+<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a><span class="do">## [49] st_join                      st_line_merge               </span></span>
+<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a><span class="do">## [51] st_m_range                   st_make_valid               </span></span>
+<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a><span class="do">## [53] st_minimum_rotated_rectangle st_nearest_points           </span></span>
+<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a><span class="do">## [55] st_node                      st_normalize                </span></span>
+<span id="cb5-30"><a href="#cb5-30" aria-hidden="true" tabindex="-1"></a><span class="do">## [57] st_point_on_surface          st_polygonize               </span></span>
+<span id="cb5-31"><a href="#cb5-31" aria-hidden="true" tabindex="-1"></a><span class="do">## [59] st_precision                 st_reverse                  </span></span>
+<span id="cb5-32"><a href="#cb5-32" aria-hidden="true" tabindex="-1"></a><span class="do">## [61] st_sample                    st_segmentize               </span></span>
+<span id="cb5-33"><a href="#cb5-33" aria-hidden="true" tabindex="-1"></a><span class="do">## [63] st_set_precision             st_shift_longitude          </span></span>
+<span id="cb5-34"><a href="#cb5-34" aria-hidden="true" tabindex="-1"></a><span class="do">## [65] st_simplify                  st_snap                     </span></span>
+<span id="cb5-35"><a href="#cb5-35" aria-hidden="true" tabindex="-1"></a><span class="do">## [67] st_sym_difference            st_transform                </span></span>
+<span id="cb5-36"><a href="#cb5-36" aria-hidden="true" tabindex="-1"></a><span class="do">## [69] st_triangulate               st_triangulate_constrained  </span></span>
+<span id="cb5-37"><a href="#cb5-37" aria-hidden="true" tabindex="-1"></a><span class="do">## [71] st_union                     st_voronoi                  </span></span>
+<span id="cb5-38"><a href="#cb5-38" aria-hidden="true" tabindex="-1"></a><span class="do">## [73] st_wrap_dateline             st_write                    </span></span>
+<span id="cb5-39"><a href="#cb5-39" aria-hidden="true" tabindex="-1"></a><span class="do">## [75] st_z_range                   st_zm                       </span></span>
+<span id="cb5-40"><a href="#cb5-40" aria-hidden="true" tabindex="-1"></a><span class="do">## [77] transform                   </span></span>
+<span id="cb5-41"><a href="#cb5-41" aria-hidden="true" tabindex="-1"></a><span class="do">## see &#39;?methods&#39; for accessing help and source code</span></span></code></pre></div>
 <p>It is also possible to create <code>data.frame</code> objects with
 geometry list-columns that are not of class <code>sf</code>, e.g. by</p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>nc.no_sf <span class="ot">&lt;-</span> <span class="fu">as.data.frame</span>(nc)</span>
@@ -772,28 +773,29 @@ exterior) for the geometry of feature 4 by</p>
 <span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a><span class="do">## [21] st_boundary                  st_break_antimeridian       </span></span>
 <span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a><span class="do">## [23] st_buffer                    st_cast                     </span></span>
 <span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a><span class="do">## [25] st_centroid                  st_collection_extract       </span></span>
-<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a><span class="do">## [27] st_convex_hull               st_coordinates              </span></span>
-<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a><span class="do">## [29] st_crop                      st_crs                      </span></span>
-<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a><span class="do">## [31] st_crs&lt;-                     st_difference               </span></span>
-<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a><span class="do">## [33] st_geometry                  st_inscribed_circle         </span></span>
-<span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a><span class="do">## [35] st_intersection              st_intersects               </span></span>
-<span id="cb13-20"><a href="#cb13-20" aria-hidden="true" tabindex="-1"></a><span class="do">## [37] st_is                        st_is_valid                 </span></span>
-<span id="cb13-21"><a href="#cb13-21" aria-hidden="true" tabindex="-1"></a><span class="do">## [39] st_line_merge                st_m_range                  </span></span>
-<span id="cb13-22"><a href="#cb13-22" aria-hidden="true" tabindex="-1"></a><span class="do">## [41] st_make_valid                st_minimum_rotated_rectangle</span></span>
-<span id="cb13-23"><a href="#cb13-23" aria-hidden="true" tabindex="-1"></a><span class="do">## [43] st_nearest_points            st_node                     </span></span>
-<span id="cb13-24"><a href="#cb13-24" aria-hidden="true" tabindex="-1"></a><span class="do">## [45] st_normalize                 st_point_on_surface         </span></span>
-<span id="cb13-25"><a href="#cb13-25" aria-hidden="true" tabindex="-1"></a><span class="do">## [47] st_polygonize                st_precision                </span></span>
-<span id="cb13-26"><a href="#cb13-26" aria-hidden="true" tabindex="-1"></a><span class="do">## [49] st_reverse                   st_sample                   </span></span>
-<span id="cb13-27"><a href="#cb13-27" aria-hidden="true" tabindex="-1"></a><span class="do">## [51] st_segmentize                st_set_precision            </span></span>
-<span id="cb13-28"><a href="#cb13-28" aria-hidden="true" tabindex="-1"></a><span class="do">## [53] st_shift_longitude           st_simplify                 </span></span>
-<span id="cb13-29"><a href="#cb13-29" aria-hidden="true" tabindex="-1"></a><span class="do">## [55] st_snap                      st_sym_difference           </span></span>
-<span id="cb13-30"><a href="#cb13-30" aria-hidden="true" tabindex="-1"></a><span class="do">## [57] st_transform                 st_triangulate              </span></span>
-<span id="cb13-31"><a href="#cb13-31" aria-hidden="true" tabindex="-1"></a><span class="do">## [59] st_union                     st_voronoi                  </span></span>
-<span id="cb13-32"><a href="#cb13-32" aria-hidden="true" tabindex="-1"></a><span class="do">## [61] st_wrap_dateline             st_write                    </span></span>
-<span id="cb13-33"><a href="#cb13-33" aria-hidden="true" tabindex="-1"></a><span class="do">## [63] st_z_range                   st_zm                       </span></span>
-<span id="cb13-34"><a href="#cb13-34" aria-hidden="true" tabindex="-1"></a><span class="do">## [65] str                          summary                     </span></span>
-<span id="cb13-35"><a href="#cb13-35" aria-hidden="true" tabindex="-1"></a><span class="do">## [67] vec_cast.sfc                 vec_ptype2.sfc              </span></span>
-<span id="cb13-36"><a href="#cb13-36" aria-hidden="true" tabindex="-1"></a><span class="do">## see &#39;?methods&#39; for accessing help and source code</span></span></code></pre></div>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a><span class="do">## [27] st_concave_hull              st_convex_hull              </span></span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a><span class="do">## [29] st_coordinates               st_crop                     </span></span>
+<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a><span class="do">## [31] st_crs                       st_crs&lt;-                    </span></span>
+<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a><span class="do">## [33] st_difference                st_geometry                 </span></span>
+<span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a><span class="do">## [35] st_inscribed_circle          st_intersection             </span></span>
+<span id="cb13-20"><a href="#cb13-20" aria-hidden="true" tabindex="-1"></a><span class="do">## [37] st_intersects                st_is                       </span></span>
+<span id="cb13-21"><a href="#cb13-21" aria-hidden="true" tabindex="-1"></a><span class="do">## [39] st_is_valid                  st_line_merge               </span></span>
+<span id="cb13-22"><a href="#cb13-22" aria-hidden="true" tabindex="-1"></a><span class="do">## [41] st_m_range                   st_make_valid               </span></span>
+<span id="cb13-23"><a href="#cb13-23" aria-hidden="true" tabindex="-1"></a><span class="do">## [43] st_minimum_rotated_rectangle st_nearest_points           </span></span>
+<span id="cb13-24"><a href="#cb13-24" aria-hidden="true" tabindex="-1"></a><span class="do">## [45] st_node                      st_normalize                </span></span>
+<span id="cb13-25"><a href="#cb13-25" aria-hidden="true" tabindex="-1"></a><span class="do">## [47] st_point_on_surface          st_polygonize               </span></span>
+<span id="cb13-26"><a href="#cb13-26" aria-hidden="true" tabindex="-1"></a><span class="do">## [49] st_precision                 st_reverse                  </span></span>
+<span id="cb13-27"><a href="#cb13-27" aria-hidden="true" tabindex="-1"></a><span class="do">## [51] st_sample                    st_segmentize               </span></span>
+<span id="cb13-28"><a href="#cb13-28" aria-hidden="true" tabindex="-1"></a><span class="do">## [53] st_set_precision             st_shift_longitude          </span></span>
+<span id="cb13-29"><a href="#cb13-29" aria-hidden="true" tabindex="-1"></a><span class="do">## [55] st_simplify                  st_snap                     </span></span>
+<span id="cb13-30"><a href="#cb13-30" aria-hidden="true" tabindex="-1"></a><span class="do">## [57] st_sym_difference            st_transform                </span></span>
+<span id="cb13-31"><a href="#cb13-31" aria-hidden="true" tabindex="-1"></a><span class="do">## [59] st_triangulate               st_triangulate_constrained  </span></span>
+<span id="cb13-32"><a href="#cb13-32" aria-hidden="true" tabindex="-1"></a><span class="do">## [61] st_union                     st_voronoi                  </span></span>
+<span id="cb13-33"><a href="#cb13-33" aria-hidden="true" tabindex="-1"></a><span class="do">## [63] st_wrap_dateline             st_write                    </span></span>
+<span id="cb13-34"><a href="#cb13-34" aria-hidden="true" tabindex="-1"></a><span class="do">## [65] st_z_range                   st_zm                       </span></span>
+<span id="cb13-35"><a href="#cb13-35" aria-hidden="true" tabindex="-1"></a><span class="do">## [67] str                          summary                     </span></span>
+<span id="cb13-36"><a href="#cb13-36" aria-hidden="true" tabindex="-1"></a><span class="do">## [69] vec_cast.sfc                 vec_ptype2.sfc              </span></span>
+<span id="cb13-37"><a href="#cb13-37" aria-hidden="true" tabindex="-1"></a><span class="do">## see &#39;?methods&#39; for accessing help and source code</span></span></code></pre></div>
 <p>Coordinate reference systems (<code>st_crs</code> and
 <code>st_transform</code>) are discussed in the section on <a href="#crs">coordinate reference systems</a>. <code>st_as_wkb</code> and
 <code>st_as_text</code> convert geometry list-columns into
@@ -1004,7 +1006,7 @@ be done by</p>
 <div class="sourceCode" id="cb23"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>filename <span class="ot">&lt;-</span> <span class="fu">system.file</span>(<span class="st">&quot;shape/nc.shp&quot;</span>, <span class="at">package=</span><span class="st">&quot;sf&quot;</span>)</span>
 <span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>nc <span class="ot">&lt;-</span> <span class="fu">st_read</span>(filename)</span>
 <span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a><span class="do">## Reading layer `nc&#39; from data source </span></span>
-<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a><span class="do">##   `/tmp/RtmpMzW26D/Rinst2bde7232b4335/sf/shape/nc.shp&#39; using driver `ESRI Shapefile&#39;</span></span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a><span class="do">##   `/tmp/RtmputZ1TO/Rinst36b22637c8c46/sf/shape/nc.shp&#39; using driver `ESRI Shapefile&#39;</span></span>
 <span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a><span class="do">## Simple feature collection with 100 features and 14 fields</span></span>
 <span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a><span class="do">## Geometry type: MULTIPOLYGON</span></span>
 <span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a><span class="do">## Dimension:     XY</span></span>
@@ -1386,7 +1388,7 @@ time:</p>
 <span id="cb45-4"><a href="#cb45-4" aria-hidden="true" tabindex="-1"></a>        <span class="at">CRESS_ID =</span> <span class="st">&quot;identity&quot;</span>, <span class="at">BIR74 =</span> <span class="st">&quot;aggregate&quot;</span>, <span class="at">SID74 =</span> <span class="st">&quot;aggregate&quot;</span>, <span class="at">NWBIR74 =</span> <span class="st">&quot;aggregate&quot;</span>,</span>
 <span id="cb45-5"><a href="#cb45-5" aria-hidden="true" tabindex="-1"></a>        <span class="at">BIR79 =</span> <span class="st">&quot;aggregate&quot;</span>, <span class="at">SID79 =</span> <span class="st">&quot;aggregate&quot;</span>, <span class="at">NWBIR79 =</span> <span class="st">&quot;aggregate&quot;</span>))</span>
 <span id="cb45-6"><a href="#cb45-6" aria-hidden="true" tabindex="-1"></a><span class="do">## Reading layer `nc&#39; from data source </span></span>
-<span id="cb45-7"><a href="#cb45-7" aria-hidden="true" tabindex="-1"></a><span class="do">##   `/tmp/RtmpMzW26D/Rinst2bde7232b4335/sf/shape/nc.shp&#39; using driver `ESRI Shapefile&#39;</span></span>
+<span id="cb45-7"><a href="#cb45-7" aria-hidden="true" tabindex="-1"></a><span class="do">##   `/tmp/RtmputZ1TO/Rinst36b22637c8c46/sf/shape/nc.shp&#39; using driver `ESRI Shapefile&#39;</span></span>
 <span id="cb45-8"><a href="#cb45-8" aria-hidden="true" tabindex="-1"></a><span class="do">## Simple feature collection with 100 features and 14 fields</span></span>
 <span id="cb45-9"><a href="#cb45-9" aria-hidden="true" tabindex="-1"></a><span class="do">## Attribute-geometry relationship: 0 constant, 8 aggregate, 6 identity</span></span>
 <span id="cb45-10"><a href="#cb45-10" aria-hidden="true" tabindex="-1"></a><span class="do">## Geometry type: MULTIPOLYGON</span></span>
