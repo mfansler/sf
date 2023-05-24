@@ -41,6 +41,8 @@
 #' When setting \code{reset} to \code{FALSE}, the original device parameters are lost, and the device must be reset using \code{dev.off()} in order to reset it.
 #'
 #' parameter \code{at} can be set to specify where labels are placed along the key; see examples.
+#' 
+#' The features are plotted in the order as they apppear in the sf object. See examples for when a different plotting order is wanted.
 #'
 #' @examples
 #' nc = st_read(system.file("gpkg/nc.gpkg", package="sf"), quiet = TRUE)
@@ -62,6 +64,11 @@
 #' layout(matrix(1:2, ncol = 2), widths = c(1, lcm(2)))
 #' plot(1)
 #' .image_scale(1:10, col = sf.colors(9), key.length = lcm(8), key.pos = 4, at = 1:10)
+#' # manipulate plotting order, plot largest polygons first:
+#' p = st_polygon(list(rbind(c(0,0), c(1,0), c(1,1), c(0,1), c(0,0))))
+#' x = st_sf(a=1:4, st_sfc(p, p * 2, p * 3, p * 4)) # plot(x, col=2:5) only shows the largest polygon!
+#' plot(x[order(st_area(x), decreasing = TRUE),], col = 2:5) # plot largest polygons first
+#' 
 #' @export
 plot.sf <- function(x, y, ..., main, pal = NULL, nbreaks = 10, breaks = "pretty",
 		max.plot = if(is.null(n <- getOption("sf_max.plot"))) 9 else n,
@@ -780,10 +787,13 @@ bb2merc = function(x, cls = "ggmap") { # return bbox in the appropriate "web mer
 #' @param axes ignore
 #' @param logz ignore
 #' @param ... ignore
+#' @param lab ignore
 .image_scale = function(z, col, breaks = NULL, key.pos, add.axis = TRUE,
-		at = NULL, ..., axes = FALSE, key.length, logz = FALSE) {
+		at = NULL, ..., axes = FALSE, key.length, logz = FALSE, lab = "") {
 	if (!is.null(breaks) && length(breaks) != (length(col) + 1))
 		stop("must have one more break than colour")
+	stopifnot(is.character(lab) || is.expression(lab))
+	lab_set = (is.character(lab) && lab != "") || is.expression(lab)
 	zlim = range(z, na.rm = TRUE)
 	if (is.null(breaks))
 		breaks = seq(zlim[1], zlim[2], length.out = length(col) + 1)
@@ -811,14 +821,16 @@ bb2merc = function(x, cls = "ggmap") { # return bbox in the appropriate "web mer
 		xlim = c(0, 1)
 		mar = c(ifelse(axes, 2.1, 1), 0, 1.2, 0)
 	}
-	mar[key.pos] = 2.1
+	mar[key.pos] = 2.1 + 1.5 * lab_set
 	par(mar = mar)
 
+	plot(1, 1, t = "n", ylim = ylim, xlim = xlim, axes = FALSE,
+		xlab = "", ylab = "", xaxs = "i", yaxs = "i")
+	if (lab != "")
+		mtext(lab, side = key.pos, line = 2.5, cex = .8)
 	poly = vector(mode="list", length(col))
 	for (i in seq(poly))
 		poly[[i]] = c(breaks[i], breaks[i+1], breaks[i+1], breaks[i])
-	plot(1, 1, t = "n", ylim = ylim, xlim = xlim, axes = FALSE,
-		xlab = "", ylab = "", xaxs = "i", yaxs = "i")
 	offset = 0.2
 	offs = switch(key.pos,
 		c(0,0,-offset,-offset),

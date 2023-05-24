@@ -1,3 +1,25 @@
+# version 1.0-13
+
+* `gdal_utils()` adds `"ogrinfo"` utility (requires GDAL >= 3.7.0); #2160
+
+* `st_as_sf()` catches errors when setting invalid crs values, raised by Jon Skøien
+
+* add `rename_with.sf()` method; #1472
+
+* use GEOS' overlayNG routines for (GEOS) Intersection, Difference, Union and SymDifference; #2143
+
+* added `duplicated.sf()`; #2138, #2140, thanks to @bart1
+
+* `select.sf()` allows selecting the same column twice under different names; #1886
+
+* `st_as_sf.ppplist()` is deprecated; #1926
+
+* `st_cast()` handles empty geometries; #1961
+
+* don't repeat longlat messages in `summarise.sf()`; #1519
+
+* fix random sampling on the sphere; #2133
+
 # version 1.0-12
 
 * update NAMESPACE to `useDynLib(sf, .registration=TRUE)`; #2127 thanks to @eddelbuettel

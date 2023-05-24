@@ -162,7 +162,11 @@ select.sf <- function(.data, ...) {
 		stop("internal error: can't find sf column") # nocov
 
 	agr = st_agr(.data)
-	vars = names(.data)[setdiff(loc, sf_column_loc)]
+	#vars = names(.data)[setdiff(loc, sf_column_loc)] # see #1886, change into:
+	lloc = loc
+	if (sf_column_loc %in% loc)
+		lloc = lloc[loc != sf_column_loc]
+	vars = names(.data)[lloc]
 
 	sf_column_loc_loc = match(sf_column_loc, loc)
 	if (is.na(sf_column_loc_loc)) {
@@ -231,6 +235,18 @@ rename.sf <- function(.data, ...) {
 	st_set_agr(st_as_sf(ret, sf_column_name = sf_column), agr)
 }
 
+rename_with.sf = function(.data, .fn, .cols, ...) {
+	if (!requireNamespace("rlang", quietly = TRUE))
+		stop("rlang required: install that first") # nocov
+	.fn = rlang::as_function(.fn)
+	agr = st_agr(.data)
+	ret = NextMethod()
+	names(agr) = .fn(names(agr))
+	st_agr(ret) = agr
+	ret
+}
+
+
 #' @name tidyverse
 #' @examples
 #' if (require(dplyr, quietly = TRUE)) {
@@ -279,7 +295,12 @@ summarise.sf <- function(.data, ..., .dots, do_union = TRUE, is_coverage = FALSE
 				i = dplyr::group_indices(.data)
 				# geom = st_geometry(.data)
 				geom = if (do_union)
-						lapply(sort(unique(i)), function(x) st_union(geom[i == x], is_coverage = is_coverage))
+						lapply(sort(unique(i)), function(x) {
+							if (x == 1)
+								st_union(geom[i == x], is_coverage = is_coverage)
+							else
+								suppressMessages(st_union(geom[i == x], is_coverage = is_coverage))
+						})
 					else
 						lapply(sort(unique(i)), function(x) st_combine(geom[i == x]))
 				geom = unlist(geom, recursive = FALSE)
@@ -623,6 +644,7 @@ register_all_s3_methods = function() {
 	register_s3_method("dplyr", "left_join", "sf")
 	register_s3_method("dplyr", "mutate", "sf")
 	register_s3_method("dplyr", "rename", "sf")
+	register_s3_method("dplyr", "rename_with", "sf")
 	register_s3_method("dplyr", "right_join", "sf")
 	register_s3_method("dplyr", "rowwise", "sf")
 	register_s3_method("dplyr", "sample_frac", "sf")

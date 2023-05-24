@@ -165,6 +165,7 @@ st_layers(system.file("osm/overpass.osm", package="sf"), do_count = TRUE)
 #  unzip("biketrails.zip")
 #  u_kmz <- "http://coagisweb.cabq.gov/datadownload/BikePaths.kmz"
 #  download.file(u_kmz, "BikePaths.kmz")
+#  
 #  # Read file formats
 #  biketrails_shp <- st_read("biketrails.shp")
 #  if(Sys.info()[1] == "Linux") # may not work if not Linux
@@ -181,9 +182,11 @@ st_geometry(nc.web_mercator)[[4]][[2]][[1]][1:3,]
 showMethods("coerce", classes = "sf")
 methods(st_as_sf)
 methods(st_as_sfc)
+
 # anticipate that sp::CRS will expand proj4strings:
 p4s <- "+proj=longlat +datum=NAD27 +no_defs +ellps=clrk66 +nadgrids=@conus,@alaska,@ntv2_0.gsb,@ntv1_can.dat"
 st_crs(nc) <- p4s
+
 # anticipate geometry column name changes:
 names(nc)[15] = "geometry"
 attr(nc, "sf_column") = "geometry"
