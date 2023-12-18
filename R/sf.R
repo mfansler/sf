@@ -48,7 +48,9 @@ st_as_sf.data.frame = function(x, ..., agr = NA_agr_, coords, wkt,
 		if (na.fail && anyNA(cc))
 			stop("missing values in coordinates not allowed")
 		# classdim = getClassDim(rep(0, length(coords)), length(coords), dim, "POINT")
-		x$geometry = structure( points_rcpp(as.matrix(cc), dim),
+		if (is.null(sf_column_name))
+			sf_column_name = "geometry"
+		x[[sf_column_name]] = structure( points_rcpp(as.matrix(cc), dim),
 			n_empty = 0L, precision = 0, crs = NA_crs_,
 			bbox = structure(
 				c(xmin = min(cc[[1]], na.rm = TRUE),
@@ -57,11 +59,12 @@ st_as_sf.data.frame = function(x, ..., agr = NA_agr_, coords, wkt,
 				ymax = max(cc[[2]], na.rm = TRUE)), class = "bbox"),
 			class =  c("sfc_POINT", "sfc" ), names = NULL)
 
-		if (is.character(coords))
-			coords = match(coords, names(x))
-
-		if (remove)
+		if (remove) {
+			if (is.character(coords))
+				coords = match(coords, names(x))
 			x = x[-coords]
+		}
+
 	}
 	st_sf(x, ..., agr = agr, sf_column_name = sf_column_name)
 }
@@ -192,8 +195,10 @@ list_column_to_sfc = function(x) {
 
 #' Create sf object
 #'
-#' Create sf, which extends data.frame-like objects with a simple feature list column
+#' Create sf, which extends data.frame-like objects with a simple feature list column.
+#' To convert a data frame object to `sf`, use [st_as_sf()]
 #' @name sf
+#' @aliases st_sf
 #' @param ... column elements to be binded into an \code{sf} object or a single \code{list} or \code{data.frame} with such columns; at least one of these columns shall be a geometry list-column of class \code{sfc} or be a list-column that can be converted into an \code{sfc} by \link{st_as_sfc}.
 #' @param crs coordinate reference system, something suitable as input to \link{st_crs}
 #' @param agr character vector; see details below.
@@ -293,12 +298,18 @@ st_sf = function(..., agr = NA_agr_, row.names,
 	st_agr(df) = agr
 	if (! missing(crs))
 		st_crs(df) = crs
+
+	if (Sys.getenv("ADD_SF_NAMESPACE") == "true")
+		attr(df, ".sf_namespace") <- .sf_namespace
+
 	df
 }
 
+.sf_namespace <- function() NULL
+
 #' @name sf
 #' @param x object of class \code{sf}
-#' @param i record selection, see \link{[.data.frame}
+#' @param i record selection, see \link{[.data.frame}, or a \code{sf} object to work with the \code{op} argument
 #' @param j variable selection, see \link{[.data.frame}
 #' @param drop logical, default \code{FALSE}; if \code{TRUE} drop the geometry column and return a \code{data.frame}, else make the geometry sticky and return a \code{sf} object.
 #' @param op function; geometrical binary predicate function to apply when \code{i} is a simple feature object
@@ -369,6 +380,11 @@ st_sf = function(..., agr = NA_agr_, row.names,
 }
 
 #' @export
+"[<-.sf" = function(x, i, j, value) {
+	st_set_agr(NextMethod())
+}
+
+#' @export
 "[[<-.sf" = function(x, i, value) {
 	agr = st_agr(x)
 	setting_geom = (i == attr(x, "sf_column")) || inherits(value, "sfc")
@@ -392,7 +408,7 @@ st_sf = function(..., agr = NA_agr_, row.names,
 	x
 }
 
-#' @name sf
+#' @rdname sf
 #' @param n maximum number of features to print; can be set globally by \code{options(sf_max_print=...)}
 #' @export
 print.sf = function(x, ..., n = getOption("sf_max_print", default = 10)) {

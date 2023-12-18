@@ -27,7 +27,7 @@ st_sample = function(x, size, ...) UseMethod("st_sample")
 #' when \code{type = "random"}.
 #' @param progress logical; if \code{TRUE} show progress bar (only if \code{size} is a vector).
 #' @return an \code{sfc} object containing the sampled \code{POINT} geometries
-#' @details if \code{x} has dimension 2 (polygons) and geographical coordinates (long/lat), uniform random sampling on the sphere is applied, see e.g. \url{http://mathworld.wolfram.com/SpherePointPicking.html}. 
+#' @details if \code{x} has dimension 2 (polygons) and geographical coordinates (long/lat), uniform random sampling on the sphere is applied, see e.g. \url{https://mathworld.wolfram.com/SpherePointPicking.html}. 
 #'
 #' For \code{regular} or \code{hexagonal} sampling of polygons, the resulting size is only an approximation.
 #'
@@ -52,13 +52,13 @@ st_sample = function(x, size, ...) UseMethod("st_sample")
 #' if (sf_extSoftVersion()["proj.4"] >= "4.9.0")
 #'   plot(p <- st_sample(x, 1000), add = TRUE)
 #' if (require(lwgeom, quietly = TRUE)) { # for st_segmentize()
-#' x2 = st_transform(st_segmentize(x, 1e4), st_crs("+proj=ortho +lat_0=30 +lon_0=45"))
-#' g = st_transform(st_graticule(), st_crs("+proj=ortho +lat_0=30 +lon_0=45"))
-#' plot(x2, graticule = g)
-#' if (sf_extSoftVersion()["proj.4"] >= "4.9.0") {
-#'   p2 = st_transform(p, st_crs("+proj=ortho +lat_0=30 +lon_0=45"))
-#'   plot(p2, add = TRUE)
-#' }
+#'   x2 = st_transform(st_segmentize(x, 1e4), st_crs("+proj=ortho +lat_0=30 +lon_0=45"))
+#'   g = st_transform(st_graticule(), st_crs("+proj=ortho +lat_0=30 +lon_0=45"))
+#'   plot(x2, graticule = g)
+#'   if (sf_extSoftVersion()["proj.4"] >= "4.9.0") {
+#'     p2 = st_transform(p, st_crs("+proj=ortho +lat_0=30 +lon_0=45"))
+#'     plot(p2, add = TRUE)
+#'   }
 #' }
 #' x = st_sfc(st_polygon(list(rbind(c(0,0),c(90,0),c(90,10),c(0,90),c(0,0))))) # NOT long/lat:
 #' plot(x)
@@ -90,9 +90,9 @@ st_sample = function(x, size, ...) UseMethod("st_sample")
 #' plot(st_sample(ls, 80))
 #' # spatstat example:
 #' if (require(spatstat.random)) {
-#'  x <- sf::st_sfc(sf::st_polygon(list(rbind(c(0, 0), c(10, 0), c(10, 10), c(0, 0)))))
-#'  # for spatstat.random::rThomas(), set type = "Thomas":
-#'  pts <- st_sample(x, kappa = 1, mu = 10, scale = 0.1, type = "Thomas") 
+#'   x <- sf::st_sfc(sf::st_polygon(list(rbind(c(0, 0), c(10, 0), c(10, 10), c(0, 0)))))
+#'   # for spatstat.random::rThomas(), set type = "Thomas":
+#'   pts <- st_sample(x, kappa = 1, mu = 10, scale = 0.1, type = "Thomas") 
 #' }
 #' @export
 #' @name st_sample
@@ -139,6 +139,31 @@ st_sample.sfg = function(x, size, ...) {
 	st_sample(st_geometry(x), size, ...)
 }
 
+#' @export
+#' @name st_sample
+#' @param great_circles logical; if `TRUE`, great circle arcs are used to connect the bounding box vertices, if `FALSE` parallels (graticules)
+#' @param segments units, or numeric (degrees); segment sizes for segmenting a bounding box polygon if `great_circles` is `FALSE`
+#' @examples
+#' bbox = st_bbox(
+#'	c(xmin = 0, xmax = 40, ymax = 70, ymin = 60),
+#' 	crs = st_crs('OGC:CRS84')
+#' )
+#' set.seed(13531)
+#' s1 = st_sample(bbox, 400)
+#' st_bbox(s1) # within bbox
+#' s2 = st_sample(bbox, 400, great_circles = TRUE)
+#' st_bbox(s2) # outside bbox
+st_sample.bbox = function(x, size, ..., great_circles = FALSE, segments = units::set_units(2, "degree", mode = "standard")) {
+	polygon = st_as_sfc(x)
+	crs = st_crs(x)
+	if (isTRUE(st_is_longlat(x)) && !great_circles) {
+		st_crs(polygon) = NA_crs_ # to fool segmentize that we're on R2:
+		segments = units::drop_units(units::set_units(segments, "degree", mode = "standard"))
+		polygon = st_set_crs(st_segmentize(polygon, segments), crs)
+	}
+	st_sample(polygon, size, ...)
+}
+
 st_poly_sample = function(x, size, ..., type = "random",
                           offset = st_sample(st_as_sfc(st_bbox(x)), 1)[[1]],
 						  by_polygon = FALSE) {
@@ -164,9 +189,13 @@ st_poly_sample = function(x, size, ..., type = "random",
 		global = FALSE
 		bb = st_bbox(x)
 		if (isTRUE(st_is_longlat(x))) {
-			if (sf_use_s2())
-				bb = st_bbox(st_segmentize(st_as_sfc(bb), 
-										   units::set_units(1, "degree", mode = "standard"))) # get coordinate range on S2
+			if (sf_use_s2()) { # if FALSE, the user wants the coord ranges to be the bbox
+				if (!requireNamespace("lwgeom", quietly = TRUE))
+					warning("coordinate ranges not computed along great circles; install package lwgeom to get rid of this warning")
+				else 
+					bb = st_bbox(st_segmentize(st_as_sfc(bb),
+							units::set_units(1, "degree", mode = "standard"))) # get coordinate range on S2
+			}
 			R = s2::s2_earth_radius_meters()
 			toRad = pi / 180
 			h1 = sin(bb["ymax"] * toRad)

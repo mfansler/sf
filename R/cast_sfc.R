@@ -147,6 +147,16 @@ empty_sfg <- function(to) {
 	   )
 }
 
+is_exotic = function(x) {
+	stopifnot(length(x) > 0)
+	if (inherits(x, c("sfc_MULTICURVE", "sfc_COMPOUNDCURVE", "sfc_CURVEPOLYGON", "sfc_MULTISURFACE"))) # for which GEOS has no st_is_empty()
+		TRUE
+	else if (inherits(x, "sfc_GEOMETRY")) {
+		cls = sapply(x, class)
+		any(cls[2,] %in% c("MULTICURVE", "COMPOUNDCURVE", "CURVEPOLYGON", "MULTISURFACE"))
+	} else
+		FALSE
+}
 
 #' @name st_cast
 #' @param ids integer vector, denoting how geometries should be grouped (default: no grouping)
@@ -165,11 +175,11 @@ empty_sfg <- function(to) {
 #' st_cast(d, "POINT") # will not convert the entire MULTIPOINT, and warns
 #' st_cast(d, "MULTIPOINT") %>% st_cast("POINT")
 st_cast.sfc = function(x, to, ..., ids = seq_along(x), group_or_split = TRUE) {
-	if (missing(to))
+	if (missing(to) || length(x) == 0)
 		return(st_cast_sfc_default(x))
 
 	e = rep(FALSE, length(x))
-	if (!inherits(x, c("sfc_MULTICURVE", "sfc_COMPOUNDCURVE", "sfc_CURVEPOLYGON"))) { # for which GEOS has no st_is_empty()
+	if (!is_exotic(x)) { # for which GEOS has no st_is_empty()
 		e = st_is_empty(x)
 		if (all(e)) {
 			x[e] = empty_sfg(to)
@@ -248,7 +258,6 @@ st_cast.sfc = function(x, to, ..., ids = seq_along(x), group_or_split = TRUE) {
 #' @details the \code{st_cast} method for \code{sf} objects can only split geometries, e.g. cast \code{MULTIPOINT} into multiple \code{POINT} features.  In case of splitting, attributes are repeated and a warning is issued when non-constant attributes are assigned to sub-geometries. To merge feature geometries and attribute values, use \link[sf:aggregate.sf]{aggregate} or \link[sf:tidyverse]{summarise}.
 st_cast.sf = function(x, to, ..., warn = TRUE, do_split = TRUE) {
 	geom = st_cast(st_geometry(x), to, group_or_split = do_split)
-	crs = st_crs(x)
 	agr = st_agr(x)
 	all_const = all_constant(x)
 	sf_column = attr(x, "sf_column") # keep name

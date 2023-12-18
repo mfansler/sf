@@ -1,3 +1,39 @@
+# version 1.0-15
+
+* add `st_perimeter()` to cover both geographic and projected coordinates; #268, #2279, by @JosiahParry
+
+* add `st_sample()` method for `bbox`, with special provisions for ellipsoidal coordinates; #2283
+
+* documentation clean-up by @olivroy; #2266, #2285
+
+* `st_convex_hull()` uses `s2::s2_convex_hull()` for geodetic coordinates; #2250
+
+* add `directed` argument to `st_line_merge()`; #2264
+
+* `st_union.sfc()` given `x` and `y` works consistently across geodetic and projected objects; #2262
+
+* `st_union.sf()` given `x` and `y` unions pairwise if `by_feature = TRUE`; #2259
+
+* `st_read()` work around issue with GPKG driver if `wkt_filter` is set; #2248
+
+* `st_read()` uses GDAL's stream reading when `use_stream = TRUE`; #2238 by @paleolimbot
+
+* `st_transform()` responds to in-session changes to `sf_proj_network()`; #2166
+
+* `plot.sf()`: `key.width` is sensitive to pointsize graphics parameter `par("ps")`; keys with factor levels suggest a proper size if they won't fit.
+
+* `plot.sf()`: `key.pos` can hold a second value in [0, 1] determining the relative position of the key in the available space 
+
+* `[<-.sf` fixes the `agr` attribute when it is broken; #2211
+
+* if the env. variable `ADD_SF_NAMESPACE` is set to `true`, `sf` objects get a new attribute, `.sf_namespace`, which forces loading the `sf` namespace when it has not been loaded so far, e.g. for proper printing or plotting of an `sf` object; #2212 by Mike Mahoney
+
+* `distinct.sf` is type-safe for `sf` objects with zero rows; #2204
+
+* `summarise.sf` raises an error if `.by` is given but no `across()` on the geometry; #2207
+
+* `st_write()` matches fields on name first, than on position; this matters for formats that have pre-defined names, such as GPX; #2202 
+
 # version 1.0-14
 
 * fix `plot.sf()` when using a key for multiple factor variables; #2196, #2195

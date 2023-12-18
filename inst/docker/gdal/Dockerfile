@@ -64,7 +64,7 @@ RUN export DEBIAN_FRONTEND=noninteractive; apt-get -y update \
 	libtiff5-dev
 
 # GEOS:
-ENV GEOS_VERSION 3.11.1
+ENV GEOS_VERSION 3.11.2
 
 RUN wget -q http://download.osgeo.org/geos/geos-${GEOS_VERSION}.tar.bz2 \
   && bzip2 -d geos-*bz2 \
@@ -80,7 +80,7 @@ RUN wget -q http://download.osgeo.org/geos/geos-${GEOS_VERSION}.tar.bz2 \
 
 #RUN git clone --depth 1 https://github.com/OSGeo/PROJ.git
 # https://download.osgeo.org/proj/proj-9.0.0RC1.tar.gz
-ENV PROJ_VERSION 9.1.0
+ENV PROJ_VERSION 9.3.0
 RUN wget -q http://download.osgeo.org/proj/proj-${PROJ_VERSION}.tar.gz
 RUN tar zxvf proj-${PROJ_VERSION}.tar.gz
 RUN cd proj* \
@@ -102,8 +102,8 @@ RUN cd proj* \
 
 # GDAL:
 
-ENV GDAL_VERSION 3.7.0
-ENV GDAL_VERSION_NAME 3.7.0
+ENV GDAL_VERSION 3.8.0
+ENV GDAL_VERSION_NAME 3.8.0
 
 RUN wget -q http://download.osgeo.org/gdal/${GDAL_VERSION}/gdal-${GDAL_VERSION_NAME}.tar.gz \
   && tar -xf gdal-${GDAL_VERSION_NAME}.tar.gz \
@@ -136,10 +136,14 @@ RUN R CMD build --no-build-vignettes --no-manual sf
 RUN rm -fr sf
 RUN git clone --depth 10 https://github.com/r-spatial/sf.git
 RUN R CMD INSTALL sf
-#RUN R CMD check --no-build-vignettes --no-manual --as-cran sf_*.tar.gz 
-#RUN R CMD check --no-build-vignettes --no-manual --as-cran lwgeom_*.tar.gz 
+RUN Rscript -e 'install.packages(c("nanoarrow"))'
+RUN R CMD check --no-build-vignettes --no-manual --as-cran sf_*.tar.gz 
+RUN R CMD check --no-build-vignettes --no-manual --as-cran lwgeom_*.tar.gz 
 
-#RUN Rscript -e 'install.packages("starsdata", repos="http://gis-bigdata.uni-muenster.de/pebesma/")'
-#RUN R CMD build --no-manual stars
-#RUN Rscript -e 'install.packages(c("ncdfgeom", "exactextractr"))'
-#RUN _R_CHECK_FORCE_SUGGESTS_=false R CMD check --no-build-vignettes --no-manual --as-cran stars_*.tar.gz 
+RUN Rscript -e 'install.packages("starsdata", repos="http://gis-bigdata.uni-muenster.de/pebesma/")'
+RUN R CMD build --no-manual stars
+RUN Rscript -e 'install.packages(c("ncdfgeom", "exactextractr"))'
+RUN _R_CHECK_FORCE_SUGGESTS_=false R CMD check --no-build-vignettes --no-manual --as-cran stars_*.tar.gz 
+RUN Rscript -e "install.packages(c('leaflet.extras2', 'mapdeck', 'plainview', 'poorman', 'rstudioapi', 'tinytest', 'webshot', 'webshot2'))"
+RUN wget -q https://cran.r-project.org/src/contrib/mapview_2.11.2.tar.gz
+RUN R CMD check mapview*gz

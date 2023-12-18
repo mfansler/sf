@@ -1,4 +1,4 @@
-## ---- echo=FALSE, include=FALSE-----------------------------------------------
+## ----echo=FALSE, include=FALSE------------------------------------------------
 knitr::opts_chunk$set(fig.height = 4.5)
 knitr::opts_chunk$set(fig.width = 6)
 knitr::opts_chunk$set(collapse = TRUE)
@@ -15,7 +15,7 @@ class(nc)
 ## -----------------------------------------------------------------------------
 attr(nc, "sf_column")
 
-## ---- echo=TRUE, eval=FALSE---------------------------------------------------
+## ----echo=TRUE, eval=FALSE----------------------------------------------------
 #  print(nc[9:15], n = 3)
 
 ## -----------------------------------------------------------------------------
@@ -90,7 +90,7 @@ p5 <- rbind(c(3,3), c(4,2), c(4,3), c(3,3))
 (mpol <- st_multipolygon(list(list(p1,p2), list(p3,p4), list(p5))))
 (gc <- st_geometrycollection(list(mp, mpol, ls)))
 
-## ---- echo=FALSE--------------------------------------------------------------
+## ----echo=FALSE---------------------------------------------------------------
 par(mar = c(0.1, 0.1, 1.3, 0.1), mfrow = c(2, 3))
 plot(mp, col = 'red')
 box()
@@ -158,7 +158,7 @@ st_layers(system.file("osm/overpass.osm", package="sf"))
 Sys.setenv(OSM_USE_CUSTOM_INDEXING="NO")
 st_layers(system.file("osm/overpass.osm", package="sf"), do_count = TRUE)
 
-## ---- eval=FALSE--------------------------------------------------------------
+## ----eval=FALSE---------------------------------------------------------------
 #  # Download .shp data
 #  u_shp <- "http://coagisweb.cabq.gov/datadownload/biketrails.zip"
 #  download.file(u_shp, "biketrails.zip")

@@ -3,7 +3,7 @@ knitr::opts_chunk$set(fig.height = 4.5)
 knitr::opts_chunk$set(fig.width = 6)
 knitr::opts_chunk$set(collapse = TRUE)
 
-## ---- eval=FALSE--------------------------------------------------------------
+## ----eval=FALSE---------------------------------------------------------------
 #  install.packages("s2")
 
 ## -----------------------------------------------------------------------------
@@ -94,7 +94,7 @@ st_intersects(nc[1:3,], nc[1:3,]) # self-intersections + neighbours
 sf_use_s2(TRUE)
 st_intersects(nc[1:3,], nc[1:3,], model = "semi-open") # only self-intersections
 
-## ---- fig.show='hold', out.width="50%"----------------------------------------
+## ----fig.show='hold', out.width="50%"-----------------------------------------
 uk = s2_data_countries("United Kingdom")
 class(uk)
 uk_sfc = st_as_sfc(uk) 

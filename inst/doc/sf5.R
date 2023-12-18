@@ -29,7 +29,7 @@ plot(nc["AREA"], key.pos = 1, axes = TRUE, key.width = lcm(1.3), key.length = 1.
 
 ## -----------------------------------------------------------------------------
 nc$f = cut(nc$AREA, 10)
-plot(nc["f"], axes = TRUE, key.pos = 4, pal = sf.colors(10), key.width = lcm(4.5))
+plot(nc["f"], axes = TRUE, key.pos = 4, pal = sf.colors(10), key.width = lcm(5))
 
 ## -----------------------------------------------------------------------------
 plot(nc["AREA"], breaks = c(0,.05,.1,.15,.2,.25))
@@ -83,7 +83,7 @@ ggplot() +
   facet_wrap(~VAR, ncol = 1) +
   scale_y_continuous(breaks = 34:36)
 
-## ---- eval = FALSE------------------------------------------------------------
+## ----eval = FALSE-------------------------------------------------------------
 #  library(mapview)
 #  mapviewOptions(fgb = FALSE) # needed when creating web pages
 #  mapview(nc["BIR74"], col.regions = sf.colors(10), fgb = FALSE)
