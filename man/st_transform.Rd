@@ -78,7 +78,7 @@ at least the one specified will be considered; a negative value disables this fe
 
 \item{quiet}{logical; print options after they have been parsed?}
 
-\item{type}{character; one of \code{have_datum_files}, \code{proj}, \code{ellps}, \code{datum}, \code{units} or \code{prime_meridians}; see Details.}
+\item{type}{character; one of \code{have_datum_files}, \code{proj}, \code{ellps}, \code{datum}, \code{units}, \code{path}, or \code{prime_meridians}; see Details.}
 
 \item{path}{character; PROJ search path to be set}
 }
@@ -95,13 +95,13 @@ Transforms using the \code{pipeline=} argument may fail if there is
 ambiguity in the axis order of the specified coordinate reference system;
 if you need the traditional GIS order, use \code{"OGC:CRS84"}, not
 \code{"EPSG:4326"}. Extra care is needed with the ESRI Shapefile format,
-because WKT1 does not store axis order unambigiously.
+because WKT1 does not store axis order unambiguously.
 
 The \code{st_transform} method for \code{sfg} objects assumes that the CRS of the object is available as an attribute of that name.
 
 For a discussion of using \code{options}, see \url{https://github.com/r-spatial/sf/issues/280} and \url{https://github.com/r-spatial/sf/issues/1983}
 
-\code{sf_proj_info} lists the available projections, ellipses, datums, units, or data search path of the PROJ library when \code{type} is equal to proj, ellps, datum, units or path; when \code{type} equals \code{have_datum_files} a boolean is returned indicating whether datum files are installed and accessible (checking for \code{conus}).
+\code{sf_proj_info} lists the available projections, ellipses, datums, units, or data search path of the PROJ library when \code{type} is equal to proj, ellps, datum, units or path; when \code{type} equals \code{have_datum_files} a boolean is returned indicating whether datum files are installed and accessible (checking for \code{conus}). \code{path} returns the \code{PROJ_INFO.searchpath} field directly, as a single string with path separaters (\code{:}  or \verb{;}).
 
 for PROJ >= 6, \code{sf_proj_info} does not provide option \code{type = "datums"}.
 PROJ < 6 does not provide the option \code{type = "prime_meridians"}.
@@ -116,7 +116,6 @@ sfc = st_sfc(p1, p2, crs = 4326)
 sfc
 st_transform(sfc, 3857)
 st_transform(st_sf(a=2:1, geom=sfc), "+init=epsg:3857")
-try(st_transform(sfc, 3857, aoi = c(-280,-90,180,90)))
 if (sf_extSoftVersion()["GDAL"] >= "3.0.0") {
   st_transform(sfc, pipeline =
 	  "+proj=pipeline +step +proj=axisswap +order=2,1") # reverse axes

@@ -1,6 +1,24 @@
+# version 1.0-16
+
+* `st_sample()` works when unprojected polygon geometry crosses the antemeridian; #2331
+
+* clean up and modernization of S3 registration of methods and tests; #2285, #2288, #2316, #2341, #2342, by @olivroy
+
+* `[.sfc` works when setting argument `op`; #2320
+
+* `st_sample()` for polygons is sensitive to setting `oriented = TRUE` to prevent wrongly correcting ring directions; #2308
+
+* add support for the GDAL `footprint` utility (requiring GDAL >= 3.8.0) to `gdal_utils`; #2305, by @goergen95
+
+* existing environment variables `PROJ_LIB` and `PROJ_DATA` are (again) ignored on `sf` binary CRAN installations (win + macos), effectively by overwriting them during the R session and restoring them on exit; this does not happen if environment variable `R_SF_USE_PROJ_DATA` is set to `true`. #2298
+
+* add `st_line_project()` to find how far a point is when projected on a line; #2291
+
+* add `st_line_interpolate()` to obtain a point at a certain distance along a line; #2291
+
 # version 1.0-15
 
-* add `st_perimeter()` to cover both geographic and projected coordinates; #268, #2279, by @JosiahParry
+* add `st_perimeter()` generic to cover both geographic and projected coordinates; #268, #2279, by @JosiahParry
 
 * add `st_sample()` method for `bbox`, with special provisions for ellipsoidal coordinates; #2283
 
@@ -28,9 +46,9 @@
 
 * if the env. variable `ADD_SF_NAMESPACE` is set to `true`, `sf` objects get a new attribute, `.sf_namespace`, which forces loading the `sf` namespace when it has not been loaded so far, e.g. for proper printing or plotting of an `sf` object; #2212 by Mike Mahoney
 
-* `distinct.sf` is type-safe for `sf` objects with zero rows; #2204
+* `distinct.sf()` is type-safe for `sf` objects with zero rows; #2204
 
-* `summarise.sf` raises an error if `.by` is given but no `across()` on the geometry; #2207
+* `summarise.sf()` raises an error if `.by` is given but no `across()` on the geometry; #2207
 
 * `st_write()` matches fields on name first, than on position; this matters for formats that have pre-defined names, such as GPX; #2202 
 
@@ -138,7 +156,7 @@
 
 * `sf_project()` accepts 3- or 4-column matrices, containing z and t values;
 
-* optimizations for `st_sfc()` by @paleolimbot; #1938, #1925
+* optimization for `st_sfc()` by @paleolimbot; #1938, #1925
 
 * `[<-.sfc()` recomputes the bounding box; `st_sfc()` gets parameter `compute_bbox`; #1965
 
@@ -805,7 +823,7 @@
 
 * have `st_graticule` return an empty graticule object when argument `datum` is `NA`; 
 
-* export `as_Spatial`, to make it easer for packages to convert `sfc` objects without importing `sf`
+* export `as_Spatial`, to make it easier for packages to convert `sfc` objects without importing `sf`
 
 * `st_distance` gains a parameter `by_element` to obtain pairwise distances; #437
 
@@ -1015,7 +1033,7 @@
 
 * add `st_proj_info`, modelled after `rgdal::projInfo`
 
-* overwriting datasets with `st_write` is no longer allowed; update=TRUE appends to them, permitted the driver supports appending.
+* overwriting datasets with `st_write()` is no longer allowed; `update=TRUE` appends to them, permitted the driver supports appending.
 
 * `st_write` gains an argument, `update`, which when `TRUE` will try to append to existing datasets (#204)
 

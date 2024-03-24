@@ -1,7 +1,7 @@
 
-R version 4.3.1 (2023-06-16) -- "Beagle Scouts"
-Copyright (C) 2023 The R Foundation for Statistical Computing
-Platform: x86_64-pc-linux-gnu (64-bit)
+R Under development (unstable) (2024-03-19 r86153 ucrt) -- "Unsuffered Consequences"
+Copyright (C) 2024 The R Foundation for Statistical Computing
+Platform: x86_64-w64-mingw32/x64
 
 R is free software and comes with ABSOLUTELY NO WARRANTY.
 You are welcome to redistribute it under certain conditions.
@@ -216,4 +216,4 @@ In CPL_crs_from_input(x) :
 > 
 > proc.time()
    user  system elapsed 
-  1.344   0.669   1.160 
+   0.65    0.21    0.81 

@@ -151,12 +151,12 @@ write_sf(nc, "nc.shp") # silently overwrites
 ## ----eval=FALSE---------------------------------------------------------------
 #  meuse <- st_read("PG:dbname=postgis", "meuse")
 
-## -----------------------------------------------------------------------------
-st_layers(system.file("osm/overpass.osm", package="sf"))
+## ----eval=FALSE---------------------------------------------------------------
+#  st_layers(system.file("osm/overpass.osm", package="sf"))
 
-## -----------------------------------------------------------------------------
-Sys.setenv(OSM_USE_CUSTOM_INDEXING="NO")
-st_layers(system.file("osm/overpass.osm", package="sf"), do_count = TRUE)
+## ----eval=FALSE---------------------------------------------------------------
+#  Sys.setenv(OSM_USE_CUSTOM_INDEXING="NO")
+#  st_layers(system.file("osm/overpass.osm", package="sf"), do_count = TRUE)
 
 ## ----eval=FALSE---------------------------------------------------------------
 #  # Download .shp data
